@@ -239,7 +239,8 @@ const DeliveryAuth = () => {
   const [profileImagePreview, setProfileImagePreview] = useState("");
 
   // Document states
-  const [aadharFile, setAadharFile] = useState(null);
+  const [aadharFrontFile, setAadharFrontFile] = useState(null);
+  const [aadharBackFile, setAadharBackFile] = useState(null);
   const [panFile, setPanFile] = useState(null);
   const [dlFile, setDlFile] = useState(null);
 
@@ -288,8 +289,10 @@ const DeliveryAuth = () => {
     setDlFile(file ? await compressImage(file) : null);
   const handlePanUpload = async (file) =>
     setPanFile(file ? await compressImage(file) : null);
-  const handleAadharUpload = async (file) =>
-    setAadharFile(file ? await compressImage(file) : null);
+  const handleAadharFrontUpload = async (file) =>
+    setAadharFrontFile(file ? await compressImage(file) : null);
+  const handleAadharBackUpload = async (file) =>
+    setAadharBackFile(file ? await compressImage(file) : null);
 
   const handleSendOtp = async () => {
     try {
@@ -345,7 +348,8 @@ const DeliveryAuth = () => {
         if (signupZoneId) formData.append("zoneId", signupZoneId);
 
         if (profileImageFile) formData.append("profileImage", profileImageFile);
-        if (aadharFile) formData.append("aadhar", aadharFile);
+        if (aadharFrontFile) formData.append("aadharFront", aadharFrontFile);
+        if (aadharBackFile) formData.append("aadharBack", aadharBackFile);
         if (panFile) formData.append("pan", panFile);
         if (dlFile) formData.append("dl", dlFile);
 
@@ -441,7 +445,8 @@ const DeliveryAuth = () => {
     setSignupAccountNumber("");
     setSignupIfsc("");
     setSignupAccountHolder("");
-    setAadharFile(null);
+    setAadharFrontFile(null);
+    setAadharBackFile(null);
     setPanFile(null);
     setDlFile(null);
     setAgreed(false);
@@ -953,7 +958,8 @@ const DeliveryAuth = () => {
                         >
                           <div className="space-y-3">
                             {[
-                              { label: "Aadhar Card (Front/Back)", state: aadharFile, setter: setAadharFile, id: "aadhar" },
+                              { label: "Aadhar Card (Front)", state: aadharFrontFile, setter: setAadharFrontFile, id: "aadharFront" },
+                              { label: "Aadhar Card (Back)", state: aadharBackFile, setter: setAadharBackFile, id: "aadharBack" },
                               { label: "PAN Card", state: panFile, setter: setPanFile, id: "pan" },
                               { label: "Driving License", state: dlFile, setter: setDlFile, id: "dl" },
                             ].map((doc) => (
@@ -965,7 +971,8 @@ const DeliveryAuth = () => {
                                   accept="image/*"
                                   onChange={(e) => {
                                     const file = e.target.files?.[0] || null;
-                                    if (doc.id === "aadhar") handleAadharUpload(file);
+                                    if (doc.id === "aadharFront") handleAadharFrontUpload(file);
+                                    else if (doc.id === "aadharBack") handleAadharBackUpload(file);
                                     else if (doc.id === "pan") handlePanUpload(file);
                                     else if (doc.id === "dl") handleDLUpload(file);
                                   }}
@@ -1020,7 +1027,7 @@ const DeliveryAuth = () => {
                             </button>
                             <button
                               onClick={handleSendOtp}
-                              disabled={loading || !dlFile || !panFile || !aadharFile}
+                              disabled={loading || !dlFile || !panFile || !aadharFrontFile || !aadharBackFile}
                               className="flex-[2] py-4 bg-black  text-primary-foreground rounded-2xl text-sm font-black tracking-widest uppercase shadow-lg shadow-brand-200 hover:bg-brand-700 transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
                             >
                               {loading ? (

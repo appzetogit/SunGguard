@@ -956,6 +956,21 @@ const ParcelTaskPage = () => {
                   ? "No OTP needed here. Upload a warehouse photo, hand the parcel (and COD cash if any) at the warehouse, then confirm."
                   : "No OTP needed here. Upload a hub photo, hand the parcel (and COD cash if any) to the hub, then confirm."}
               </p>
+              {isOutstation && parcel.receiverAddress && (
+                <div className="rounded-xl border border-slate-200 bg-white px-2.5 py-2">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-wide">
+                    Final receiver (for the warehouse's label)
+                  </p>
+                  <p className="text-[12px] font-bold text-slate-800 mt-0.5">
+                    {parcel.receiverAddress.name} · {parcel.receiverAddress.phone}
+                  </p>
+                  <p className="text-[11px] text-slate-500">
+                    {parcel.receiverAddress.fullAddress}
+                    {parcel.receiverAddress.city ? `, ${parcel.receiverAddress.city}` : ""}
+                    {parcel.receiverAddress.pincode ? ` - ${parcel.receiverAddress.pincode}` : ""}
+                  </p>
+                </div>
+              )}
               {isOutstation && warehousePickerOpen && (
                 <div className="rounded-xl border border-slate-200 bg-white p-2.5 space-y-2">
                   <div className="flex items-center justify-between">

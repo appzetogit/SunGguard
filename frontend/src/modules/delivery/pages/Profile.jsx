@@ -171,7 +171,7 @@ const Profile = () => {
     {
       icon: FileText,
       label: "Documents",
-      sub: user?.documents?.aadhar || user?.documents?.pan || user?.documents?.drivingLicense
+      sub: user?.documents?.aadhar || user?.documents?.aadharFront || user?.documents?.pan || user?.documents?.drivingLicense
         ? "Aadhar, PAN, DL uploaded"
         : "Upload Aadhar, PAN, DL",
       color: "text-purple-600 bg-purple-50",

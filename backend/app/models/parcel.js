@@ -29,6 +29,46 @@ const addressDetailsSchema = new mongoose.Schema({
   },
 }, { _id: false });
 
+/**
+ * Who the parcel is actually for, once it leaves the warehouse.
+ *
+ * Deliberately separate from `addressDetailsSchema`: `dropAddress` on this
+ * model is always the warehouse the rider hands the parcel to (see
+ * createParcel/tryAutoAssignParcelToWarehouse), never the end customer. This
+ * is the address the courier company hands the parcel on to — no lat/lng,
+ * since nobody in this flow dispatches or navigates to it; it exists to be
+ * printed on a shipping label at the warehouse.
+ */
+const receiverAddressSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+  },
+  phone: {
+    type: String,
+    required: true,
+  },
+  fullAddress: {
+    type: String,
+    required: true,
+  },
+  city: {
+    type: String,
+    trim: true,
+    default: "",
+  },
+  state: {
+    type: String,
+    trim: true,
+    default: "",
+  },
+  pincode: {
+    type: String,
+    trim: true,
+    default: "",
+  },
+}, { _id: false });
+
 const packageDetailsSchema = new mongoose.Schema({
   packageType: {
     type: String,
@@ -73,6 +113,17 @@ const parcelSchema = new mongoose.Schema(
     dropAddress: {
       type: addressDetailsSchema,
       required: true,
+    },
+    /**
+     * The end customer this outstation parcel is actually going to — who the
+     * courier company hands it to after the warehouse. Optional at the
+     * schema level so a local parcel (which delivers straight to
+     * `dropAddress`, no warehouse in between) and any parcel booked before
+     * this field existed are unaffected.
+     */
+    receiverAddress: {
+      type: receiverAddressSchema,
+      default: undefined,
     },
     packageDetails: {
       type: packageDetailsSchema,

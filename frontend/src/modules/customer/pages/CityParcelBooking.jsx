@@ -18,6 +18,7 @@ import {
 } from "../components/sunguard/kit";
 import { unwrap } from "@core/api/unwrap";
 import { getJSON, setJSON, remove as removeStored } from "@core/utils/storage";
+import Modal from "../../../shared/components/ui/Modal";
 import { STORAGE_KEYS } from "@core/utils/storageKeys";
 import {
   checkPersonName,
@@ -529,7 +530,14 @@ const CityParcelBooking = () => {
     setCouponError(null);
   };
 
+  // The single "Pay ₹X" button used to place a real, unconfirmed order on
+  // one tap — indistinguishable in weight from a "Continue" button, and COD
+  // has no Razorpay screen to act as a natural point of no return. This
+  // gate is the only thing standing between a tap and a booked rider.
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
   const place = async () => {
+    setConfirmOpen(false);
     setPlacing(true);
     try {
       const { data } = await cityParcelApi.create({
@@ -995,7 +1003,10 @@ const CityParcelBooking = () => {
             </PrimaryButton>
             </>
           ) : (
-            <PrimaryButton disabled={!quote || !payment || placing} onClick={place}>
+            <PrimaryButton
+              disabled={!quote || !payment || placing}
+              onClick={() => setConfirmOpen(true)}
+            >
               {placing ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
@@ -1010,6 +1021,43 @@ const CityParcelBooking = () => {
           )}
         </div>
       </div>
+
+      <Modal
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        title="Confirm this booking?"
+        size="sm"
+        footer={
+          <div className="flex gap-2 w-full">
+            <button
+              type="button"
+              onClick={() => setConfirmOpen(false)}
+              className="flex-1 h-11 rounded-xl border border-sg-line text-sg-ink-2 font-bold text-sm">
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={place}
+              disabled={placing}
+              className="flex-1 h-11 rounded-xl bg-sg-ink text-sg-surface font-bold text-sm disabled:opacity-60">
+              {placing ? "Booking…" : "Yes, book it"}
+            </button>
+          </div>
+        }>
+        <div className="space-y-2 text-sm">
+          <p className="text-sg-ink-2">
+            A rider will be requested to pick up and deliver within your zone.
+          </p>
+          <div className="rounded-xl bg-sg-bg px-3 py-2.5 flex items-center justify-between">
+            <span className="text-sg-ink-2 font-semibold">
+              {payment === "COD" ? "Cash on pickup" : "Pay now"}
+            </span>
+            <span className="font-black text-sg-ink text-base">
+              ₹{quote ? Number(appliedCoupon?.payableFare ?? quote.fare).toFixed(0) : "0"}
+            </span>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

@@ -142,9 +142,19 @@ function mockRes() {
   return res;
 }
 
+const RECEIVER = {
+  name: "Rohit Sharma",
+  phone: "9123456780",
+  fullAddress: "45 Marine Drive, Colaba",
+  city: "Mumbai",
+  state: "Maharashtra",
+  pincode: "400001",
+};
+
 const REQUEST_BODY = {
   pickupAddress: PICKUP,
   dropAddress: DROP,
+  receiverAddress: RECEIVER,
   packageDetails: { packageType: "document", weight: 1, description: "papers" },
   courierCompanyId: COURIER_ID,
   destinationCity: "Mumbai",

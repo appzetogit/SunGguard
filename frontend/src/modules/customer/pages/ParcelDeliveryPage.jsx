@@ -41,6 +41,7 @@ import {
 } from "../utils/bookingValidation";
 import { parcelApi } from "../services/parcelApi";
 import MapPicker from "../../../shared/components/MapPicker";
+import Modal from "../../../shared/components/ui/Modal";
 import { zonesApi } from "@shared/services/zonesApi";
 import { zonesContainingPoint } from "@shared/utils/zoneGeometry";
 import { useAuth } from "@core/context/AuthContext";
@@ -620,6 +621,33 @@ const ParcelDeliveryPage = () => {
     });
   };
 
+  /**
+   * Who the parcel is actually for, once it leaves the warehouse.
+   *
+   * Separate from `pickupDetails` and unrelated to `dropAddress` (which the
+   * server always fills with the warehouse — see createParcel). No map pin:
+   * nobody dispatches against this point, it only has to be readable enough
+   * for the warehouse to label the parcel for the courier company.
+   */
+  const [receiverDetails, setReceiverDetails] = useState(() => ({
+    name: "",
+    phone: "",
+    address: "",
+    city: "",
+    state: "",
+    pincode: "",
+    ...outstationDraft.receiverDetails,
+  }));
+
+  const updateReceiverField = (field, value) => {
+    setReceiverDetails((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const composeReceiverFullAddress = (details) =>
+    [details.address?.trim(), details.city?.trim(), details.state?.trim(), details.pincode?.trim()]
+      .filter(Boolean)
+      .join(", ");
+
   const [maxWeightKg, setMaxWeightKg] = useState(1);
   const [expressCharge, setExpressCharge] = useState(0);
   const [packageDescriptionPlaceholder, setPackageDescriptionPlaceholder] =
@@ -669,6 +697,7 @@ const ParcelDeliveryPage = () => {
       STORAGE_KEYS.PORTER_OUTSTATION_BOOKING_DRAFT,
       {
         pickupDetails,
+        receiverDetails,
         packageSegment,
         packageCategory,
         weightInput,
@@ -706,6 +735,7 @@ const ParcelDeliveryPage = () => {
     preferredPickupDate,
     step,
     furthest,
+    receiverDetails,
   ]);
   const [direction, setDirection] = useState(1);
   const topRef = useRef(null);
@@ -1131,6 +1161,15 @@ const ParcelDeliveryPage = () => {
           if (preferredPickupDate > addDaysToDateInput(MAX_BOOKING_DAYS))
             return `The booking end date cannot be more than ${MAX_BOOKING_DAYS} days ahead.`;
         }
+        const receiverProblem = firstProblem(
+          checkPersonName(receiverDetails.name, "Receiver name"),
+          checkPhone(receiverDetails.phone, "Receiver phone"),
+          checkAddressLine(receiverDetails.address, "Receiver address"),
+          checkPlaceName(receiverDetails.city, "Receiver city"),
+          checkPlaceName(receiverDetails.state, "Receiver state"),
+          checkPincode(receiverDetails.pincode),
+        );
+        if (receiverProblem) return receiverProblem;
         return null;
       }
       if (index === 2) {
@@ -1143,6 +1182,7 @@ const ParcelDeliveryPage = () => {
     [
       pickupDetails,
       pickupOutOfZone,
+      receiverDetails,
       selectedCourier,
       isOtherCourier,
       customCourierNameSaved,
@@ -1194,7 +1234,15 @@ const ParcelDeliveryPage = () => {
     fareEstimation,
   ]);
 
-  // Create Parcel request
+  // Whether the customer has actually confirmed the booking in the dialog
+  // below — the submit button alone used to be enough to book instantly
+  // (especially for COD, which has no Razorpay screen to act as a natural
+  // "are you sure" gate), and it read exactly like every other "Continue"
+  // button in the wizard, so an unintended tap silently placed a real order.
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  // Validates the whole form and, if it's bookable, opens the confirm
+  // dialog — it does not book anything by itself.
   const handlePlaceOrder = async (e) => {
     e.preventDefault();
     const composedAddress = composePickupFullAddress(pickupDetails);
@@ -1235,6 +1283,18 @@ const ParcelDeliveryPage = () => {
     if (!destinationCity || !selectedCity) {
       return toast.error("Please select destination city.");
     }
+    if (!receiverDetails.name?.trim() || !receiverDetails.phone?.trim()) {
+      return toast.error("Please enter receiver name and phone.");
+    }
+    if (!receiverDetails.address?.trim()) {
+      return toast.error("Please enter receiver address.");
+    }
+    if (!receiverDetails.city?.trim() || !receiverDetails.state?.trim()) {
+      return toast.error("Please enter receiver city and state.");
+    }
+    if (!receiverDetails.pincode?.trim()) {
+      return toast.error("Please enter receiver pincode.");
+    }
     if (bookingDurationMode === "custom_days") {
       if (parsedCustomDays < 2 || parsedCustomDays > MAX_BOOKING_DAYS) {
         return toast.error(`Enter between 2 and ${MAX_BOOKING_DAYS} days.`);
@@ -1254,6 +1314,14 @@ const ParcelDeliveryPage = () => {
       }
     }
 
+    setConfirmOpen(true);
+  };
+
+  // The actual booking — only ever called from the confirm dialog's own
+  // "Confirm" button, never from handlePlaceOrder directly.
+  const confirmAndBook = async () => {
+    setConfirmOpen(false);
+    const composedAddress = composePickupFullAddress(pickupDetails);
     const dropAddress = (() => {
       if (nearestWarehouse) {
         return {
@@ -1315,6 +1383,14 @@ const ParcelDeliveryPage = () => {
           pincode: pickupDetails.pincode?.trim() || undefined,
         },
         dropAddress,
+        receiverAddress: {
+          name: receiverDetails.name.trim(),
+          phone: receiverDetails.phone.trim(),
+          fullAddress: composeReceiverFullAddress(receiverDetails),
+          city: receiverDetails.city.trim(),
+          state: receiverDetails.state.trim(),
+          pincode: receiverDetails.pincode.trim(),
+        },
         packageDetails: {
           packageType: DEFAULT_PACKAGE_TYPE,
           packageSegment,
@@ -1404,6 +1480,7 @@ const ParcelDeliveryPage = () => {
         setCustomCourierNameSaved(false);
         setDeliverySpeed("normal");
         setDestinationCity("");
+        setReceiverDetails({ name: "", phone: "", address: "", city: "", state: "", pincode: "" });
         setBookingDurationMode("one_day");
         setCustomDaysInput("7");
         setPreferredPickupDate(todayDateInputValue());
@@ -1495,11 +1572,16 @@ const ParcelDeliveryPage = () => {
         <form
           onSubmit={handlePlaceOrder}
           onKeyDown={(e) => {
-            // Enter inside a field must never submit a half-filled waybill.
+            // Enter inside a field must never submit the form — on every
+            // step, including the last one. The submit button now only ever
+            // opens the confirm dialog, never books directly, but a stray
+            // Enter (mobile keyboard "Go", autofill, mis-focus) reaching the
+            // form's onSubmit would still pop that dialog open unasked.
+            // Booking is meant to start from one deliberate tap, nothing else.
             if (
               e.key === "Enter" &&
               e.target.tagName !== "TEXTAREA" &&
-              !isLastStep
+              e.target.tagName !== "BUTTON"
             ) {
               e.preventDefault();
             }
@@ -1861,6 +1943,132 @@ const ParcelDeliveryPage = () => {
                               cities={DESTINATION_CITIES}
                               value={destinationCity}
                               onChange={setDestinationCity}
+                            />
+                          </Field>
+                        </Sheet>
+                      </motion.div>
+
+                      <motion.div variants={stackItem}>
+                        <Sheet className="p-5 space-y-4">
+                          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                            Receiver details
+                          </p>
+                          <p className="text-[11px] text-slate-400 -mt-2">
+                            Who the courier hands this to, once it reaches {destinationCity || "the destination city"}.
+                          </p>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <Field
+                              label="Receiver name"
+                              filled={Boolean(receiverDetails.name?.trim())}>
+                              <div className="relative">
+                                <User
+                                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                                  size={15}
+                                />
+                                <input
+                                  type="text"
+                                  placeholder="Full name"
+                                  value={receiverDetails.name}
+                                  onChange={(e) =>
+                                    updateReceiverField("name", sanitizeNameInput(e.target.value))
+                                  }
+                                  maxLength={NAME_MAX}
+                                  autoComplete="name"
+                                  className={cn(
+                                    inputClass(Boolean(receiverDetails.name?.trim())),
+                                    "pl-10",
+                                  )}
+                                />
+                              </div>
+                            </Field>
+                            <Field
+                              label="Receiver phone"
+                              filled={Boolean(receiverDetails.phone?.trim())}>
+                              <div className="relative">
+                                <Phone
+                                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                                  size={15}
+                                />
+                                <input
+                                  type="tel"
+                                  inputMode="tel"
+                                  placeholder="10-digit"
+                                  value={receiverDetails.phone}
+                                  onChange={(e) =>
+                                    updateReceiverField("phone", sanitizePhoneInput(e.target.value))
+                                  }
+                                  maxLength={PHONE_MAX}
+                                  autoComplete="tel"
+                                  className={cn(
+                                    inputClass(Boolean(receiverDetails.phone?.trim())),
+                                    "pl-10",
+                                  )}
+                                />
+                              </div>
+                            </Field>
+                          </div>
+
+                          <Field
+                            label="Receiver address"
+                            filled={Boolean(receiverDetails.address?.trim())}>
+                            <textarea
+                              rows={2}
+                              placeholder="Flat no, building, street or area"
+                              value={receiverDetails.address}
+                              onChange={(e) => updateReceiverField("address", e.target.value)}
+                              className={cn(
+                                inputClass(Boolean(receiverDetails.address?.trim())),
+                                "resize-none",
+                              )}
+                            />
+                          </Field>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <Field
+                              label="City"
+                              filled={Boolean(receiverDetails.city?.trim())}>
+                              <input
+                                type="text"
+                                placeholder="City"
+                                value={receiverDetails.city}
+                                onChange={(e) => updateReceiverField("city", e.target.value)}
+                                className={inputClass(Boolean(receiverDetails.city?.trim()))}
+                              />
+                            </Field>
+                            <Field
+                              label="State"
+                              filled={Boolean(receiverDetails.state?.trim())}>
+                              <input
+                                type="text"
+                                placeholder="State"
+                                value={receiverDetails.state}
+                                onChange={(e) => updateReceiverField("state", e.target.value)}
+                                className={inputClass(Boolean(receiverDetails.state?.trim()))}
+                              />
+                            </Field>
+                          </div>
+
+                          <Field
+                            label="Pincode"
+                            filled={Boolean(receiverDetails.pincode?.trim())}>
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              maxLength={6}
+                              placeholder="110075"
+                              value={receiverDetails.pincode}
+                              onChange={(e) =>
+                                updateReceiverField(
+                                  "pincode",
+                                  e.target.value.replace(/\D/g, "").slice(0, 6),
+                                )
+                              }
+                              className={cn(
+                                inputClass(Boolean(receiverDetails.pincode?.trim())),
+                                "tracking-[0.25em]",
+                              )}
+                              style={{ fontFamily: MONO }}
                             />
                           </Field>
                         </Sheet>
@@ -2551,6 +2759,52 @@ const ParcelDeliveryPage = () => {
           boundaryLabel="a serviceable zone"
         />
       )}
+
+      {/* Explicit confirm — the submit button alone used to be indistinguishable
+          from every "Continue" button before it, and COD has no Razorpay screen
+          to act as a natural point of no return, so a tap here placed a real,
+          unconfirmed order. */}
+      <Modal
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        title="Confirm this booking?"
+        size="sm"
+        footer={
+          <div className="flex gap-2 w-full">
+            <button
+              type="button"
+              onClick={() => setConfirmOpen(false)}
+              className="flex-1 h-11 rounded-xl border border-slate-200 text-slate-600 font-bold text-sm">
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={confirmAndBook}
+              disabled={loading}
+              className="flex-1 h-11 rounded-xl bg-[color:var(--primary)] text-white font-bold text-sm disabled:opacity-60">
+              {loading ? "Booking…" : "Yes, book it"}
+            </button>
+          </div>
+        }>
+        <div className="space-y-2 text-sm">
+          <p className="text-slate-600">
+            A rider will be requested to pick up from{" "}
+            <span className="font-bold text-slate-900">
+              {pickupDetails.city || "your address"}
+            </span>{" "}
+            and route this to <span className="font-bold text-slate-900">{destinationCity}</span> via{" "}
+            <span className="font-bold text-slate-900">{courierCompany}</span>.
+          </p>
+          <div className="rounded-xl bg-slate-50 px-3 py-2.5 flex items-center justify-between">
+            <span className="text-slate-500 font-semibold">
+              {paymentMethod === "UPI" ? "Pay now (UPI)" : "Cash on pickup"}
+            </span>
+            <span className="font-black text-slate-900 text-base">
+              ₹{totalFare.toFixed(2)}
+            </span>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

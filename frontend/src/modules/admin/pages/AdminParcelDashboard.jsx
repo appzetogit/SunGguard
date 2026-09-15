@@ -3148,7 +3148,7 @@ const AdminParcelDashboard = () => {
 
                 <div className="border-t border-slate-100 pt-4">
                   <strong className="text-slate-800 block text-xs mb-1 uppercase tracking-wider">
-                    Dropoff Address
+                    {selectedParcel.warehouseId ? "Dropoff (Warehouse)" : "Dropoff Address"}
                   </strong>
                   <p className="font-bold text-slate-700">
                     {selectedParcel.dropAddress?.name} (
@@ -3158,6 +3158,30 @@ const AdminParcelDashboard = () => {
                     {selectedParcel.dropAddress?.fullAddress}
                   </p>
                 </div>
+
+                {selectedParcel.receiverAddress && (
+                  <div className="border-t border-slate-100 pt-4">
+                    <strong className="text-slate-800 block text-xs mb-1 uppercase tracking-wider">
+                      Receiver (final delivery, via courier)
+                    </strong>
+                    <p className="font-bold text-slate-700">
+                      {selectedParcel.receiverAddress.name} (
+                      {selectedParcel.receiverAddress.phone})
+                    </p>
+                    <p className="text-slate-500 mt-0.5 leading-relaxed">
+                      {selectedParcel.receiverAddress.fullAddress}
+                      {selectedParcel.receiverAddress.city
+                        ? `, ${selectedParcel.receiverAddress.city}`
+                        : ""}
+                      {selectedParcel.receiverAddress.state
+                        ? `, ${selectedParcel.receiverAddress.state}`
+                        : ""}
+                      {selectedParcel.receiverAddress.pincode
+                        ? ` - ${selectedParcel.receiverAddress.pincode}`
+                        : ""}
+                    </p>
+                  </div>
+                )}
 
                 {selectedParcel.deliveryPartnerId && (
                   <div className="border-t border-slate-100 pt-4">

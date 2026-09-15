@@ -38,6 +38,14 @@ const formatServiceTypes = (rider) => {
     return services.length ? services.join(" · ") : "Not specified";
 };
 
+const DOC_LABELS = {
+    aadhar: "AADHAR",
+    aadharFront: "AADHAR FRONT",
+    aadharBack: "AADHAR BACK",
+    pan: "PAN",
+    drivingLicense: "DRIVING LICENSE",
+};
+
 const formatPanDisplay = (value) => {
     const pan = String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
     if (!pan) return "Not provided";
@@ -747,7 +755,7 @@ return (
                                         const isObj = doc && typeof doc === 'object';
                                         const docKey = isObj ? (doc.name || '') : doc;
                                         const docUrl = isObj ? doc.url : (viewingRider.documentsRaw?.[docKey] || '');
-                                        const docName = docKey.toUpperCase();
+                                        const docName = DOC_LABELS[docKey] || docKey.toUpperCase();
                                         return (
                                             <a 
                                                 key={idx} 

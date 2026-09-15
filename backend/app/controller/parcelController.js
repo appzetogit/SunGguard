@@ -531,6 +531,38 @@ function checkBookingAddress(address, label) {
   return null;
 }
 
+/**
+ * Validates the end customer an outstation parcel is actually going to — the
+ * label the warehouse hands the courier company, not a place the rider ever
+ * navigates to. No lat/lng gate, unlike `checkBookingAddress`: nobody in
+ * this flow dispatches against this point.
+ */
+function checkReceiverAddress(address) {
+  if (!address || typeof address !== "object") return "Receiver details are required";
+
+  const name = String(address.name || "").trim();
+  if (name.length < 2 || name.length > 80 || !PERSON_NAME_PATTERN.test(name)) {
+    return "Enter a valid receiver name — letters only, no digits";
+  }
+
+  const phone = String(address.phone || "").trim().replace(/[\s-]/g, "");
+  if (!PHONE_PATTERN.test(phone)) {
+    return "Enter a valid 10-digit receiver phone number";
+  }
+
+  const fullAddress = String(address.fullAddress || "").trim();
+  if (fullAddress.length < 5 || fullAddress.length > 500) {
+    return "Receiver address looks too short to find";
+  }
+
+  const pincode = String(address.pincode || "").trim();
+  if (!PINCODE_PATTERN.test(pincode)) {
+    return "Enter a valid 6-digit receiver pincode";
+  }
+
+  return null;
+}
+
 const PARCEL_PAYMENT_METHODS = ["UPI", "CARD", "WALLET", "COD"];
 
 /**
@@ -547,6 +579,7 @@ export const createParcel = async (req, res) => {
     const {
       pickupAddress,
       dropAddress,
+      receiverAddress,
       packageDetails,
       paymentMethod,
       courierCompany,
@@ -701,6 +734,11 @@ export const createParcel = async (req, res) => {
     if (!isOutstation) {
       const dropProblem = checkBookingAddress(dropAddress, "Drop");
       if (dropProblem) return handleResponse(res, 400, dropProblem);
+    } else {
+      // The local flow's `dropAddress` IS the end customer; outstation needs
+      // this separately, since its `dropAddress` is always the warehouse.
+      const receiverProblem = checkReceiverAddress(receiverAddress);
+      if (receiverProblem) return handleResponse(res, 400, receiverProblem);
     }
 
     /**
@@ -798,6 +836,16 @@ export const createParcel = async (req, res) => {
     const parcelFields = {
       pickupAddress,
       dropAddress: resolvedDropAddress,
+      receiverAddress: isOutstation
+        ? {
+            name: String(receiverAddress.name).trim(),
+            phone: String(receiverAddress.phone).trim().replace(/[\s-]/g, ""),
+            fullAddress: String(receiverAddress.fullAddress).trim(),
+            city: String(receiverAddress.city || "").trim(),
+            state: String(receiverAddress.state || "").trim(),
+            pincode: String(receiverAddress.pincode || "").trim(),
+          }
+        : undefined,
       packageDetails,
       courierCompany: courier,
       courierCompanyId: courierDoc._id,

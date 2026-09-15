@@ -74,7 +74,11 @@ const deliverySchema = new mongoose.Schema(
         },
 
         documents: {
+            // Legacy single-image field, kept so partners who signed up
+            // before front/back capture was added still show their file.
             aadhar: { type: String },
+            aadharFront: { type: String },
+            aadharBack: { type: String },
             pan: { type: String },
             drivingLicense: { type: String },
         },

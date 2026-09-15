@@ -6,18 +6,24 @@ import Card from "@/shared/components/ui/Card";
 import { useAuth } from "@core/context/AuthContext";
 
 /**
- * Only the three documents actually collected at onboarding (see
- * signupDelivery in backend/app/controller/deliveryAuthController.js —
- * aadhar/pan/dl are the only files it accepts and stores under
- * `documents.{aadhar,pan,drivingLicense}`). Police Clearance and Bank
- * Passbook were never part of that form, so there is nothing real to show
- * for them.
+ * Only the documents actually collected at onboarding (see signupDelivery
+ * in backend/app/controller/deliveryAuthController.js — aadhar front/back,
+ * pan, and dl are the only files it accepts, stored under
+ * `documents.{aadharFront,aadharBack,pan,drivingLicense}`). Police
+ * Clearance and Bank Passbook were never part of that form, so there is
+ * nothing real to show for them.
  */
 const DOC_TYPES = [
-  { key: "aadhar", title: "Aadhar Card" },
+  { key: "aadharFront", title: "Aadhar Card (Front)" },
+  { key: "aadharBack", title: "Aadhar Card (Back)" },
   { key: "pan", title: "PAN Card" },
   { key: "drivingLicense", title: "Driving License" },
 ];
+
+// Older accounts registered before front/back capture only have the
+// single legacy `aadhar` image — fall back to it for the front slot.
+const legacyAadharFallback = (type, documents) =>
+  type.key === "aadharFront" ? documents?.aadhar || "" : "";
 
 const isPdf = (url) => /\.pdf(\?|$)/i.test(url);
 
@@ -35,7 +41,7 @@ const Documents = () => {
 
   const docs = DOC_TYPES.map((type) => ({
     ...type,
-    fileUrl: user?.documents?.[type.key] || "",
+    fileUrl: user?.documents?.[type.key] || legacyAadharFallback(type, user?.documents),
   }));
 
   return (

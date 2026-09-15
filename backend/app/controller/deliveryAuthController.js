@@ -268,6 +268,8 @@ export const signupDelivery = async (req, res) => {
         let otp = generateOTP();
 
         let aadharUrl = delivery?.documents?.aadhar || "";
+        let aadharFrontUrl = delivery?.documents?.aadharFront || "";
+        let aadharBackUrl = delivery?.documents?.aadharBack || "";
         let panUrl = delivery?.documents?.pan || "";
         let dlUrl = delivery?.documents?.drivingLicense || "";
         let profileImageUrl = delivery?.profileImage || "";
@@ -296,6 +298,10 @@ export const signupDelivery = async (req, res) => {
                     profileImageUrl = await uploadImageWithFallback(file.buffer, "delivery/profiles", opts);
                 } else if (file.fieldname === "aadhar") {
                     aadharUrl = await uploadImageWithFallback(file.buffer, "delivery/documents", opts);
+                } else if (file.fieldname === "aadharFront") {
+                    aadharFrontUrl = await uploadImageWithFallback(file.buffer, "delivery/documents", opts);
+                } else if (file.fieldname === "aadharBack") {
+                    aadharBackUrl = await uploadImageWithFallback(file.buffer, "delivery/documents", opts);
                 } else if (file.fieldname === "pan") {
                     panUrl = await uploadImageWithFallback(file.buffer, "delivery/documents", opts);
                 } else if (file.fieldname === "dl") {
@@ -315,11 +321,15 @@ export const signupDelivery = async (req, res) => {
         }
 
         const normalizedAadhar = pickBodyString(body, ["aadharUrl"]);
+        const normalizedAadharFront = pickBodyString(body, ["aadharFrontUrl"]);
+        const normalizedAadharBack = pickBodyString(body, ["aadharBackUrl"]);
         const normalizedPan = pickBodyString(body, ["panUrl"]);
         const normalizedDl = pickBodyString(body, ["drivingLicenseUrl", "dlUrl"]);
         const normalizedProfileImage = pickBodyString(body, ["profileImageUrl", "profileImage"]);
 
         if (/^https?:\/\//i.test(normalizedAadhar)) aadharUrl = normalizedAadhar;
+        if (/^https?:\/\//i.test(normalizedAadharFront)) aadharFrontUrl = normalizedAadharFront;
+        if (/^https?:\/\//i.test(normalizedAadharBack)) aadharBackUrl = normalizedAadharBack;
         if (/^https?:\/\//i.test(normalizedPan)) panUrl = normalizedPan;
         if (/^https?:\/\//i.test(normalizedDl)) dlUrl = normalizedDl;
         if (/^https?:\/\//i.test(normalizedProfileImage)) profileImageUrl = normalizedProfileImage;
@@ -345,6 +355,8 @@ export const signupDelivery = async (req, res) => {
             applicationStatus: "pending",
             documents: {
                 aadhar: aadharUrl,
+                aadharFront: aadharFrontUrl,
+                aadharBack: aadharBackUrl,
                 pan: panUrl,
                 drivingLicense: dlUrl,
             },
