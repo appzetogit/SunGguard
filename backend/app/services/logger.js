@@ -1,9 +1,15 @@
 /**
  * Structured Logging Service
- * 
+ *
  * Provides structured JSON logging with correlation tracking, log level filtering,
  * and automatic sanitization of sensitive data.
- * 
+ *
+ * In development the terminal gets a short, colored one-line summary per
+ * entry instead of a raw JSON blob — a green check for a clean request or
+ * info log, a red cross for an error, an amber warning triangle otherwise.
+ * The full structured JSON (needed for log aggregation) is still what ships
+ * when NODE_ENV=production, or whenever LOG_FORMAT=json is set explicitly.
+ *
  * @module services/logger
  */
 
@@ -22,6 +28,98 @@ const LOG_LEVELS = {
   info: 2,
   debug: 3
 };
+
+// A real terminal wants a short colored line, not a JSON document — but a
+// log aggregator in production wants the opposite, so the two modes are
+// picked here once rather than scattered through every call site.
+const PRETTY_LOGS =
+  (process.env.LOG_FORMAT || '').toLowerCase() !== 'json' &&
+  process.env.NODE_ENV !== 'production';
+
+const ANSI = {
+  reset: '\x1b[0m',
+  dim: '\x1b[2m',
+  red: '\x1b[31m',
+  green: '\x1b[32m',
+  yellow: '\x1b[33m',
+  blue: '\x1b[34m',
+  magenta: '\x1b[35m',
+  cyan: '\x1b[36m',
+  gray: '\x1b[90m',
+};
+
+// process.stdout.isTTY is false when output is piped/redirected — colors
+// would just show up as literal escape codes there, so skip them.
+const COLOR_ENABLED = Boolean(process.stdout.isTTY);
+
+function paint(color, text) {
+  if (!COLOR_ENABLED) return text;
+  return `${ANSI[color] || ''}${text}${ANSI.reset}`;
+}
+
+const LEVEL_BADGE = {
+  error: () => paint('red', '✖ ERROR'),
+  warn: () => paint('yellow', '⚠ WARN '),
+  info: () => paint('cyan', 'ℹ INFO '),
+  debug: () => paint('gray', '• DEBUG'),
+};
+
+/** A handful of fields worth a glance inline; everything else is noise. */
+const PRETTY_CONTEXT_KEYS = [
+  'statusCode',
+  'duration',
+  'method',
+  'path',
+  'route',
+  'userId',
+  'code',
+  'port',
+];
+
+function formatPrettyContext(context = {}) {
+  const parts = [];
+  for (const key of PRETTY_CONTEXT_KEYS) {
+    if (context[key] === undefined || context[key] === null) continue;
+    const value = key === 'duration' ? `${context[key]}ms` : context[key];
+    parts.push(`${key}=${value}`);
+  }
+  return parts.length ? paint('dim', parts.join(' ')) : '';
+}
+
+/**
+ * One compact, human-scannable line per log entry.
+ *
+ * HTTP request completions are the overwhelming majority of lines a running
+ * server prints, so they get their own tighter layout — method, path and
+ * status lined up — rather than sharing the generic "badge + message" shape.
+ */
+function formatPrettyLine(level, message, context = {}) {
+  if (message === 'HTTP request completed' && context.method) {
+    const icon =
+      level === 'error' ? paint('red', '✖') : level === 'warn' ? paint('yellow', '●') : paint('green', '✓');
+    const status = String(context.statusCode ?? '---').padEnd(3);
+    const statusColor = level === 'error' ? 'red' : level === 'warn' ? 'yellow' : 'green';
+    const method = String(context.method).padEnd(6);
+    const duration = context.duration != null ? paint('dim', `${context.duration}ms`) : '';
+    return `${icon} ${paint(statusColor, status)} ${method} ${context.path || ''} ${duration}`.trimEnd();
+  }
+
+  const badge = (LEVEL_BADGE[level] || LEVEL_BADGE.info)();
+  const contextStr = formatPrettyContext(context);
+
+  let line = `${badge} ${message}`;
+  if (contextStr) line += `  ${contextStr}`;
+
+  // An attached Error is the one thing worth a second line — its stack is
+  // how a failure actually gets diagnosed, JSON blob or not.
+  if (context.error?.stack) {
+    line += `\n${paint('dim', context.error.stack)}`;
+  } else if (context.error?.message) {
+    line += `  ${paint('red', context.error.message)}`;
+  }
+
+  return line;
+}
 
 // Sensitive field patterns to redact
 const SENSITIVE_PATTERNS = [
@@ -156,10 +254,10 @@ function log(level, message, context = {}) {
   }
   
   const entry = formatLogEntry(level, message, context);
-  
-  // Output as JSON
-  const output = JSON.stringify(entry);
-  
+  const output = PRETTY_LOGS
+    ? formatPrettyLine(level, message, entry.context)
+    : JSON.stringify(entry);
+
   // Use appropriate console method
   if (level === 'error') {
     console.error(output);
