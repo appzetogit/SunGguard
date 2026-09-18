@@ -12,6 +12,7 @@ import {
   Upload,
   Image,
   Filter,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -300,7 +301,7 @@ const SubCategories = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="ds-section-spacing">
       <PageHeader
         title="Sub-Categories (Level 3)"
         description="Manage subcategories mapped to Level 2 parent categories."
@@ -320,12 +321,12 @@ const SubCategories = () => {
         }
       />
 
-      <Card className="p-0 overflow-hidden">
-        <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex gap-3 items-center flex-wrap bg-slate-50/50 dark:bg-slate-800/20">
+      <Card className="ds-card-compact">
+        <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center flex-wrap">
           {selectedItems.length > 0 && (
             <button
               onClick={handleBulkDelete}
-              className="flex items-center gap-2 px-3.5 py-2 bg-rose-50 border border-rose-200 text-rose-600 rounded-xl hover:bg-rose-100 transition-colors text-xs font-semibold"
+              className="ds-btn ds-btn-sm bg-rose-50 border border-rose-200 text-rose-600 hover:bg-rose-100"
             >
               <Trash2 className="w-3.5 h-3.5" />
               <span>Delete ({selectedItems.length})</span>
@@ -368,12 +369,23 @@ const SubCategories = () => {
             </select>
           </div>
         </div>
+      </Card>
+
+      <Card className="p-0 overflow-hidden relative min-h-[300px]">
+        {isLoading && (
+          <div className="absolute inset-0 bg-white/60 dark:bg-slate-900/60 backdrop-blur-[1px] z-10 flex items-center justify-center">
+            <div className="flex flex-col items-center gap-2">
+              <Loader2 className="h-8 w-8 text-primary animate-spin" />
+              <p className="ds-caption text-gray-500 font-medium">Loading Subcategories...</p>
+            </div>
+          </div>
+        )}
 
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-100">
+          <table className="ds-table">
+            <thead className="ds-table-header">
               <tr>
-                <th className="py-3 px-4 text-left">
+                <th className="ds-table-header-cell w-12">
                   <input
                     type="checkbox"
                     className="rounded border-gray-300 text-brand-600 focus:ring-brand-500"
@@ -387,47 +399,32 @@ const SubCategories = () => {
                     onChange={handleSelectAll}
                   />
                 </th>
-                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Image
-                </th>
-                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Name
-                </th>
-                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Parent Chain
-                </th>
-                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Slug
-                </th>
-                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="text-right py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
+                <th className="ds-table-header-cell">Image</th>
+                <th className="ds-table-header-cell">Name</th>
+                <th className="ds-table-header-cell">Parent Chain</th>
+                <th className="ds-table-header-cell">Slug</th>
+                <th className="ds-table-header-cell">Status</th>
+                <th className="ds-table-header-cell text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
-              {isLoading ? (
+            <tbody>
+              {!isLoading && filteredCategories.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="text-center py-8 text-gray-500">
-                    Loading...
-                  </td>
-                </tr>
-              ) : filteredCategories.length === 0 ? (
-                <tr>
-                  <td colSpan="7" className="text-center py-8 text-gray-500">
-                    No subcategories found
+                  <td colSpan="7" className="px-6 py-20 text-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="p-4 bg-gray-50 rounded-full">
+                        <Image className="h-8 w-8 text-gray-300" />
+                      </div>
+                      <p className="ds-h4 text-gray-400">No subcategories found</p>
+                    </div>
                   </td>
                 </tr>
               ) : (
                 paginatedCategories.map((cat) => {
                   const parentInfo = getParentInfo(cat.parentId);
                   return (
-                    <tr
-                      key={cat._id || cat.id}
-                      className="hover:bg-gray-50/50 transition-colors">
-                      <td className="py-4.5 px-6">
+                    <tr key={cat._id || cat.id} className="ds-table-row">
+                      <td className="ds-table-cell">
                         <input
                           type="checkbox"
                           className="rounded border-gray-300 text-purple-600 focus:ring-purple-500 h-4 w-4"
@@ -435,7 +432,7 @@ const SubCategories = () => {
                           onChange={() => handleSelect(cat._id || cat.id)}
                         />
                       </td>
-                      <td className="py-4.5 px-6">
+                      <td className="ds-table-cell">
                         <div className="w-11 h-11 rounded-xl bg-gray-100 overflow-hidden flex items-center justify-center border border-gray-200 shrink-0">
                           {cat.image ? (
                             <img
@@ -448,10 +445,10 @@ const SubCategories = () => {
                           )}
                         </div>
                       </td>
-                      <td className="py-4.5 px-6 font-bold text-base text-slate-900 dark:text-white">
+                      <td className="ds-table-cell font-bold text-slate-900 dark:text-white">
                         {cat.name}
                       </td>
-                      <td className="py-4.5 px-6">
+                      <td className="ds-table-cell">
                         <div className="flex flex-col gap-1">
                           <span className="text-xs text-slate-400 flex items-center gap-1">
                             <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
@@ -462,8 +459,8 @@ const SubCategories = () => {
                           </span>
                         </div>
                       </td>
-                      <td className="py-4.5 px-6 text-sm font-mono text-slate-500">{cat.slug}</td>
-                      <td className="py-4.5 px-6">
+                      <td className="ds-table-cell text-sm font-mono text-slate-500">{cat.slug}</td>
+                      <td className="ds-table-cell">
                         <Badge
                           variant={
                             cat.status === "active" ? "success" : "warning"
@@ -471,20 +468,22 @@ const SubCategories = () => {
                           {cat.status}
                         </Badge>
                       </td>
-                      <td className="py-4.5 px-6 text-right space-x-2">
-                        <button
-                          onClick={() => openEditModal(cat)}
-                          className="p-1 text-gray-500 hover:text-brand-600 transition-colors">
-                          <Edit className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            setDeleteTarget(cat);
-                            setIsDeleteModalOpen(true);
-                          }}
-                          className="p-1 text-gray-500 hover:text-red-600 transition-colors">
-                          <Trash className="w-5 h-5" />
-                        </button>
+                      <td className="ds-table-cell text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => openEditModal(cat)}
+                            className="p-2 bg-primary/10 text-primary rounded-lg hover:bg-primary hover:text-white transition-all">
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setDeleteTarget(cat);
+                              setIsDeleteModalOpen(true);
+                            }}
+                            className="p-2 bg-gray-50 text-gray-400 rounded-lg hover:bg-red-600 hover:text-white transition-all">
+                            <Trash className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -519,7 +518,7 @@ const SubCategories = () => {
               exit={{ opacity: 0, scale: 0.95 }}
               className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden">
               <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-                <h2 className="text-lg font-bold text-gray-900">
+                <h2 className="ds-h4">
                   {editingItem ? "Edit Subcategory" : "Add Subcategory"}
                 </h2>
                 <button
@@ -629,16 +628,14 @@ const SubCategories = () => {
               <div className="p-6 border-t border-gray-100 flex justify-end gap-3 bg-gray-50">
                 <button
                   onClick={() => setIsAddModalOpen(false)}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium">
+                  className="ds-btn ds-btn-md bg-white ring-1 ring-gray-200 text-gray-700 hover:bg-gray-50">
                   Cancel
                 </button>
                 <button
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="px-4 py-2 bg-black  text-primary-foreground rounded-lg hover:bg-brand-700 font-medium disabled:opacity-50 flex items-center gap-2">
-                  {isSaving && (
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  )}
+                  className="ds-btn ds-btn-md bg-primary text-primary-foreground shadow-lg shadow-primary/20 disabled:opacity-50">
+                  {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
                   {editingItem ? "Update Subcategory" : "Create Subcategory"}
                 </button>
               </div>
@@ -660,7 +657,7 @@ const SubCategories = () => {
                 <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4">
                   <Trash className="w-6 h-6" />
                 </div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">
+                <h3 className="ds-h4 mb-2">
                   Delete Subcategory?
                 </h3>
                 <p className="text-gray-500 text-sm mb-6">
@@ -673,12 +670,12 @@ const SubCategories = () => {
                 <div className="flex gap-3 justify-center">
                   <button
                     onClick={() => setIsDeleteModalOpen(false)}
-                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition-colors">
+                    className="ds-btn ds-btn-md bg-white ring-1 ring-gray-200 text-gray-700 hover:bg-gray-50">
                     Cancel
                   </button>
                   <button
                     onClick={handleDelete}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors">
+                    className="ds-btn ds-btn-md bg-red-600 text-white hover:bg-red-700">
                     Delete
                   </button>
                 </div>

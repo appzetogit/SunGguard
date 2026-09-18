@@ -3,14 +3,13 @@ import Card from "@shared/components/ui/Card";
 import Badge from "@shared/components/ui/Badge";
 import {
   HiOutlineTruck,
-  HiOutlineMapPin,
   HiOutlineBolt,
   HiOutlineClock,
-  HiOutlineExclamationCircle,
-  HiOutlineInformationCircle,
   HiOutlineXMark,
   HiOutlineChevronRight,
   HiOutlineSignal,
+  HiOutlineUserGroup,
+  HiOutlineShieldCheck,
 } from "react-icons/hi2";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@shared/components/ui/Toast";
@@ -89,25 +88,48 @@ const FleetRadar = () => {
             Real-time tracking and delivery reliability monitor.
           </p>
         </div>
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-4">
-            <div className="text-center">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                Active Riders
-              </p>
-              <h4 className="text-xl font-black text-slate-900">42 / 50</h4>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 bg-white rounded-2xl border border-slate-100 shadow-sm px-2 py-2">
+            <div className="flex items-center gap-2.5 px-3 py-1.5">
+              <div className="h-8 w-8 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 shrink-0">
+                <HiOutlineUserGroup className="h-4 w-4" />
+              </div>
+              <div>
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                  Active Riders
+                </p>
+                <h4 className="text-sm font-black text-slate-900 mt-1">
+                  42 / 50
+                </h4>
+              </div>
             </div>
-            <div className="text-center">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                Avg Deliv. Time
-              </p>
-              <h4 className="text-xl font-black text-brand-600">14.2m</h4>
+            <div className="h-8 w-px bg-slate-100" />
+            <div className="flex items-center gap-2.5 px-3 py-1.5">
+              <div className="h-8 w-8 rounded-xl bg-brand-50 flex items-center justify-center text-brand-600 shrink-0">
+                <HiOutlineClock className="h-4 w-4" />
+              </div>
+              <div>
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                  Avg Deliv. Time
+                </p>
+                <h4 className="text-sm font-black text-brand-600 mt-1">
+                  14.2m
+                </h4>
+              </div>
             </div>
-            <div className="text-center">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                SLA Health
-              </p>
-              <h4 className="text-xl font-black text-primary">98.5%</h4>
+            <div className="h-8 w-px bg-slate-100" />
+            <div className="flex items-center gap-2.5 px-3 py-1.5">
+              <div className="h-8 w-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                <HiOutlineShieldCheck className="h-4 w-4" />
+              </div>
+              <div>
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                  SLA Health
+                </p>
+                <h4 className="text-sm font-black text-primary mt-1">
+                  98.5%
+                </h4>
+              </div>
             </div>
           </div>
         </div>

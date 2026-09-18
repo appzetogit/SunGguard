@@ -16,6 +16,10 @@ import Card from "@shared/components/ui/Card";
 import Modal from "@shared/components/ui/Modal";
 import Button from "@shared/components/ui/Button";
 import ConfirmDialog from "@shared/components/ui/ConfirmDialog";
+import PageHeader from "@shared/components/ui/PageHeader";
+import StatCard from "@shared/components/ui/StatCard";
+import Badge from "@shared/components/ui/Badge";
+import EmptyState from "@shared/components/ui/EmptyState";
 import { adminPorterApi } from "../../services/api/porterApi";
 import ZoneMapEditor from "./ZoneMapEditor";
 import { maskName, checkName, firstError } from "../../utils/formRules";
@@ -237,44 +241,30 @@ const DeliveryZones = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                    <h1 className="flex items-center gap-2.5 text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-                        <Layers className="h-6 w-6 text-primary" />
-                        Delivery Zones
-                    </h1>
-                    <p className="mt-1 text-sm text-slate-500">
-                        Draw the areas the porter fleet serves.
-                    </p>
-                </div>
-                <Button onClick={openCreate} className="gap-2">
-                    <Plus className="h-4 w-4" /> New Zone
-                </Button>
-            </div>
+            <PageHeader
+                title="Delivery Zones"
+                description="Draw the areas the porter fleet serves."
+                icon={Layers}
+                actions={
+                    <Button onClick={openCreate} className="gap-2">
+                        <Plus className="h-4 w-4" /> New Zone
+                    </Button>
+                }
+            />
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="ds-grid-cards-3">
                 {[
                     { label: "Total Zones", value: summary.total, icon: Layers },
-                    { label: "Active", value: summary.active, icon: CheckCircle2 },
+                    { label: "Active", value: summary.active, icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50 border border-emerald-200" },
                     {
                         label: "Coverage",
                         value: `${summary.area.toFixed(1)} km²`,
                         icon: Ruler,
+                        color: "text-blue-600",
+                        bg: "bg-blue-50 border border-blue-200",
                     },
                 ].map((stat) => (
-                    <Card key={stat.label} className="flex items-center gap-4 p-5">
-                        <div className="grid h-11 w-11 place-items-center rounded-2xl bg-primary/10 text-primary">
-                            <stat.icon className="h-5 w-5" />
-                        </div>
-                        <div>
-                            <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                                {stat.label}
-                            </p>
-                            <p className="font-mono text-2xl font-extrabold text-slate-900 dark:text-white">
-                                {stat.value}
-                            </p>
-                        </div>
-                    </Card>
+                    <StatCard key={stat.label} label={stat.label} value={stat.value} icon={stat.icon} color={stat.color} bg={stat.bg} />
                 ))}
             </div>
 
@@ -306,20 +296,17 @@ const DeliveryZones = () => {
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
             ) : zones.length === 0 ? (
-                <Card className="flex flex-col items-center gap-3 py-20 text-center">
-                    <div className="grid h-14 w-14 place-items-center rounded-2xl bg-slate-100 dark:bg-slate-800">
-                        <MapIcon className="h-6 w-6 text-slate-400" />
-                    </div>
-                    <p className="text-base font-bold text-slate-700 dark:text-slate-200">
-                        No zones yet
-                    </p>
-                    <p className="max-w-sm text-sm text-slate-500">
-                        Draw your first serviceable area on the map to start routing porter
-                        parcels by zone.
-                    </p>
-                    <Button onClick={openCreate} className="mt-2 gap-2">
-                        <Plus className="h-4 w-4" /> Create a zone
-                    </Button>
+                <Card>
+                    <EmptyState
+                        icon={MapIcon}
+                        title="No zones yet"
+                        description="Draw your first serviceable area on the map to start routing porter parcels by zone."
+                        action={
+                            <Button onClick={openCreate} className="gap-2">
+                                <Plus className="h-4 w-4" /> Create a zone
+                            </Button>
+                        }
+                    />
                 </Card>
             ) : (
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -338,16 +325,9 @@ const DeliveryZones = () => {
                                                 {zone.city || "No city set"}
                                             </p>
                                         </div>
-                                        <span
-                                            className={cn(
-                                                "shrink-0 rounded-lg px-2.5 py-1 text-[10px] font-black uppercase tracking-wide",
-                                                zone.isActive
-                                                    ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400"
-                                                    : "bg-slate-100 text-slate-500 dark:bg-slate-800",
-                                            )}
-                                        >
+                                        <Badge variant={zone.isActive ? "success" : "gray"} className="shrink-0">
                                             {zone.isActive ? "Active" : "Inactive"}
-                                        </span>
+                                        </Badge>
                                     </div>
 
                                     <div className="mt-3 grid grid-cols-2 gap-2 text-center">
@@ -375,8 +355,6 @@ const DeliveryZones = () => {
                                 <button
                                     onClick={() => {
                                         setViewing(zone);
-                                        setProbe({ lat: "", lng: "" });
-                                        setProbeResult(null);
                                     }}
                                     className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
                                 >

@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Modal from '@shared/components/ui/Modal';
+import PageHeader from '@shared/components/ui/PageHeader';
 import { useToast } from '@shared/components/ui/Toast';
 
 const CustomerDetail = () => {
@@ -151,42 +152,41 @@ const CustomerDetail = () => {
     return (
         <div className="ds-section-spacing animate-in fade-in slide-in-from-bottom-4 duration-700 pb-12">
             {/* Action Bar */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 px-1">
-                <div className="flex items-center gap-4">
+            <PageHeader
+                title="Customer Profile"
+                description="Full profile and shopping history for this customer."
+                breadcrumbs={
                     <button
                         onClick={() => navigate('/admin/customers')}
-                        className="p-2.5 bg-white ring-1 ring-slate-200 rounded-xl hover:bg-slate-50 transition-all shadow-sm group"
+                        className="inline-flex items-center gap-1 hover:text-primary transition-colors"
                     >
-                        <ChevronLeft className="h-5 w-5 text-slate-500 group-hover:-translate-x-0.5 transition-transform" />
+                        <ChevronLeft className="h-3.5 w-3.5" />
+                        Back to Customers
                     </button>
-                    <div>
-                        <div className="flex items-center gap-2">
-                            <h1 className="ds-h1">Customer Profile</h1>
-                            <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-widest">{customer.id}</Badge>
-                        </div>
-                        <p className="ds-description mt-1">Full profile and shopping history for this customer.</p>
-                    </div>
-                </div>
-                <div className="flex items-center gap-3">
-                    <button
-                        onClick={handleRefresh}
-                        className="flex items-center gap-2 px-5 py-3 bg-white ring-1 ring-slate-200 text-slate-700 rounded-2xl text-xs font-bold hover:bg-slate-50 transition-all shadow-sm"
-                    >
-                        <RotateCw className={cn("h-4 w-4 text-brand-500", isRefreshing && "animate-spin")} />
-                        REFRESH
-                    </button>
-                    <button
-                        onClick={() => {
-                            setEditForm({ ...customer });
-                            setIsEditModalOpen(true);
-                        }}
-                        className="flex items-center gap-2 px-5 py-3 bg-slate-900 text-white rounded-2xl text-xs font-bold hover:bg-slate-800 transition-all shadow-lg active:scale-95 shadow-slate-200"
-                    >
-                        <Edit3 className="h-4 w-4" />
-                        EDIT PROFILE
-                    </button>
-                </div>
-            </div>
+                }
+                badge={<Badge variant="gray" className="text-[10px] font-bold uppercase tracking-widest">{customer.id}</Badge>}
+                actions={
+                    <>
+                        <button
+                            onClick={handleRefresh}
+                            className="ds-btn ds-btn-md bg-white ring-1 ring-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm"
+                        >
+                            <RotateCw className={cn("h-4 w-4 text-brand-500", isRefreshing && "animate-spin")} />
+                            REFRESH
+                        </button>
+                        <button
+                            onClick={() => {
+                                setEditForm({ ...customer });
+                                setIsEditModalOpen(true);
+                            }}
+                            className="ds-btn ds-btn-md bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-200"
+                        >
+                            <Edit3 className="h-4 w-4" />
+                            EDIT PROFILE
+                        </button>
+                    </>
+                }
+            />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 {/* Main Profile Info */}
@@ -375,8 +375,13 @@ const CustomerDetail = () => {
                                     ))}
                                     {filteredOrders.length === 0 && (
                                         <tr>
-                                            <td colSpan="4" className="px-4 py-5 text-center text-xs font-bold text-slate-400">
-                                                No orders found matching your search.
+                                            <td colSpan="4" className="px-4 py-14 text-center">
+                                                <div className="flex flex-col items-center gap-2">
+                                                    <div className="p-3 bg-slate-50 rounded-full">
+                                                        <Package className="h-6 w-6 text-slate-300" />
+                                                    </div>
+                                                    <p className="text-xs font-bold text-slate-400">No orders found matching your search.</p>
+                                                </div>
                                             </td>
                                         </tr>
                                     )}

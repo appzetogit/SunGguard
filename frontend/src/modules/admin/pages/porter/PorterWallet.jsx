@@ -24,6 +24,10 @@ import { toast } from "sonner";
 import Card from "@shared/components/ui/Card";
 import ConfirmDialog from "@shared/components/ui/ConfirmDialog";
 import Modal from "@shared/components/ui/Modal";
+import PageHeader from "@shared/components/ui/PageHeader";
+import StatCard from "@shared/components/ui/StatCard";
+import Badge from "@shared/components/ui/Badge";
+import EmptyState from "@shared/components/ui/EmptyState";
 import { adminPorterApi } from "../../services/api/porterApi";
 import { adminFinanceApi } from "../../services/api/financeApi";
 import { cn } from "@/lib/utils";
@@ -168,16 +172,9 @@ const WithdrawalDetailModal = ({ row, onClose }) => {
               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Withdrawal Amount</p>
               <p className="font-mono text-xl font-extrabold text-slate-900 dark:text-white">{rupees(row.amount)}</p>
             </div>
-            <span
-              className={cn(
-                "rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase",
-                row.status === "Settled"
-                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400"
-                  : "bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400",
-              )}
-            >
+            <Badge variant={row.status === "Settled" ? "success" : "warning"}>
               {row.status}
-            </span>
+            </Badge>
           </div>
 
           {/* Payout destination, in full */}
@@ -322,28 +319,32 @@ const PorterWallet = () => {
       label: "Porter Revenue",
       value: rupees(revenue.total),
       icon: TrendingUp,
-      tint: "bg-blue-500/10 text-blue-600 border-blue-200 dark:border-blue-900",
+      color: "text-blue-600",
+      bg: "bg-blue-500/10 border border-blue-200 dark:border-blue-900",
       note: `Outstation ${rupees(revenue.pickup)} · Local ${rupees(revenue.city)}`,
     },
     {
       label: "Rider Earning",
       value: rupees(riderEarning.total),
       icon: Users,
-      tint: "bg-emerald-500/10 text-emerald-600 border-emerald-200 dark:border-emerald-900",
+      color: "text-emerald-600",
+      bg: "bg-emerald-500/10 border border-emerald-200 dark:border-emerald-900",
       note: `${riderEarning.riders || 0} riders earned from porter jobs`,
     },
     {
       label: "Admin Earning",
       value: rupees(adminEarning.total),
       icon: Wallet,
-      tint: "bg-purple-500/10 text-purple-600 border-purple-200 dark:border-purple-900",
+      color: "text-purple-600",
+      bg: "bg-purple-500/10 border border-purple-200 dark:border-purple-900",
       note: `${adminEarning.marginPercent || 0}% margin on porter revenue`,
     },
     {
       label: "Held Back",
       value: rupees(withheld.amount),
       icon: AlertTriangle,
-      tint: "bg-amber-500/10 text-amber-600 border-amber-200 dark:border-amber-900",
+      color: "text-amber-600",
+      bg: "bg-amber-500/10 border border-amber-200 dark:border-amber-900",
       note: `${withheld.count || 0} deliveries awaiting review`,
     },
   ];
@@ -353,21 +354,24 @@ const PorterWallet = () => {
       label: "Wallet Balance",
       value: rupees(wallet.totalBalance),
       icon: Wallet,
-      tint: "bg-slate-500/10 text-slate-600 border-slate-200 dark:border-slate-700",
+      color: "text-slate-600",
+      bg: "bg-slate-500/10 border border-slate-200 dark:border-slate-700",
       note: "All services, not porter alone",
     },
     {
       label: "Ready to Pay",
       value: rupees(wallet.pendingWithdrawals),
       icon: Clock,
-      tint: "bg-amber-500/10 text-amber-600 border-amber-200 dark:border-amber-900",
+      color: "text-amber-600",
+      bg: "bg-amber-500/10 border border-amber-200 dark:border-amber-900",
       note: "Withdrawal requests awaiting settlement",
     },
     {
       label: "Paid Out",
       value: rupees(wallet.paidOut),
       icon: CheckCircle2,
-      tint: "bg-emerald-500/10 text-emerald-600 border-emerald-200 dark:border-emerald-900",
+      color: "text-emerald-600",
+      bg: "bg-emerald-500/10 border border-emerald-200 dark:border-emerald-900",
       note: "Lifetime, settled withdrawals",
     },
   ];
@@ -375,28 +379,20 @@ const PorterWallet = () => {
   return (
     <div className="space-y-6 pb-20">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-              Porter Wallet
-            </h1>
-            <span className="rounded-md bg-cyan-100 px-2 py-0.5 text-xs font-semibold text-cyan-800 dark:bg-cyan-950 dark:text-cyan-300">
-              Porter Ops
-            </span>
-          </div>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            What porter earned, what riders earned, what the platform keeps, and who still needs to be paid.
-          </p>
-        </div>
-        <button
-          onClick={handleRefresh}
-          className="inline-flex items-center gap-2 self-start rounded-2xl bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-primary/90"
-        >
-          <RotateCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
-          Refresh
-        </button>
-      </div>
+      <PageHeader
+        title="Porter Wallet"
+        description="What porter earned, what riders earned, what the platform keeps, and who still needs to be paid."
+        badge={<Badge variant="info">Porter Ops</Badge>}
+        actions={
+          <button
+            onClick={handleRefresh}
+            className="inline-flex items-center gap-2 self-start rounded-2xl bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-primary/90"
+          >
+            <RotateCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
+            Refresh
+          </button>
+        }
+      />
 
       {/* Revenue / earning / margin */}
       {overviewLoading ? (
@@ -406,16 +402,15 @@ const PorterWallet = () => {
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {moneyStats.map((stat) => (
-            <Card key={stat.label} className="flex items-center gap-4 p-5">
-              <div className={cn("rounded-2xl border p-3", stat.tint)}>
-                <stat.icon className="h-5 w-5" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{stat.label}</p>
-                <p className="font-mono text-xl font-extrabold text-slate-900 dark:text-white">{stat.value}</p>
-                <p className="truncate text-[11px] text-slate-400">{stat.note}</p>
-              </div>
-            </Card>
+            <StatCard
+              key={stat.label}
+              label={stat.label}
+              value={stat.value}
+              description={stat.note}
+              icon={stat.icon}
+              color={stat.color}
+              bg={stat.bg}
+            />
           ))}
         </div>
       )}
@@ -428,16 +423,15 @@ const PorterWallet = () => {
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           {walletStats.map((stat) => (
-            <Card key={stat.label} className="flex items-center gap-4 p-5">
-              <div className={cn("rounded-2xl border p-3", stat.tint)}>
-                <stat.icon className="h-5 w-5" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{stat.label}</p>
-                <p className="font-mono text-xl font-extrabold text-slate-900 dark:text-white">{stat.value}</p>
-                <p className="truncate text-[11px] text-slate-400">{stat.note}</p>
-              </div>
-            </Card>
+            <StatCard
+              key={stat.label}
+              label={stat.label}
+              value={stat.value}
+              description={stat.note}
+              icon={stat.icon}
+              color={stat.color}
+              bg={stat.bg}
+            />
           ))}
         </div>
       </div>
@@ -456,7 +450,7 @@ const PorterWallet = () => {
                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
               </div>
             ) : riders.length === 0 ? (
-              <p className="py-14 text-center text-xs font-semibold text-slate-400">No porter riders yet</p>
+              <EmptyState icon={Users} title="No porter riders yet" />
             ) : (
               <div className="divide-y divide-slate-100 dark:divide-slate-800">
                 {riders.map((rider) => (
@@ -524,9 +518,10 @@ const PorterWallet = () => {
               <Loader2 className="h-7 w-7 animate-spin text-primary" />
             </div>
           ) : (withdrawals?.items || []).length === 0 ? (
-            <p className="py-16 text-center text-xs font-semibold text-slate-400">
-              {statusTab === "pending" ? "Nothing pending — riders are paid up" : "No withdrawal requests here"}
-            </p>
+            <EmptyState
+              icon={Banknote}
+              title={statusTab === "pending" ? "Nothing pending — riders are paid up" : "No withdrawal requests here"}
+            />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left">
@@ -556,16 +551,9 @@ const PorterWallet = () => {
                         {rupees(row.amount)}
                       </td>
                       <td className="px-5 py-3">
-                        <span
-                          className={cn(
-                            "rounded-lg px-2 py-0.5 text-[10px] font-bold uppercase",
-                            row.status === "Settled"
-                              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400"
-                              : "bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400",
-                          )}
-                        >
+                        <Badge variant={row.status === "Settled" ? "success" : "warning"}>
                           {row.status}
-                        </span>
+                        </Badge>
                       </td>
                       <td className="px-5 py-3 text-[11px] text-slate-500">
                         {row.date

@@ -20,6 +20,9 @@ import {
 import { toast } from "sonner";
 import Card from "@shared/components/ui/Card";
 import ConfirmDialog from "@shared/components/ui/ConfirmDialog";
+import StatCard from "@shared/components/ui/StatCard";
+import Badge from "@shared/components/ui/Badge";
+import EmptyState from "@shared/components/ui/EmptyState";
 import { adminPorterApi } from "../../services/api/porterApi";
 import { cn } from "@/lib/utils";
 
@@ -39,13 +42,12 @@ const formatDateTime = (value) => {
   });
 };
 
-const STATUS_BADGE = {
-  DELIVERED: "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400",
-  CANCELLED: "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-400",
-  DELIVERY_FAILED: "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-400",
+const STATUS_BADGE_VARIANT = {
+  DELIVERED: "success",
+  CANCELLED: "error",
+  DELIVERY_FAILED: "error",
 };
-const STATUS_BADGE_DEFAULT =
-  "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-400";
+const STATUS_BADGE_DEFAULT_VARIANT = "warning";
 
 const PorterCustomerDetail = () => {
   const { id } = useParams();
@@ -143,18 +145,11 @@ const PorterCustomerDetail = () => {
             />
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold text-slate-900 dark:text-white">{customer.name}</h1>
-                <span
-                  className={cn(
-                    "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-bold",
-                    customer.isActive
-                      ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400"
-                      : "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-400",
-                  )}
-                >
+                <h1 className="ds-h1">{customer.name}</h1>
+                <Badge variant={customer.isActive ? "success" : "error"}>
                   <span className={cn("h-1.5 w-1.5 rounded-full", customer.isActive ? "bg-emerald-500" : "bg-rose-500")} />
                   {customer.isActive ? "Active" : "Inactive"}
-                </span>
+                </Badge>
               </div>
               <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
                 <span className="flex items-center gap-1"><Phone className="h-3 w-3" />{customer.phone}</span>
@@ -197,26 +192,18 @@ const PorterCustomerDetail = () => {
         </Card>
 
         <div className="grid grid-cols-2 gap-4 lg:col-span-2">
-          {stats.map((s) => (
-            <div
-              key={s.label}
-              className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900"
-            >
-              <div
-                className={cn(
-                  "mb-2 inline-flex h-8 w-8 items-center justify-center rounded-lg",
-                  s.color === "blue" && "bg-blue-50 text-blue-600",
-                  s.color === "emerald" && "bg-emerald-50 text-emerald-600",
-                  s.color === "rose" && "bg-rose-50 text-rose-600",
-                  s.color === "amber" && "bg-amber-50 text-amber-600",
-                )}
-              >
-                <s.icon className="h-4 w-4" />
-              </div>
-              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{s.label}</p>
-              <p className="mt-0.5 text-xl font-bold text-slate-900 dark:text-white">{s.value}</p>
-            </div>
-          ))}
+          {stats.map((s) => {
+            const colorMap = {
+              blue: { color: "text-blue-600", bg: "bg-blue-50 border border-blue-200" },
+              emerald: { color: "text-emerald-600", bg: "bg-emerald-50 border border-emerald-200" },
+              rose: { color: "text-rose-600", bg: "bg-rose-50 border border-rose-200" },
+              amber: { color: "text-amber-600", bg: "bg-amber-50 border border-amber-200" },
+            };
+            const tone = colorMap[s.color] || {};
+            return (
+              <StatCard key={s.label} label={s.label} value={s.value} icon={s.icon} color={tone.color} bg={tone.bg} />
+            );
+          })}
         </div>
       </div>
 
@@ -241,8 +228,8 @@ const PorterCustomerDetail = () => {
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {(customer.recentBookings || []).length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-5 py-14 text-center text-xs font-semibold text-slate-400">
-                      No bookings yet
+                    <td colSpan={4} className="p-0">
+                      <EmptyState title="No bookings yet" description="This customer hasn't placed a Porter booking yet." />
                     </td>
                   </tr>
                 ) : (
@@ -276,14 +263,9 @@ const PorterCustomerDetail = () => {
                         </div>
                       </td>
                       <td className="px-5 py-3.5">
-                        <span
-                          className={cn(
-                            "inline-flex rounded-full border px-2 py-0.5 text-[10px] font-bold",
-                            STATUS_BADGE[b.status] || STATUS_BADGE_DEFAULT,
-                          )}
-                        >
+                        <Badge variant={STATUS_BADGE_VARIANT[b.status] || STATUS_BADGE_DEFAULT_VARIANT}>
                           {b.status?.replace(/_/g, " ")}
-                        </span>
+                        </Badge>
                       </td>
                       <td className="px-5 py-3.5 font-mono text-xs font-bold text-slate-800 dark:text-slate-200">
                         {formatMoney(b.fare)}
@@ -303,10 +285,7 @@ const PorterCustomerDetail = () => {
         <div className="space-y-4">
           <Card title="Saved Addresses">
             {(customer.addresses || []).length === 0 ? (
-              <div className="rounded-xl border border-dashed border-slate-200 py-8 text-center dark:border-slate-700">
-                <MapPin className="mx-auto h-8 w-8 text-slate-200" />
-                <p className="mt-2 text-xs font-semibold text-slate-400">No saved addresses</p>
-              </div>
+              <EmptyState icon={MapPin} title="No saved addresses" className="py-8" />
             ) : (
               <div className="space-y-2.5">
                 {customer.addresses.map((addr, idx) => (

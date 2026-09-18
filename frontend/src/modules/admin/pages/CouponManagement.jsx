@@ -2,6 +2,8 @@ import React, { useState, useMemo, useEffect } from 'react';
 import Card from '@shared/components/ui/Card';
 import Badge from '@shared/components/ui/Badge';
 import Modal from '@shared/components/ui/Modal';
+import PageHeader from '@shared/components/ui/PageHeader';
+import StatCard from '@shared/components/ui/StatCard';
 import { useToast } from '@shared/components/ui/Toast';
 import {
     HiOutlinePlus,
@@ -18,6 +20,7 @@ import {
     HiOutlineXMark,
     HiOutlineEye
 } from 'react-icons/hi2';
+import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { adminApi } from '../services/adminApi';
@@ -250,53 +253,56 @@ const CouponManagement = () => {
     };
 
     return (
-        <div className="ds-section-spacing animate-in fade-in slide-in-from-bottom-4 duration-700 pb-12">
-            {/* Header Area */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 px-1">
-                <div>
-                    <h1 className="ds-h1 flex items-center gap-3">
-                        Delivery Coupons
-                    </h1>
-                    <p className="ds-description mt-1">Discount codes for local and outstation delivery bookings.</p>
-                </div>
-                <button
-                    onClick={() => handleOpenModal()}
-                    className="flex items-center gap-2 px-6 py-3.5 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] active:scale-95 transition-all"
-                >
-                    <HiOutlinePlus className="h-5 w-5" />
-                    CREATE DELIVERY COUPON
-                </button>
-            </div>
+        <div className="ds-section-spacing">
+            <PageHeader
+                title="Delivery Coupons"
+                description="Discount codes for local and outstation delivery bookings."
+                actions={
+                    <button
+                        onClick={() => handleOpenModal()}
+                        className="ds-btn ds-btn-md bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                    >
+                        <HiOutlinePlus className="ds-icon-sm" />
+                        CREATE DELIVERY COUPON
+                    </button>
+                }
+            />
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {[
-                    { label: 'Total Coupons', value: stats.total, icon: HiOutlineTicket, color: 'indigo' },
-                    { label: 'Active Codes', value: stats.active, icon: HiOutlineCheckCircle, color: 'emerald' },
-                    { label: 'Redemptions', value: stats.totalRedeemed.toLocaleString(), icon: HiOutlineUsers, color: 'amber' },
-                    { label: 'Expiring Soon', value: stats.expiringSoon, icon: HiOutlineClock, color: 'rose' },
-                ].map((s, i) => (
-                    <Card key={i} className="p-6 border-none shadow-xl ring-1 ring-slate-100 bg-white group hover:ring-primary/20 transition-all">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className={cn("p-2.5 rounded-2xl",
-                                s.color === 'indigo' && "bg-brand-50 text-brand-600",
-                                s.color === 'emerald' && "bg-brand-50 text-brand-600",
-                                s.color === 'amber' && "bg-amber-50 text-amber-600",
-                                s.color === 'rose' && "bg-rose-50 text-rose-600",
-                            )}>
-                                <s.icon className="h-6 w-6" />
-                            </div>
-                        </div>
-                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{s.label}</h4>
-                        <h3 className="text-2xl font-black text-slate-900">{s.value}</h3>
-                    </Card>
-                ))}
+            <div className="ds-grid-cards-4">
+                <StatCard
+                    label="Total Coupons"
+                    value={stats.total}
+                    icon={HiOutlineTicket}
+                    color="text-brand-600"
+                    bg="bg-brand-50"
+                />
+                <StatCard
+                    label="Active Codes"
+                    value={stats.active}
+                    icon={HiOutlineCheckCircle}
+                    color="text-emerald-600"
+                    bg="bg-emerald-50"
+                />
+                <StatCard
+                    label="Redemptions"
+                    value={stats.totalRedeemed.toLocaleString()}
+                    icon={HiOutlineUsers}
+                    color="text-amber-600"
+                    bg="bg-amber-50"
+                />
+                <StatCard
+                    label="Expiring Soon"
+                    value={stats.expiringSoon}
+                    icon={HiOutlineClock}
+                    color="text-rose-600"
+                    bg="bg-rose-50"
+                />
             </div>
 
             {/* Main Content Area */}
-            <Card className="border-none shadow-xl ring-1 ring-slate-100 bg-white rounded-xl overflow-hidden">
-                {/* Table Filters */}
-                <div className="p-4 border-b border-slate-50 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <Card className="ds-card-compact">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                     <div className="flex items-center gap-4 flex-1">
                         <div className="relative group flex-1 max-w-md">
                             <HiOutlineMagnifyingGlass className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
@@ -305,7 +311,7 @@ const CouponManagement = () => {
                                 placeholder="Search by code or description..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border-none rounded-2xl text-xs font-bold outline-none ring-1 ring-transparent focus:ring-primary/10 transition-all"
+                                className="ds-input pl-10"
                             />
                         </div>
                         <div className="flex bg-slate-100 p-1.5 rounded-2xl">
@@ -324,31 +330,47 @@ const CouponManagement = () => {
                         </div>
                     </div>
                 </div>
+            </Card>
 
-                {/* Coupons Table */}
+            {/* Coupons Table */}
+            <Card className="overflow-hidden relative min-h-[200px]">
+                {isLoading && (
+                    <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] z-10 flex items-center justify-center">
+                        <div className="flex flex-col items-center gap-2">
+                            <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                            <p className="ds-caption text-gray-500 font-medium">Loading coupons...</p>
+                        </div>
+                    </div>
+                )}
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                        <thead>
-                            <tr className="bg-slate-50/70 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800">
-                                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Coupon Code</th>
-                                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Offerings</th>
-                                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Performance</th>
-                                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Validity</th>
-                                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">Status</th>
-                                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Actions</th>
+                    <table className="ds-table">
+                        <thead className="ds-table-header">
+                            <tr>
+                                <th className="ds-table-header-cell">Coupon Code</th>
+                                <th className="ds-table-header-cell">Offerings</th>
+                                <th className="ds-table-header-cell">Performance</th>
+                                <th className="ds-table-header-cell">Validity</th>
+                                <th className="ds-table-header-cell text-center">Status</th>
+                                <th className="ds-table-header-cell text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                            {isLoading && (
+                        <tbody>
+                            {!isLoading && filteredCoupons.length === 0 && (
                                 <tr>
-                                    <td colSpan="6" className="text-center py-12 text-slate-400 text-sm">
-                                        Loading coupons...
+                                    <td colSpan="6" className="px-6 py-20 text-center">
+                                        <div className="flex flex-col items-center gap-3">
+                                            <div className="p-4 bg-gray-50 rounded-full">
+                                                <HiOutlineTicket className="h-8 w-8 text-gray-300" />
+                                            </div>
+                                            <p className="ds-h4 text-gray-400">No codes found</p>
+                                            <p className="ds-caption text-gray-400">Try adjusting your filters or create a new promotion.</p>
+                                        </div>
                                     </td>
                                 </tr>
                             )}
-                            {!isLoading && filteredCoupons.map((c) => (
-                                <tr key={c._id} className="group hover:bg-slate-50/50 transition-colors">
-                                    <td className="px-6 py-4.5">
+                            {filteredCoupons.map((c) => (
+                                <tr key={c._id} className="ds-table-row hover:bg-slate-50/70 transition-colors">
+                                    <td className="ds-table-cell py-4 px-6">
                                         <div className="flex items-center gap-4">
                                             <div className="h-12 w-12 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center shrink-0">
                                                 <HiOutlineTicket className="h-6 w-6" />
@@ -360,7 +382,7 @@ const CouponManagement = () => {
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4.5">
+                                    <td className="ds-table-cell py-4 px-6">
                                         <div className="space-y-1">
                                             <p className="text-sm font-bold text-slate-900 dark:text-white">
                                                 {c.discountType === 'percentage' ? `${c.discountValue}% OFF` : c.discountType === 'free_delivery' ? 'Free Delivery' : `₹${c.discountValue} OFF`}
@@ -373,14 +395,14 @@ const CouponManagement = () => {
                                             </p>
                                             <div className="flex flex-wrap gap-1 pt-1">
                                                 {(Array.isArray(c.appliesTo) && c.appliesTo.length > 0 ? c.appliesTo : ['order']).map((scope) => (
-                                                    <Badge key={scope} variant="secondary" className="text-[9px] px-1.5 py-0.5 font-bold">
+                                                    <Badge key={scope} variant="gray" className="text-[9px] px-1.5 py-0.5 font-bold">
                                                         {scope === 'porter_local' ? 'Local' : scope === 'porter_outstation' ? 'Outstation' : 'Orders'}
                                                     </Badge>
                                                 ))}
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4.5">
+                                    <td className="ds-table-cell py-4 px-6">
                                         <div className="space-y-2">
                                             <div className="flex justify-between items-end">
                                                 <span className="text-xs text-slate-500 font-medium">Redeemed</span>
@@ -394,7 +416,7 @@ const CouponManagement = () => {
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4.5">
+                                    <td className="ds-table-cell py-4 px-6">
                                         <div className="flex items-center gap-2 text-slate-500 text-xs font-medium">
                                             <HiOutlineCalendarDays className="h-4 w-4 text-slate-400" />
                                             <span>
@@ -402,12 +424,12 @@ const CouponManagement = () => {
                                             </span>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4.5 text-center">
-                                        <Badge variant={c.isActive ? 'success' : 'secondary'} className="text-xs font-semibold px-2.5 py-0.5">
+                                    <td className="ds-table-cell py-4 px-6 text-center">
+                                        <Badge variant={c.isActive ? 'success' : 'gray'} className="text-xs font-semibold px-2.5 py-0.5">
                                             {c.isActive ? 'Active' : 'Inactive'}
                                         </Badge>
                                     </td>
-                                    <td className="px-4 py-6">
+                                    <td className="ds-table-cell text-right">
                                         <div className="flex items-center justify-end gap-2">
                                             <button
                                                 onClick={() => handleOpenModal(c)}
@@ -428,16 +450,6 @@ const CouponManagement = () => {
                         </tbody>
                     </table>
                 </div>
-
-                {filteredCoupons.length === 0 && (
-                    <div className="p-20 text-center">
-                        <div className="h-20 w-20 bg-slate-50 rounded-xl flex items-center justify-center mx-auto mb-6">
-                            <HiOutlineTicket className="h-10 w-10 text-slate-200" />
-                        </div>
-                        <h3 className="text-lg font-black text-slate-900">No codes found</h3>
-                        <p className="text-sm font-bold text-slate-400 mt-2">Try adjusting your filters or create a new promotion.</p>
-                    </div>
-                )}
             </Card>
 
             {/* Delete confirmation dialog */}
@@ -678,13 +690,13 @@ const CouponManagement = () => {
                         <button
                             type="button"
                             onClick={() => setIsModalOpen(false)}
-                            className="flex-1 py-4 bg-slate-100 text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest"
+                            className="ds-btn ds-btn-md flex-1 bg-slate-100 text-slate-500 hover:bg-slate-200"
                         >
                             CANCEL
                         </button>
                         <button
                             type="submit"
-                            className="flex-1 py-4 bg-primary text-primary-foreground rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-primary/20"
+                            className="ds-btn ds-btn-md flex-1 bg-primary text-primary-foreground shadow-xl shadow-primary/20"
                         >
                             {editingCoupon ? 'SAVE CHANGES' : 'CREATE COUPON'}
                         </button>

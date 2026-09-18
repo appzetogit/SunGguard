@@ -14,6 +14,8 @@ import {
 } from "react-icons/hi2";
 import { motion, AnimatePresence } from "framer-motion";
 import Pagination from "@shared/components/ui/Pagination";
+import Loader from "@shared/components/ui/Loader";
+import EmptyState from "@shared/components/ui/EmptyState";
 import { adminApi } from "../services/adminApi";
 import { toast } from "sonner";
 
@@ -78,17 +80,17 @@ const FleetTrackingTable = () => {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Fleet Tracking</h1>
-          <p className="text-sm text-slate-500">
+          <h1 className="ds-h1">Fleet Tracking</h1>
+          <p className="ds-description mt-0.5">
             Monitor all active delivery assignments in real-time.
           </p>
         </div>
         <div className="relative w-full md:w-80">
-          <HiOutlineMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <HiOutlineMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 h-4 w-4" />
           <input
             type="text"
             placeholder="Search Order or Partner..."
-            className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -96,6 +98,11 @@ const FleetTrackingTable = () => {
       </div>
 
       <Card className="overflow-hidden border-slate-200 shadow-sm bg-white">
+        {isLoading && fleet.length === 0 ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader size="md" />
+          </div>
+        ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -185,7 +192,21 @@ const FleetTrackingTable = () => {
               ))}
             </tbody>
           </table>
+
+          {filteredFleet.length === 0 && (
+            <EmptyState
+              icon={HiOutlineTruck}
+              title="No active missions"
+              description={
+                searchTerm
+                  ? "No fleet assignments match your search. Try a different order ID or partner name."
+                  : "There are no active delivery assignments being tracked right now."
+              }
+            />
+          )}
         </div>
+        )}
+
         <div className="px-6 py-3 border-t border-slate-100">
           <Pagination
             page={page}
@@ -200,14 +221,6 @@ const FleetTrackingTable = () => {
             loading={isLoading}
           />
         </div>
-
-        {filteredFleet.length === 0 && (
-          <div className="py-12 text-center text-slate-400">
-            <p className="text-sm font-medium tracking-wide">
-              No active missions matching your search.
-            </p>
-          </div>
-        )}
       </Card>
 
       {/* Delivery Boy Detail Modal */}

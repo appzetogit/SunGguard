@@ -157,7 +157,7 @@ const CategoryHierarchy = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="ds-section-spacing">
       <PageHeader
         title="Category Hierarchy Explorer"
         description="Miller columns visual overview of your store's multi-tier catalog structure."
@@ -213,7 +213,8 @@ const CategoryHierarchy = () => {
 
           <div className="flex-1 overflow-y-auto py-2 custom-scrollbar">
             {isLoading ? (
-              <div className="p-8 text-center text-slate-400 text-xs">
+              <div className="p-8 flex flex-col items-center justify-center gap-2 text-slate-400 text-xs">
+                <RotateCw className="w-4 h-4 animate-spin text-primary" />
                 Loading category structure...
               </div>
             ) : filteredHeaders.length === 0 ? (

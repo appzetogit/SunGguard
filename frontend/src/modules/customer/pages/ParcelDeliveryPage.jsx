@@ -82,29 +82,6 @@ const FALLBACK_COURIER_COMPANIES = [
   { id: "", name: "Shadowfax", platformCharge: 0, companyCharge: 0 },
 ];
 
-const DESTINATION_CITIES = [
-  { name: "Mumbai", lat: 19.076, lng: 72.8777 },
-  { name: "Delhi", lat: 28.6139, lng: 77.209 },
-  { name: "Bengaluru", lat: 12.9716, lng: 77.5946 },
-  { name: "Hyderabad", lat: 17.385, lng: 78.4867 },
-  { name: "Chennai", lat: 13.0827, lng: 80.2707 },
-  { name: "Kolkata", lat: 22.5726, lng: 88.3639 },
-  { name: "Pune", lat: 18.5204, lng: 73.8567 },
-  { name: "Ahmedabad", lat: 23.0225, lng: 72.5714 },
-  { name: "Jaipur", lat: 26.9124, lng: 75.7873 },
-  { name: "Surat", lat: 21.1702, lng: 72.8311 },
-  { name: "Lucknow", lat: 26.8467, lng: 80.9462 },
-  { name: "Chandigarh", lat: 30.7333, lng: 76.7794 },
-  { name: "Indore", lat: 22.7196, lng: 75.8577 },
-  { name: "Bhopal", lat: 23.2599, lng: 77.4126 },
-  { name: "Nagpur", lat: 21.1458, lng: 79.0882 },
-  { name: "Patna", lat: 25.5941, lng: 85.1376 },
-  { name: "Kochi", lat: 9.9312, lng: 76.2673 },
-  { name: "Coimbatore", lat: 11.0168, lng: 76.9558 },
-  { name: "Visakhapatnam", lat: 17.6868, lng: 83.2185 },
-  { name: "Other", lat: 20.5937, lng: 78.9629 },
-];
-
 const BOOKING_DURATION_MODES = [
   { value: "one_day", label: "One day", helper: "Today only" },
   { value: "custom_days", label: "Custom days", helper: "Set a count" },
@@ -168,9 +145,6 @@ const addDaysToDateInput = (days) => {
 };
 
 const todayDateInputValue = () => addDaysToDateInput(0);
-
-const getCityCoords = (cityName) =>
-  DESTINATION_CITIES.find((c) => c.name === cityName) || null;
 
 const formatInr = (value) => `₹${Number(value || 0).toFixed(2)}`;
 
@@ -385,88 +359,6 @@ const CourierCompanySelect = ({
                 No courier companies available yet
               </p>
             )}
-          </div>,
-          document.body,
-        )}
-    </div>
-  );
-};
-
-const DestinationCitySelect = ({ cities, value, onChange }) => {
-  const [open, setOpen] = useState(false);
-  const close = useCallback(() => setOpen(false), []);
-  const { rootRef, listRef, menuStyle } = useInScreenMenu(
-    open,
-    close,
-    (cities?.length || 0) + 1,
-    42,
-  );
-
-  return (
-    <div className="relative" ref={rootRef}>
-      <button
-        type="button"
-        onClick={() => setOpen((prev) => !prev)}
-        className={cn(
-          inputClass(Boolean(value)),
-          "pr-10 text-left min-h-[50px]",
-        )}
-        aria-haspopup="listbox"
-        aria-expanded={open}>
-        {value ? (
-          <span className="font-semibold text-slate-900">{value}</span>
-        ) : (
-          <span className="text-slate-400">Pick a destination city</span>
-        )}
-      </button>
-      <ChevronDown
-        size={16}
-        className={`absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none transition-transform duration-200 ${
-          open ? "rotate-180" : ""
-        }`}
-      />
-
-      {open &&
-        menuStyle &&
-        createPortal(
-          <div
-            ref={listRef}
-            role="listbox"
-            style={menuStyle}
-            className={menuClass}>
-            <button
-              type="button"
-              role="option"
-              aria-selected={!value}
-              onClick={() => {
-                onChange("");
-                setOpen(false);
-              }}
-              className="w-full px-4 py-2.5 text-left text-sm text-slate-400 hover:bg-slate-50 border-b border-slate-100">
-              Pick a destination city
-            </button>
-            {cities.map((city) => {
-              const isSelected = city.name === value;
-              return (
-                <button
-                  key={city.name}
-                  type="button"
-                  role="option"
-                  aria-selected={isSelected}
-                  onClick={() => {
-                    onChange(city.name);
-                    setOpen(false);
-                  }}
-                  className={`w-full px-4 py-2.5 text-left text-sm font-semibold border-b border-slate-50 last:border-b-0 flex items-center justify-between gap-2 ${
-                    isSelected
-                      ? "text-[color:var(--primary)] bg-[color:var(--primary)]/5"
-                      : "text-slate-800 hover:bg-slate-50"
-                  }`}>
-                  {city.name}
-                  {isSelected && <Check size={15} strokeWidth={3} />}
-                </button>
-              );
-            })}
           </div>,
           document.body,
         )}
@@ -783,10 +675,13 @@ const ParcelDeliveryPage = () => {
     }
   };
 
-  const selectedCity = useMemo(
-    () => (destinationCity ? getCityCoords(destinationCity) : null),
-    [destinationCity],
-  );
+  // Destination city is never picked separately — it mirrors whatever city
+  // the customer types into the receiver's address below, so they only ever
+  // enter a city once and the two can never disagree.
+  useEffect(() => {
+    const city = receiverDetails.city?.trim();
+    if (city && city !== destinationCity) setDestinationCity(city);
+  }, [receiverDetails.city, destinationCity]);
 
   const selectedCourier = useMemo(
     () =>
@@ -1147,8 +1042,6 @@ const ParcelDeliveryPage = () => {
         if (!selectedCourier) return "Pick a courier company.";
         if (isOtherCourier && !customCourierNameSaved)
           return "Enter the courier company name, then press Enter.";
-        if (!destinationCity || !selectedCity)
-          return "Pick a destination city.";
         if (
           bookingDurationMode === "custom_days" &&
           (parsedCustomDays < 2 || parsedCustomDays > MAX_BOOKING_DAYS)
@@ -1186,8 +1079,6 @@ const ParcelDeliveryPage = () => {
       selectedCourier,
       isOtherCourier,
       customCourierNameSaved,
-      destinationCity,
-      selectedCity,
       bookingDurationMode,
       parsedCustomDays,
       preferredPickupDate,
@@ -1280,9 +1171,6 @@ const ParcelDeliveryPage = () => {
     if (isOtherCourier && !customCourierNameSaved) {
       return toast.error("Please enter courier company name and press Enter.");
     }
-    if (!destinationCity || !selectedCity) {
-      return toast.error("Please select destination city.");
-    }
     if (!receiverDetails.name?.trim() || !receiverDetails.phone?.trim()) {
       return toast.error("Please enter receiver name and phone.");
     }
@@ -1357,6 +1245,10 @@ const ParcelDeliveryPage = () => {
         };
       }
 
+      // Last resort: neither a resolved warehouse nor a stored courier
+      // location. Rather than invent a destination-city coordinate, pin the
+      // drop record to the pickup point — it's a label at this stage, not a
+      // route, and the parcel physically starts there.
       return {
         name: courierCompany,
         phone:
@@ -1364,8 +1256,8 @@ const ParcelDeliveryPage = () => {
             .replace(/\D/g, "")
             .slice(-10) || "0000000000",
         fullAddress: `${courierCompany} drop point, ${destinationCity}`,
-        lat: selectedCity.lat,
-        lng: selectedCity.lng,
+        lat: pickupDetails.lat,
+        lng: pickupDetails.lng,
       };
     })();
 
@@ -1505,7 +1397,7 @@ const ParcelDeliveryPage = () => {
     loading ||
     estimating ||
     !pickupDetails.lat ||
-    !selectedCity ||
+    !destinationCity ||
     !selectedCourier ||
     (isOtherCourier && !customCourierNameSaved) ||
     !paymentMethod;
@@ -1830,29 +1722,6 @@ const ParcelDeliveryPage = () => {
                             counter={courierCompany}
                             destination={destinationCity}
                           />
-                          {nearestWarehouse && (
-                            <div className="mt-3 pt-3 border-t border-slate-100 flex items-start gap-2.5">
-                              <span className="text-base leading-none">🏭</span>
-                              <div className="min-w-0">
-                                <p className="text-[10px] font-black uppercase tracking-wider text-amber-700">
-                                  Drop Point: Nearest Warehouse
-                                </p>
-                                <p className="text-xs font-bold text-slate-800 mt-0.5">
-                                  {nearestWarehouse.name}
-                                </p>
-                                <p className="text-[11px] text-slate-500">
-                                  {nearestWarehouse.address}
-                                  {nearestWarehouse.city
-                                    ? `, ${nearestWarehouse.city}`
-                                    : ""}
-                                </p>
-                                <p className="text-[10px] text-slate-400 mt-0.5">
-                                  Rider will pick up from you and deliver here
-                                  for onward dispatch.
-                                </p>
-                              </div>
-                            </div>
-                          )}
                         </Sheet>
                       </motion.div>
 
@@ -1934,17 +1803,6 @@ const ParcelDeliveryPage = () => {
                               </motion.div>
                             )}
                           </AnimatePresence>
-
-                          <Field
-                            label="Destination city"
-                            filled={Boolean(destinationCity)}
-                            hint="Where the parcel finally lands.">
-                            <DestinationCitySelect
-                              cities={DESTINATION_CITIES}
-                              value={destinationCity}
-                              onChange={setDestinationCity}
-                            />
-                          </Field>
                         </Sheet>
                       </motion.div>
 
@@ -1954,7 +1812,8 @@ const ParcelDeliveryPage = () => {
                             Receiver details
                           </p>
                           <p className="text-[11px] text-slate-400 -mt-2">
-                            Who the courier hands this to, once it reaches {destinationCity || "the destination city"}.
+                            Who the courier hands this to. The city you enter below is also
+                            used as the destination city.
                           </p>
 
                           <div className="grid grid-cols-2 gap-3">

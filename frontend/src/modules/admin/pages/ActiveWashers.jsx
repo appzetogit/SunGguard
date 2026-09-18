@@ -4,6 +4,9 @@
 import React, { useState, useMemo } from 'react';
 import Card from '@shared/components/ui/Card';
 import Badge from '@shared/components/ui/Badge';
+import PageHeader from '@shared/components/ui/PageHeader';
+import StatCard from '@shared/components/ui/StatCard';
+import EmptyState from '@shared/components/ui/EmptyState';
 import {
     Users,
     UserCheck,
@@ -141,39 +144,32 @@ const ActiveWashers = () => {
     return (
         <div className="ds-section-spacing animate-in fade-in duration-700">
             {/* Header Section */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                <div>
-                    <h1 className="ds-h1 flex items-center gap-3">
-                        Active Washers
-                        <div className="h-2 w-2 rounded-full bg-cyan-500 animate-pulse" />
-                    </h1>
-                    <p className="ds-description mt-1">Monitor online status, ratings, and performance of active door step car wash agents.</p>
-                </div>
-                <button 
-                    onClick={() => fetchWashers(1)}
-                    className="p-3 bg-white ring-1 ring-slate-200 rounded-2xl text-slate-400 hover:text-cyan-500 transition-all shadow-sm"
-                >
-                    <RotateCw className="h-5 w-5" />
-                </button>
-            </div>
+            <PageHeader
+                title="Active Washers"
+                description="Monitor online status, ratings, and performance of active door step car wash agents."
+                badge={<div className="h-2 w-2 rounded-full bg-cyan-500 animate-pulse" />}
+                actions={
+                    <button
+                        onClick={() => fetchWashers(1)}
+                        className="p-3 bg-white ring-1 ring-slate-200 rounded-2xl text-slate-400 hover:text-cyan-500 transition-all shadow-sm"
+                    >
+                        <RotateCw className="h-5 w-5" />
+                    </button>
+                }
+            />
 
             {/* Quick Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="ds-grid-cards-4">
                 {stats.map((stat, idx) => (
-                    <Card key={idx} className="p-6 border-none shadow-xl ring-1 ring-slate-100 hover:ring-cyan-500/20 transition-all group overflow-hidden relative bg-white">
-                        <div className="flex justify-between items-start relative z-10">
-                            <div>
-                                <p className="ds-label mb-2">{stat.label}</p>
-                                <h3 className="ds-stat-medium text-slate-800">{stat.value}</h3>
-                            </div>
-                            <div className={cn(
-                                "p-3 rounded-2xl transition-all duration-300 group-hover:scale-110 shadow-lg text-cyan-600 bg-cyan-50 shadow-cyan-50"
-                            )}>
-                                <stat.icon className="h-5 w-5" strokeWidth={2.5} />
-                            </div>
-                        </div>
-                        <div className="absolute -bottom-6 -right-6 h-24 w-24 bg-slate-50 rounded-full group-hover:scale-150 transition-transform duration-700" />
-                    </Card>
+                    <StatCard
+                        key={idx}
+                        label={stat.label}
+                        value={stat.value}
+                        icon={stat.icon}
+                        description={stat.description}
+                        color="text-cyan-600"
+                        bg="bg-cyan-50"
+                    />
                 ))}
             </div>
 
@@ -223,9 +219,12 @@ const ActiveWashers = () => {
                 )}
                 <AnimatePresence mode='popLayout'>
                     {!isLoading && filteredWashers.length === 0 ?
-                        <div className="col-span-full py-20 text-center bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
-                            <Users className="h-10 w-10 text-slate-300 mx-auto mb-4" />
-                            <p className="text-sm font-bold text-slate-500">No active washers found matching your filters.</p>
+                        <div className="col-span-full">
+                            <EmptyState
+                                icon={Users}
+                                title="No active washers found"
+                                description="No car wash partners match your current search or filters."
+                            />
                         </div>
                         :
                         filteredWashers.map((washer) => (

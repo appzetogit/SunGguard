@@ -29,6 +29,8 @@ import {
 import { cn } from '@/lib/utils';
 import { useToast } from '@shared/components/ui/Toast';
 import Modal from '@shared/components/ui/Modal';
+import PageHeader from '@shared/components/ui/PageHeader';
+import StatCard from '@shared/components/ui/StatCard';
 import { motion } from 'framer-motion';
 
 const SellerDetail = () => {
@@ -75,62 +77,70 @@ const SellerDetail = () => {
     return (
         <div className="ds-section-spacing animate-in fade-in slide-in-from-bottom-4 duration-700 pb-12">
             {/* Header / Action Bar */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                <div className="flex items-center gap-4">
+            <PageHeader
+                title={seller.shopName}
+                description={`Owned by ${seller.ownerName} • ${seller.category}`}
+                breadcrumbs={
                     <button
                         onClick={() => navigate('/admin/sellers/active')}
-                        className="p-2.5 bg-white ring-1 ring-slate-200 rounded-xl hover:bg-slate-50 transition-all shadow-sm group"
+                        className="inline-flex items-center gap-1 hover:text-primary transition-colors"
                     >
-                        <ChevronLeft className="h-5 w-5 text-slate-500 group-hover:-translate-x-0.5 transition-transform" />
+                        <ChevronLeft className="h-3.5 w-3.5" />
+                        Back to Sellers
                     </button>
-                    <div>
-                        <div className="flex items-center gap-2">
-                            <h1 className="ds-h1">{seller.shopName}</h1>
-                            <Badge variant="success" className="text-[10px] font-black uppercase tracking-widest">{seller.status}</Badge>
-                        </div>
-                        <p className="ds-description mt-1 text-slate-500 font-medium">Owned by {seller.ownerName} • {seller.category}</p>
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                    <button
-                        onClick={handleRefresh}
-                        className="flex items-center gap-2 px-5 py-3 bg-white ring-1 ring-slate-200 text-slate-700 rounded-2xl text-xs font-bold hover:bg-slate-50 transition-all"
-                    >
-                        <RotateCw className={cn("h-4 w-4 text-primary", isRefreshing && "animate-spin")} />
-                        SYNC DATA
-                    </button>
-                    <button className="flex items-center gap-2 px-5 py-3 bg-slate-900 text-white rounded-2xl text-xs font-bold hover:bg-slate-800 transition-all shadow-lg shadow-slate-200">
-                        <Edit3 className="h-4 w-4" />
-                        EDIT SHOP
-                    </button>
-                </div>
-            </div>
+                }
+                badge={<Badge variant={seller.status === 'active' ? 'success' : 'gray'} className="text-[10px] font-black uppercase tracking-widest">{seller.status}</Badge>}
+                actions={
+                    <>
+                        <button
+                            onClick={handleRefresh}
+                            className="ds-btn ds-btn-md bg-white ring-1 ring-slate-200 text-slate-700 hover:bg-slate-50"
+                        >
+                            <RotateCw className={cn("h-4 w-4 text-primary", isRefreshing && "animate-spin")} />
+                            SYNC DATA
+                        </button>
+                        <button className="ds-btn ds-btn-md bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-200">
+                            <Edit3 className="h-4 w-4" />
+                            EDIT SHOP
+                        </button>
+                    </>
+                }
+            />
 
             {/* Quick Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {[
-                    { label: 'Wallet Balance', value: `₹${seller.walletBalance.toLocaleString()}`, icon: Wallet, color: 'emerald', sub: 'Available for Payout' },
-                    { label: 'Total Revenue', value: `₹${(seller.totalRevenue / 1000).toFixed(1)}k`, icon: TrendingUp, color: 'blue', sub: 'Gross Sales' },
-                    { label: 'Orders Handled', value: seller.totalOrders, icon: ShoppingBag, color: 'indigo', sub: 'Lifetime Orders' },
-                    { label: 'Store Rating', value: `${seller.rating} / 5.0`, icon: Star, color: 'amber', sub: 'Based on 450+ reviews' },
-                ].map((stat, i) => (
-                    <Card key={i} className="p-6 border-none shadow-xl ring-1 ring-slate-100 bg-white group hover:ring-primary/20 transition-all">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className={cn("p-2.5 rounded-2xl",
-                                stat.color === 'emerald' && "bg-brand-50 text-brand-600",
-                                stat.color === 'blue' && "bg-brand-50 text-brand-600",
-                                stat.color === 'indigo' && "bg-brand-50 text-brand-600",
-                                stat.color === 'amber' && "bg-amber-50 text-amber-600",
-                            )}>
-                                <stat.icon className="h-5 w-5" />
-                            </div>
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stat.sub}</span>
-                        </div>
-                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{stat.label}</h4>
-                        <h3 className="text-2xl font-black text-slate-900">{stat.value}</h3>
-                    </Card>
-                ))}
+            <div className="ds-grid-cards-4">
+                <StatCard
+                    label="Wallet Balance"
+                    value={`₹${seller.walletBalance.toLocaleString()}`}
+                    icon={Wallet}
+                    color="text-brand-600"
+                    bg="bg-brand-50"
+                    description="Available for Payout"
+                />
+                <StatCard
+                    label="Total Revenue"
+                    value={`₹${(seller.totalRevenue / 1000).toFixed(1)}k`}
+                    icon={TrendingUp}
+                    color="text-brand-600"
+                    bg="bg-brand-50"
+                    description="Gross Sales"
+                />
+                <StatCard
+                    label="Orders Handled"
+                    value={seller.totalOrders}
+                    icon={ShoppingBag}
+                    color="text-brand-600"
+                    bg="bg-brand-50"
+                    description="Lifetime Orders"
+                />
+                <StatCard
+                    label="Store Rating"
+                    value={`${seller.rating} / 5.0`}
+                    icon={Star}
+                    color="text-amber-600"
+                    bg="bg-amber-50"
+                    description="Based on 450+ reviews"
+                />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

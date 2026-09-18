@@ -12,6 +12,9 @@ import {
 import { toast } from "sonner";
 import Card from "@shared/components/ui/Card";
 import Button from "@shared/components/ui/Button";
+import PageHeader from "@shared/components/ui/PageHeader";
+import Badge from "@shared/components/ui/Badge";
+import EmptyState from "@shared/components/ui/EmptyState";
 import { adminPorterApi } from "../../services/api/porterApi";
 import { cn } from "@/lib/utils";
 
@@ -35,10 +38,10 @@ const ORIGINS = [
     { key: "delivery", label: "Delivery" },
 ];
 
-const STATUS_STYLE = {
-    open: "bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400",
-    processing: "bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400",
-    closed: "bg-slate-100 text-slate-500 dark:bg-slate-800",
+const STATUS_BADGE_VARIANT = {
+    open: "warning",
+    processing: "info",
+    closed: "gray",
 };
 
 const isDeliveryTicket = (t) => t.userType === "Delivery" || t.userType === "Rider";
@@ -149,24 +152,20 @@ const PorterTickets = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                    <h1 className="flex items-center gap-2.5 text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-                        <LifeBuoy className="h-6 w-6 text-primary" />
-                        Porter Support
-                    </h1>
-                    <p className="mt-1 text-sm text-slate-500">
-                        Complaints raised by customers and delivery partners land here.
-                    </p>
-                </div>
-                <button
-                    onClick={() => fetchTickets(true)}
-                    className="inline-flex items-center gap-2 rounded-2xl bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-primary/90"
-                >
-                    <RotateCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
-                    Refresh
-                </button>
-            </div>
+            <PageHeader
+                title="Porter Support"
+                description="Complaints raised by customers and delivery partners land here."
+                icon={LifeBuoy}
+                actions={
+                    <button
+                        onClick={() => fetchTickets(true)}
+                        className="inline-flex items-center gap-2 rounded-2xl bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-primary/90"
+                    >
+                        <RotateCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
+                        Refresh
+                    </button>
+                }
+            />
 
             <Card className="p-3 space-y-3">
                 <div className="flex flex-wrap gap-2">
@@ -222,11 +221,8 @@ const PorterTickets = () => {
                     {/* List */}
                     <div className="space-y-3 lg:col-span-2">
                         {visible.length === 0 ? (
-                            <Card className="flex flex-col items-center gap-2 py-16 text-center">
-                                <Package className="h-7 w-7 text-slate-300" />
-                                <p className="text-sm font-bold text-slate-600 dark:text-slate-300">
-                                    No tickets here
-                                </p>
+                            <Card>
+                                <EmptyState icon={Package} title="No tickets here" />
                             </Card>
                         ) : (
                             visible.map((ticket) => (
@@ -247,14 +243,12 @@ const PorterTickets = () => {
                                         <p className="min-w-0 flex-1 truncate text-sm font-bold text-slate-900 dark:text-white">
                                             {ticket.subject || "Untitled"}
                                         </p>
-                                        <span
-                                            className={cn(
-                                                "shrink-0 rounded-lg px-2 py-0.5 text-[10px] font-black uppercase",
-                                                STATUS_STYLE[ticket.status] || STATUS_STYLE.closed,
-                                            )}
+                                        <Badge
+                                            variant={STATUS_BADGE_VARIANT[ticket.status] || STATUS_BADGE_VARIANT.closed}
+                                            className="shrink-0"
                                         >
                                             {ticket.status}
-                                        </span>
+                                        </Badge>
                                     </div>
                                     <div className="mt-1.5 flex items-center gap-1.5">
                                         <OriginBadge ticket={ticket} />
@@ -277,11 +271,8 @@ const PorterTickets = () => {
                     {/* Thread */}
                     <div className="lg:col-span-3">
                         {!selected ? (
-                            <Card className="flex h-full min-h-[280px] flex-col items-center justify-center gap-2 text-center">
-                                <MessageSquare className="h-8 w-8 text-slate-300" />
-                                <p className="text-sm font-semibold text-slate-500">
-                                    Pick a ticket to read and reply
-                                </p>
+                            <Card className="flex h-full min-h-[280px] flex-col items-center justify-center">
+                                <EmptyState icon={MessageSquare} title="Pick a ticket to read and reply" />
                             </Card>
                         ) : (
                             <Card className="flex h-full flex-col p-0">

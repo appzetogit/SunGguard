@@ -7,6 +7,8 @@ import {
 import Card from "@shared/components/ui/Card";
 import Badge from "@shared/components/ui/Badge";
 import Pagination from "@shared/components/ui/Pagination";
+import PageHeader from "@shared/components/ui/PageHeader";
+import StatCard from "@shared/components/ui/StatCard";
 import {
   HiOutlineBuildingOffice2,
   HiOutlineMagnifyingGlass,
@@ -420,22 +422,18 @@ const SellerLocations = () => {
 
   return (
     <div className="h-[calc(100vh-84px)] min-h-[820px] flex flex-col gap-5 animate-in fade-in duration-700 overflow-hidden">
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-        <div>
-          <h1 className="ds-h1 flex items-center gap-2">
-            Seller Locations
-            <Badge
-              variant="primary"
-              className="text-[9px] px-1.5 py-0 font-bold tracking-wider uppercase">
-              Google Maps
-            </Badge>
-          </h1>
-          <p className="ds-description mt-0.5">
-            Global view of seller locations, radius coverage, and order density.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
+      <PageHeader
+        title="Seller Locations"
+        description="Global view of seller locations, radius coverage, and order density."
+        badge={
+          <Badge
+            variant="primary"
+            className="text-[9px] px-1.5 py-0 font-bold tracking-wider uppercase">
+            Google Maps
+          </Badge>
+        }
+        actions={
+          <div className="flex items-center gap-2">
           <div className="flex bg-slate-100 p-1 rounded-xl">
             <button
               onClick={() => setMapView("coverage")}
@@ -483,41 +481,14 @@ const SellerLocations = () => {
             />
           </button>
         </div>
-      </div>
+        }
+      />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 shrink-0">
-        <Card className="border-none ring-1 ring-slate-100 p-4">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-            Sellers
-          </p>
-          <p className="text-2xl font-black text-slate-900 mt-1">
-            {stats.totalSellers.toLocaleString("en-IN")}
-          </p>
-        </Card>
-        <Card className="border-none ring-1 ring-slate-100 p-4">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-            Mapped
-          </p>
-          <p className="text-2xl font-black text-brand-600 mt-1">
-            {stats.mappedSellers.toLocaleString("en-IN")}
-          </p>
-        </Card>
-        <Card className="border-none ring-1 ring-slate-100 p-4">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-            Avg Radius
-          </p>
-          <p className="text-2xl font-black text-slate-900 mt-1">
-            {stats.averageRadiusKm} km
-          </p>
-        </Card>
-        <Card className="border-none ring-1 ring-slate-100 p-4">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-            Active Orders
-          </p>
-          <p className="text-2xl font-black text-slate-900 mt-1">
-            {stats.totalActiveOrders.toLocaleString("en-IN")}
-          </p>
-        </Card>
+        <StatCard label="Sellers" value={stats.totalSellers.toLocaleString("en-IN")} className="p-4" />
+        <StatCard label="Mapped" value={stats.mappedSellers.toLocaleString("en-IN")} color="text-brand-600" bg="bg-brand-50" className="p-4" />
+        <StatCard label="Avg Radius" value={`${stats.averageRadiusKm} km`} className="p-4" />
+        <StatCard label="Active Orders" value={stats.totalActiveOrders.toLocaleString("en-IN")} className="p-4" />
       </div>
 
       <div className="flex-1 min-h-0 grid grid-cols-1 xl:grid-cols-[360px_minmax(0,1fr)] gap-5">

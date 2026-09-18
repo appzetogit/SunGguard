@@ -17,6 +17,10 @@ import { useNavigate } from "react-router-dom";
 import Card from "@shared/components/ui/Card";
 import ConfirmDialog from "@shared/components/ui/ConfirmDialog";
 import Pagination from "@shared/components/ui/Pagination";
+import PageHeader from "@shared/components/ui/PageHeader";
+import StatCard from "@shared/components/ui/StatCard";
+import Badge from "@shared/components/ui/Badge";
+import EmptyState from "@shared/components/ui/EmptyState";
 import { adminPorterApi } from "../../services/api/porterApi";
 import { cn } from "@/lib/utils";
 
@@ -96,11 +100,11 @@ const PorterCustomers = () => {
 
   const statCards = useMemo(
     () => [
-      { label: "Porter Customers", value: stats.totalPorterCustomers, icon: Users, color: "text-slate-700", bg: "bg-slate-100" },
-      { label: "Active", value: stats.active, icon: UserCheck, color: "text-emerald-600", bg: "bg-emerald-50" },
-      { label: "Inactive", value: stats.inactive, icon: UserX, color: "text-rose-600", bg: "bg-rose-50" },
-      { label: "Total Bookings", value: stats.totalBookings, icon: Package, color: "text-blue-600", bg: "bg-blue-50" },
-      { label: "Total Revenue", value: formatMoney(stats.totalRevenue), icon: IndianRupee, color: "text-amber-600", bg: "bg-amber-50" },
+      { label: "Porter Customers", value: stats.totalPorterCustomers, icon: Users, color: "text-slate-600", bg: "bg-slate-100 border border-slate-200 dark:bg-slate-800 dark:border-slate-700" },
+      { label: "Active", value: stats.active, icon: UserCheck, color: "text-emerald-600", bg: "bg-emerald-50 border border-emerald-200 dark:bg-emerald-950/40 dark:border-emerald-800" },
+      { label: "Inactive", value: stats.inactive, icon: UserX, color: "text-rose-600", bg: "bg-rose-50 border border-rose-200 dark:bg-rose-950/40 dark:border-rose-800" },
+      { label: "Total Bookings", value: stats.totalBookings, icon: Package, color: "text-blue-600", bg: "bg-blue-50 border border-blue-200 dark:bg-blue-950/40 dark:border-blue-800" },
+      { label: "Total Revenue", value: formatMoney(stats.totalRevenue), icon: IndianRupee, color: "text-amber-600", bg: "bg-amber-50 border border-amber-200 dark:bg-amber-950/40 dark:border-amber-800" },
     ],
     [stats],
   );
@@ -127,36 +131,16 @@ const PorterCustomers = () => {
   return (
     <div className="space-y-6 pb-20">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-              Porter Customers
-            </h1>
-            <span className="rounded-md bg-cyan-100 px-2 py-0.5 text-xs font-semibold text-cyan-800 dark:bg-cyan-950 dark:text-cyan-300">
-              Porter Ops
-            </span>
-          </div>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Customers who have booked pickup or city parcels, with real booking counts and spend.
-            Deactivating an account here blocks that customer from logging in or booking again.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Porter Customers"
+        description="Customers who have booked pickup or city parcels, with real booking counts and spend. Deactivating an account here blocks that customer from logging in or booking again."
+        badge={<Badge variant="info">Porter Ops</Badge>}
+      />
 
       {/* Stat Cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
         {statCards.map((s) => (
-          <div
-            key={s.label}
-            className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900"
-          >
-            <div className={cn("mb-2 inline-flex h-8 w-8 items-center justify-center rounded-lg", s.bg)}>
-              <s.icon className={cn("h-4 w-4", s.color)} />
-            </div>
-            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{s.label}</p>
-            <p className="mt-0.5 text-xl font-bold text-slate-900 dark:text-white">{s.value}</p>
-          </div>
+          <StatCard key={s.label} label={s.label} value={s.value} icon={s.icon} color={s.color} bg={s.bg} />
         ))}
       </div>
 
@@ -238,17 +222,15 @@ const PorterCustomers = () => {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {!loading && customers.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-20 text-center">
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="rounded-full bg-slate-50 p-4 dark:bg-slate-800">
-                        <Users className="h-8 w-8 text-slate-300" />
-                      </div>
-                      <p className="text-sm font-semibold text-slate-400">
-                        {search || statusFilter !== "all"
+                  <td colSpan={6}>
+                    <EmptyState
+                      icon={Users}
+                      title={
+                        search || statusFilter !== "all"
                           ? "No customers match your filters"
-                          : "No customer has booked a Porter delivery yet"}
-                      </p>
-                    </div>
+                          : "No customer has booked a Porter delivery yet"
+                      }
+                    />
                   </td>
                 </tr>
               ) : (
@@ -298,17 +280,10 @@ const PorterCustomers = () => {
                       {formatDate(c.lastBookingAt)}
                     </td>
                     <td className="px-5 py-4">
-                      <span
-                        className={cn(
-                          "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-bold",
-                          c.isActive
-                            ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400"
-                            : "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-400",
-                        )}
-                      >
+                      <Badge variant={c.isActive ? "success" : "error"}>
                         <span className={cn("h-1.5 w-1.5 rounded-full", c.isActive ? "bg-emerald-500" : "bg-rose-500")} />
                         {c.isActive ? "Active" : "Inactive"}
-                      </span>
+                      </Badge>
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex items-center justify-end gap-2">

@@ -16,6 +16,12 @@ import {
     ShieldCheck,
     Star,
     Banknote,
+    CalendarCheck,
+    XCircle,
+    CircleDollarSign,
+    MapPin,
+    PieChart as PieChartIcon,
+    Bike,
 } from "lucide-react";
 import {
     AreaChart,
@@ -27,10 +33,15 @@ import {
     CartesianGrid,
     Tooltip,
     ResponsiveContainer,
+    PieChart,
+    Pie,
+    Cell,
 } from "recharts";
 import { toast } from "sonner";
 import Card from "@shared/components/ui/Card";
 import StatusBadge from "@shared/components/ui/StatusBadge";
+import StatCard from "@shared/components/ui/StatCard";
+import EmptyState from "@shared/components/ui/EmptyState";
 import { adminPorterApi } from "../../services/api/porterApi";
 import { cn } from "@/lib/utils";
 
@@ -69,6 +80,28 @@ const ATTENTION = [
     { key: "withheldPayouts", label: "Payouts withheld", hint: "Blocked rider pay" },
     { key: "refundRequests", label: "Refund requests", hint: "Awaiting a decision" },
     { key: "cashDepositsPending", label: "Cash deposits", hint: "Awaiting review" },
+];
+
+/** Same counters, worded as an alert feed instead of a grid of tiles. */
+const ALERTS = [
+    { key: "unassigned", title: "Unassigned bookings", description: "Need driver assignment" },
+    { key: "failed", title: "Failed deliveries", description: "Delivery attempt did not go through" },
+    { key: "cashDepositsPending", title: "Cash deposits pending", description: "Awaiting review" },
+    { key: "withheldPayouts", title: "Payouts withheld", description: "Blocked rider pay" },
+    { key: "refundRequests", title: "Refund requests", description: "Awaiting a decision" },
+];
+
+const STATUS_DONUT = [
+    { key: "completed", label: "Completed", color: "#10B981" },
+    { key: "ongoing", label: "Ongoing", color: "#2563EB" },
+    { key: "pending", label: "Pending", color: "#F59E0B" },
+    { key: "cancelled", label: "Cancelled", color: "#EF4444" },
+];
+
+const FLEET_DONUT = [
+    { key: "onlineFree", label: "Online", color: "#10B981" },
+    { key: "busy", label: "Busy", color: "#2563EB" },
+    { key: "offline", label: "Offline", color: "#94A3B8" },
 ];
 
 const PorterDashboard = () => {
@@ -117,12 +150,31 @@ const PorterDashboard = () => {
     const attention = data?.needsAttention || {};
     const trend = data?.trend || [];
     const recent = data?.recent || [];
+    const statusOverview = data?.statusOverview || {};
+    const topAreas = data?.topAreas || [];
 
     const trendChart = trend.map((row) => ({ ...row, label: shortDate(row.date) }));
     const attentionTotal = ATTENTION.reduce(
         (sum, item) => sum + (attention[item.key] || 0),
         0,
     );
+
+    const statusTotal = STATUS_DONUT.reduce((sum, s) => sum + (statusOverview[s.key] || 0), 0);
+    const statusChart = STATUS_DONUT.map((s) => ({ ...s, value: statusOverview[s.key] || 0 }));
+
+    const fleet = overview.fleet || {};
+    const fleetOnlineFree = Math.max((fleet.online || 0) - (fleet.busy || 0), 0);
+    const fleetChart = [
+        { ...FLEET_DONUT[0], value: fleetOnlineFree },
+        { ...FLEET_DONUT[1], value: fleet.busy || 0 },
+        { ...FLEET_DONUT[2], value: fleet.offline || 0 },
+    ];
+
+    const pickupShare = breakdown.pickup?.total || 0;
+    const cityShare = breakdown.city?.total || 0;
+    const shareTotal = pickupShare + cityShare || 1;
+    const pickupPct = Math.round((pickupShare / shareTotal) * 100);
+    const cityPct = 100 - pickupPct;
 
     const kpis = [
         {
@@ -133,11 +185,32 @@ const PorterDashboard = () => {
             note: `${overview.activeParcels || 0} still in flight`,
         },
         {
+            label: "Today's Parcels",
+            value: Number(overview.todayParcels || 0).toLocaleString("en-IN"),
+            icon: CalendarCheck,
+            tint: "bg-indigo-500/10 text-indigo-600 border-indigo-200 dark:border-indigo-900",
+            note: "Booked since midnight",
+        },
+        {
+            label: "Active Deliveries",
+            value: Number(overview.activeParcels || 0).toLocaleString("en-IN"),
+            icon: Bike,
+            tint: "bg-cyan-500/10 text-cyan-600 border-cyan-200 dark:border-cyan-900",
+            note: "Real-time in-transit count",
+        },
+        {
             label: "Delivered",
             value: Number(overview.deliveredParcels || 0).toLocaleString("en-IN"),
             icon: Truck,
             tint: "bg-emerald-500/10 text-emerald-600 border-emerald-200 dark:border-emerald-900",
-            note: `${overview.cancelledParcels || 0} cancelled`,
+            note: "Completed bookings",
+        },
+        {
+            label: "Cancelled",
+            value: Number(overview.cancelledParcels || 0).toLocaleString("en-IN"),
+            icon: XCircle,
+            tint: "bg-red-500/10 text-red-600 border-red-200 dark:border-red-900",
+            note: "Cancelled + returned",
         },
         {
             label: "Revenue",
@@ -147,11 +220,18 @@ const PorterDashboard = () => {
             note: `${rupees(overview.riderPayout)} to riders`,
         },
         {
-            label: "Margin",
+            label: "Admin Commission",
             value: rupees(overview.margin),
             icon: TrendingUp,
             tint: "bg-violet-500/10 text-violet-600 border-violet-200 dark:border-violet-900",
             note: `${overview.distanceKm || 0} km covered`,
+        },
+        {
+            label: "Rider Payouts",
+            value: rupees(overview.riderPayout),
+            icon: CircleDollarSign,
+            tint: "bg-fuchsia-500/10 text-fuchsia-600 border-fuchsia-200 dark:border-fuchsia-900",
+            note: "Paid out to porters",
         },
     ];
 
@@ -212,29 +292,17 @@ const PorterDashboard = () => {
             </div>
 
             {/* KPIs */}
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 md:gap-6">
                 {kpis.map((kpi) => (
-                    <div
+                    <StatCard
                         key={kpi.label}
-                        className="flex flex-col justify-between rounded-3xl border border-slate-200/90 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900"
-                    >
-                        <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 md:text-sm">
-                                {kpi.label}
-                            </span>
-                            <div className={cn("rounded-2xl border p-3 shadow-sm", kpi.tint)}>
-                                <kpi.icon className="h-5 w-5" />
-                            </div>
-                        </div>
-                        <div className="mt-4">
-                            <h3 className="font-mono text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white md:text-4xl">
-                                {kpi.value}
-                            </h3>
-                            <p className="mt-2 truncate text-xs font-medium text-slate-400">
-                                {kpi.note}
-                            </p>
-                        </div>
-                    </div>
+                        label={kpi.label}
+                        value={kpi.value}
+                        description={kpi.note}
+                        icon={kpi.icon}
+                        color={kpi.tint.split(" ")[1]}
+                        bg={kpi.tint}
+                    />
                 ))}
             </div>
 
@@ -335,27 +403,15 @@ const PorterDashboard = () => {
                         note: "COD deposits awaiting review",
                     },
                 ].map((kpi) => (
-                    <div
+                    <StatCard
                         key={kpi.label}
-                        className="flex flex-col justify-between rounded-3xl border border-slate-200/90 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900"
-                    >
-                        <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 md:text-sm">
-                                {kpi.label}
-                            </span>
-                            <div className={cn("rounded-2xl border p-3 shadow-sm", kpi.tint)}>
-                                <kpi.icon className="h-5 w-5" />
-                            </div>
-                        </div>
-                        <div className="mt-4">
-                            <h3 className="font-mono text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white md:text-4xl">
-                                {kpi.value}
-                            </h3>
-                            <p className="mt-2 truncate text-xs font-medium text-slate-400">
-                                {kpi.note}
-                            </p>
-                        </div>
-                    </div>
+                        label={kpi.label}
+                        value={kpi.value}
+                        description={kpi.note}
+                        icon={kpi.icon}
+                        color={kpi.tint.split(" ")[1]}
+                        bg={kpi.tint}
+                    />
                 ))}
             </div>
 
@@ -488,6 +544,244 @@ const PorterDashboard = () => {
                 </Card>
             </div>
 
+            {/* Booking status & fleet status donuts */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <Card className="flex flex-col rounded-3xl p-6 shadow-sm md:p-7">
+                    <div>
+                        <h3 className="flex items-center gap-2.5 text-lg font-extrabold text-slate-900 dark:text-white md:text-xl">
+                            <PieChartIcon className="h-5 w-5 text-primary" />
+                            Booking Status
+                        </h3>
+                        <p className="mt-1 text-xs text-slate-500 md:text-sm">
+                            Completed, ongoing, pending and cancelled — merged across both modules
+                        </p>
+                    </div>
+
+                    <div className="relative flex h-[220px] w-full items-center justify-center my-2">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie
+                                    data={statusChart}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={65}
+                                    outerRadius={95}
+                                    paddingAngle={statusTotal ? 5 : 0}
+                                    dataKey="value"
+                                >
+                                    {statusChart.map((entry) => (
+                                        <Cell key={entry.key} fill={entry.color} />
+                                    ))}
+                                </Pie>
+                                <Tooltip contentStyle={tooltipStyle} />
+                            </PieChart>
+                        </ResponsiveContainer>
+                        <div className="pointer-events-none absolute flex flex-col items-center">
+                            <span className="text-2xl font-black text-slate-900 dark:text-white">
+                                {statusTotal.toLocaleString("en-IN")}
+                            </span>
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                                Total
+                            </span>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 border-t border-slate-100 pt-4 dark:border-slate-800">
+                        {statusChart.map((s) => (
+                            <div key={s.key} className="flex items-center justify-between text-sm">
+                                <span className="flex items-center gap-2">
+                                    <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: s.color }} />
+                                    <span className="font-semibold text-slate-700 dark:text-slate-200">{s.label}</span>
+                                </span>
+                                <span className="font-mono font-bold text-slate-900 dark:text-white">
+                                    {s.value.toLocaleString("en-IN")}
+                                    <span className="ml-1 text-[11px] font-medium text-slate-400">
+                                        ({statusTotal ? Math.round((s.value / statusTotal) * 100) : 0}%)
+                                    </span>
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                </Card>
+
+                <Card className="flex flex-col rounded-3xl p-6 shadow-sm md:p-7">
+                    <div>
+                        <h3 className="flex items-center gap-2.5 text-lg font-extrabold text-slate-900 dark:text-white md:text-xl">
+                            <Users className="h-5 w-5 text-emerald-600" />
+                            Delivery Boy Status
+                        </h3>
+                        <p className="mt-1 text-xs text-slate-500 md:text-sm">
+                            Live fleet availability right now
+                        </p>
+                    </div>
+
+                    <div className="relative flex h-[220px] w-full items-center justify-center my-2">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie
+                                    data={fleetChart}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={65}
+                                    outerRadius={95}
+                                    paddingAngle={fleet.total ? 5 : 0}
+                                    dataKey="value"
+                                >
+                                    {fleetChart.map((entry) => (
+                                        <Cell key={entry.key} fill={entry.color} />
+                                    ))}
+                                </Pie>
+                                <Tooltip contentStyle={tooltipStyle} />
+                            </PieChart>
+                        </ResponsiveContainer>
+                        <div className="pointer-events-none absolute flex flex-col items-center">
+                            <span className="text-2xl font-black text-slate-900 dark:text-white">
+                                {Number(fleet.total || 0).toLocaleString("en-IN")}
+                            </span>
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                                Total
+                            </span>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
+                        {fleetChart.map((s) => (
+                            <div key={s.key} className="text-center">
+                                <p className="flex items-center justify-center gap-1.5 font-mono text-lg font-extrabold text-slate-900 dark:text-white">
+                                    <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: s.color }} />
+                                    {s.value.toLocaleString("en-IN")}
+                                </p>
+                                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                                    {s.label} {fleet.total ? `(${Math.round((s.value / fleet.total) * 100)}%)` : ""}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+                </Card>
+            </div>
+
+            {/* Alerts, top areas & booking type distribution */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                <Card className="rounded-3xl p-6 shadow-sm md:p-7">
+                    <div className="flex items-center justify-between">
+                        <h3 className="flex items-center gap-2.5 text-lg font-extrabold text-slate-900 dark:text-white md:text-xl">
+                            <AlertTriangle className="h-5 w-5 text-amber-500" />
+                            Alerts &amp; Notifications
+                        </h3>
+                    </div>
+                    <div className="mt-4 space-y-1">
+                        {ALERTS.filter((a) => (attention[a.key] || 0) > 0).length === 0 ? (
+                            <p className="py-6 text-center text-sm text-slate-400">
+                                Nothing needs attention right now.
+                            </p>
+                        ) : (
+                            ALERTS.filter((a) => (attention[a.key] || 0) > 0).map((a) => (
+                                <div
+                                    key={a.key}
+                                    className="flex items-center gap-3 rounded-xl px-2 py-3 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                                >
+                                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 text-sm font-black text-amber-700 dark:bg-amber-950/50 dark:text-amber-400">
+                                        {attention[a.key]}
+                                    </span>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="truncate text-sm font-bold text-slate-800 dark:text-slate-100">
+                                            {a.title}
+                                        </p>
+                                        <p className="truncate text-xs text-slate-500">{a.description}</p>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </Card>
+
+                <Card className="rounded-3xl p-6 shadow-sm md:p-7">
+                    <h3 className="flex items-center gap-2.5 text-lg font-extrabold text-slate-900 dark:text-white md:text-xl">
+                        <MapPin className="h-5 w-5 text-primary" />
+                        Top Areas by Bookings
+                    </h3>
+                    <p className="mt-1 text-xs text-slate-500 md:text-sm">Zones ranked by parcels in this window</p>
+
+                    <div className="mt-5 space-y-4">
+                        {topAreas.length === 0 ? (
+                            <p className="py-6 text-center text-sm text-slate-400">
+                                No zone-tagged bookings yet.
+                            </p>
+                        ) : (
+                            (() => {
+                                const maxCount = Math.max(...topAreas.map((z) => z.count), 1);
+                                return topAreas.map((zone) => (
+                                    <div key={zone.zoneId}>
+                                        <div className="mb-1.5 flex items-center justify-between text-sm">
+                                            <span className="truncate font-semibold text-slate-700 dark:text-slate-200">
+                                                {zone.name}
+                                                {zone.city ? (
+                                                    <span className="ml-1 text-xs font-normal text-slate-400">
+                                                        · {zone.city}
+                                                    </span>
+                                                ) : null}
+                                            </span>
+                                            <span className="font-mono font-bold text-slate-900 dark:text-white">
+                                                {zone.count}
+                                            </span>
+                                        </div>
+                                        <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                                            <div
+                                                className="h-full rounded-full bg-primary"
+                                                style={{ width: `${Math.max((zone.count / maxCount) * 100, 4)}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                ));
+                            })()
+                        )}
+                    </div>
+                </Card>
+
+                <Card className="rounded-3xl p-6 shadow-sm md:p-7">
+                    <h3 className="flex items-center gap-2.5 text-lg font-extrabold text-slate-900 dark:text-white md:text-xl">
+                        <Boxes className="h-5 w-5 text-emerald-600" />
+                        Booking Type Distribution
+                    </h3>
+                    <p className="mt-1 text-xs text-slate-500 md:text-sm">Pickup service vs city parcel</p>
+
+                    <div className="mt-6 space-y-6">
+                        <div>
+                            <div className="mb-2 flex items-center justify-between text-sm">
+                                <span className="font-semibold text-slate-700 dark:text-slate-200">
+                                    Pickup Service Bookings
+                                </span>
+                                <span className="font-mono font-bold text-slate-900 dark:text-white">
+                                    {pickupPct}%
+                                </span>
+                            </div>
+                            <div className="h-3 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                                <div
+                                    className="h-full rounded-full bg-blue-600"
+                                    style={{ width: `${pickupPct}%` }}
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <div className="mb-2 flex items-center justify-between text-sm">
+                                <span className="font-semibold text-slate-700 dark:text-slate-200">
+                                    City Parcel Bookings
+                                </span>
+                                <span className="font-mono font-bold text-slate-900 dark:text-white">
+                                    {cityPct}%
+                                </span>
+                            </div>
+                            <div className="h-3 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                                <div
+                                    className="h-full rounded-full bg-emerald-500"
+                                    style={{ width: `${cityPct}%` }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </Card>
+            </div>
+
             {/* Recent parcels */}
             <Card className="overflow-hidden rounded-3xl p-0 shadow-sm">
                 <div className="flex items-center justify-between border-b border-slate-100 p-6 dark:border-slate-800">
@@ -525,11 +819,12 @@ const PorterDashboard = () => {
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                             {recent.length === 0 ? (
                                 <tr>
-                                    <td
-                                        colSpan={5}
-                                        className="py-16 text-center text-sm font-semibold text-slate-400"
-                                    >
-                                        No parcels booked in this window
+                                    <td colSpan={5}>
+                                        <EmptyState
+                                            icon={Package}
+                                            title="No parcels booked in this window"
+                                            description="Try a wider date range or check back later."
+                                        />
                                     </td>
                                 </tr>
                             ) : (

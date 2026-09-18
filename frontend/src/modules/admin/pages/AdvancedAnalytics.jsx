@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import Card from '@shared/components/ui/Card';
 import Badge from '@shared/components/ui/Badge';
+import PageHeader from '@shared/components/ui/PageHeader';
+import StatCard from '@shared/components/ui/StatCard';
 import {
     HiOutlineArrowTrendingUp,
     HiOutlineArrowTrendingDown,
@@ -80,77 +82,63 @@ const AdvancedAnalytics = () => {
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-12">
             {/* Header Area */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 px-1">
-                <div>
-                    <h1 className="admin-h1 flex items-center gap-2">
-                        Business Intel Hub
-                        <Badge variant="blue" className="text-[10px] font-black uppercase tracking-tighter">Enterprise v2.0</Badge>
-                    </h1>
-                    <p className="admin-description mt-1">Deep granular insights and real-time performance metrics.</p>
-                </div>
-                <div className="flex items-center gap-3 bg-white p-1.5 rounded-2xl shadow-sm ring-1 ring-slate-200">
-                    {['24h', '7d', '30d', '90d'].map((range) => (
-                        <button
-                            key={range}
-                            onClick={() => setTimeRange(range)}
-                            className={cn(
-                                "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-                                timeRange === range ? "bg-slate-900 text-white shadow-lg" : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
-                            )}
-                        >
-                            {range}
+            <PageHeader
+                title="Business Intel Hub"
+                description="Deep granular insights and real-time performance metrics."
+                badge={<Badge variant="blue" className="text-[10px] font-black uppercase tracking-tighter">Enterprise v2.0</Badge>}
+                actions={
+                    <div className="flex items-center gap-3 bg-white p-1.5 rounded-2xl shadow-sm ring-1 ring-slate-200">
+                        {['24h', '7d', '30d', '90d'].map((range) => (
+                            <button
+                                key={range}
+                                onClick={() => setTimeRange(range)}
+                                className={cn(
+                                    "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                                    timeRange === range ? "bg-slate-900 text-white shadow-lg" : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+                                )}
+                            >
+                                {range}
+                            </button>
+                        ))}
+                        <div className="w-px h-6 bg-slate-200 mx-1" />
+                        <button className="p-2 text-slate-400 hover:text-primary transition-colors">
+                            <HiOutlineCalendarDays className="h-5 w-5" />
                         </button>
-                    ))}
-                    <div className="w-px h-6 bg-slate-200 mx-1" />
-                    <button className="p-2 text-slate-400 hover:text-primary transition-colors">
-                        <HiOutlineCalendarDays className="h-5 w-5" />
-                    </button>
-                    <button
-                        onClick={handleDownloadReport}
-                        className="flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary/20 transition-all"
-                    >
-                        <HiOutlineArrowDownTray className="h-4 w-4" />
-                        REPORT
-                    </button>
-                </div>
-            </div>
+                        <button
+                            onClick={handleDownloadReport}
+                            className="flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary/20 transition-all"
+                        >
+                            <HiOutlineArrowDownTray className="h-4 w-4" />
+                            REPORT
+                        </button>
+                    </div>
+                }
+            />
 
             {/* Goals Section */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="ds-grid-cards-4">
                 {[
                     { label: 'Gross Revenue', value: '₹5,42,000', trend: '+12.5%', icon: HiOutlineBanknotes, color: 'indigo' },
                     { label: 'Total Orders', value: '1,248', trend: '+8.2%', icon: HiOutlineShoppingBag, color: 'emerald' },
                     { label: 'Active Sellers', value: '84', trend: '+2', icon: HiOutlineUsers, color: 'amber' },
                     { label: 'Avg Order Value', value: '₹434', trend: '-2.1%', icon: HiOutlineBolt, color: 'rose' },
                 ].map((goal, i) => (
-                    <Card key={i} className="p-6 border-none shadow-xl ring-1 ring-slate-100 bg-white group hover:scale-[1.02] transition-all">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className={cn("p-2.5 rounded-2xl",
-                                goal.color === 'indigo' && "bg-brand-50 text-brand-600",
-                                goal.color === 'emerald' && "bg-brand-50 text-brand-600",
-                                goal.color === 'amber' && "bg-amber-50 text-amber-600",
-                                goal.color === 'rose' && "bg-rose-50 text-rose-600",
-                            )}>
-                                <goal.icon className="h-6 w-6" />
-                            </div>
-                            <div className={cn("flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-black",
-                                goal.trend.startsWith('+') ? "bg-brand-50 text-brand-600" : "bg-rose-50 text-rose-600"
-                            )}>
-                                {goal.trend.startsWith('+') ? <HiOutlineArrowTrendingUp className="h-3 w-3" /> : <HiOutlineArrowTrendingDown className="h-3 w-3" />}
-                                {goal.trend}
-                            </div>
-                        </div>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{goal.label}</p>
-                        <h3 className="text-2xl font-black text-slate-900 leading-none">{goal.value}</h3>
-                        <div className="mt-4 h-1 w-full bg-slate-50 rounded-full overflow-hidden">
-                            <div className={cn("h-full rounded-full animate-progress",
-                                goal.color === 'indigo' && "bg-brand-500",
-                                goal.color === 'emerald' && "bg-brand-500",
-                                goal.color === 'amber' && "bg-amber-500",
-                                goal.color === 'rose' && "bg-rose-500",
-                            )} style={{ width: '70%' }} />
-                        </div>
-                    </Card>
+                    <StatCard
+                        key={i}
+                        label={goal.label}
+                        value={goal.value}
+                        icon={goal.icon}
+                        trend={goal.trend}
+                        trendDirection={goal.trend.startsWith('+') ? 'up' : 'down'}
+                        color={
+                            goal.color === 'amber' ? 'text-amber-600' :
+                                goal.color === 'rose' ? 'text-rose-600' : 'text-brand-600'
+                        }
+                        bg={
+                            goal.color === 'amber' ? 'bg-amber-50' :
+                                goal.color === 'rose' ? 'bg-rose-50' : 'bg-brand-50'
+                        }
+                    />
                 ))}
             </div>
 

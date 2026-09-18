@@ -2,13 +2,16 @@ import React, { useEffect, useMemo, useState } from "react";
 import Card from "@shared/components/ui/Card";
 import Badge from "@shared/components/ui/Badge";
 import Modal from "@shared/components/ui/Modal";
+import PageHeader from "@shared/components/ui/PageHeader";
+import EmptyState from "@shared/components/ui/EmptyState";
 import { useToast } from "@shared/components/ui/Toast";
 import {
   HiOutlinePlus,
-  HiOutlinePhoto,
   HiOutlineTrash,
   HiOutlinePencilSquare,
+  HiOutlineBuildingStorefront,
 } from "react-icons/hi2";
+import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { adminApi } from "../services/adminApi";
 import {
@@ -198,44 +201,46 @@ const ShopByStoreManagement = () => {
   };
 
   return (
-    <div className="ds-section-spacing animate-in fade-in slide-in-from-bottom-4 duration-700 pb-12">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 px-1 mb-6">
-        <div>
-          <h1 className="ds-h1 flex items-center gap-3">
-            Shop by Store
-            <Badge
-              variant="primary"
-              className="text-[10px] font-black uppercase tracking-widest"
-            >
-              Curated Storefronts
-            </Badge>
-          </h1>
-          <p className="ds-description mt-1">
+    <div className="ds-section-spacing">
+      <PageHeader
+        title="Shop by Store"
+        description={
+          <>
             Create themed stores like &quot;Summer Coolers&quot; or
             &quot;Breakfast Essentials&quot;. Pick categories and hero
             products, choose banner colour and imagery – these power the
             customer &quot;Shop by Store&quot; page.
-          </p>
-        </div>
-        <button
-          onClick={openCreateModal}
-          className="flex items-center gap-2 px-6 py-3.5 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] active:scale-95 transition-all"
-        >
-          <HiOutlinePlus className="h-5 w-5" />
-          New Store
-        </button>
-      </div>
+          </>
+        }
+        badge={
+          <Badge variant="primary" className="uppercase tracking-widest">
+            Curated Storefronts
+          </Badge>
+        }
+        actions={
+          <button
+            onClick={openCreateModal}
+            className="ds-btn ds-btn-md bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+          >
+            <HiOutlinePlus className="ds-icon-sm" />
+            New Store
+          </button>
+        }
+      />
 
-      <Card className="border-none shadow-xl ring-1 ring-slate-100 bg-white rounded-xl overflow-hidden">
-        <div className="p-4 border-b border-slate-50 flex items-center justify-between">
-          <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+      <Card className="overflow-hidden relative min-h-[240px]" contentClassName="p-0">
+        {isLoading && (
+          <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] z-10 flex items-center justify-center">
+            <div className="flex flex-col items-center gap-2">
+              <Loader2 className="h-8 w-8 text-primary animate-spin" />
+              <p className="ds-caption text-gray-500 font-medium">Loading stores...</p>
+            </div>
+          </div>
+        )}
+        <div className="p-4 border-b border-slate-100">
+          <h2 className="ds-caption text-slate-500">
             Stores ({stores.length})
           </h2>
-          {isLoading && (
-            <span className="text-[10px] font-bold text-slate-400">
-              Loading...
-            </span>
-          )}
         </div>
         <div className="divide-y divide-slate-50">
           {stores.map((store, idx) => {
@@ -268,10 +273,15 @@ const ShopByStoreManagement = () => {
                     }}
                   />
                   <div>
-                    <p className="text-sm font-black text-slate-900">
-                      {idx + 1}. {store.title}
-                    </p>
-                    <p className="text-[10px] font-bold text-slate-500">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold text-slate-900">
+                        {idx + 1}. {store.title}
+                      </p>
+                      <Badge variant={store.status === "active" ? "success" : "gray"}>
+                        {store.status || "active"}
+                      </Badge>
+                    </div>
+                    <p className="ds-caption text-slate-500 mt-0.5">
                       Categories: {catNames} · {productCount} product(s)
                     </p>
                   </div>
@@ -280,31 +290,26 @@ const ShopByStoreManagement = () => {
                 <div className="flex items-center gap-2 ml-auto">
                   <button
                     onClick={() => openEditModal(store)}
-                    className="p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-xl"
+                    className="p-2 bg-primary/10 text-primary rounded-lg hover:bg-primary hover:text-white transition-all"
                   >
-                    <HiOutlinePencilSquare className="h-5 w-5" />
+                    <HiOutlinePencilSquare className="ds-icon-sm" />
                   </button>
                   <button
                     onClick={() => handleDelete(store._id)}
-                    className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl"
+                    className="p-2 bg-gray-50 text-gray-400 rounded-lg hover:bg-rose-500 hover:text-white transition-all"
                   >
-                    <HiOutlineTrash className="h-5 w-5" />
+                    <HiOutlineTrash className="ds-icon-sm" />
                   </button>
                 </div>
               </div>
             );
           })}
           {stores.length === 0 && !isLoading && (
-            <div className="p-16 text-center">
-              <HiOutlinePhoto className="h-12 w-12 text-slate-200 mx-auto mb-3" />
-              <h3 className="text-lg font-black text-slate-900">
-                No stores created yet
-              </h3>
-              <p className="text-sm font-bold text-slate-400 mt-2">
-                Click &quot;New Store&quot; to design your first curated
-                storefront.
-              </p>
-            </div>
+            <EmptyState
+              icon={HiOutlineBuildingStorefront}
+              title="No stores created yet"
+              description={'Click "New Store" to design your first curated storefront.'}
+            />
           )}
         </div>
       </Card>

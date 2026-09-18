@@ -13,6 +13,10 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import Card from "@shared/components/ui/Card";
+import PageHeader from "@shared/components/ui/PageHeader";
+import StatCard from "@shared/components/ui/StatCard";
+import Badge from "@shared/components/ui/Badge";
+import EmptyState from "@shared/components/ui/EmptyState";
 import { adminPorterApi } from "../../services/api/porterApi";
 import { cn } from "@/lib/utils";
 
@@ -140,28 +144,32 @@ const PorterGst = () => {
         value: rupees(combined?.collected?.gst),
         note: `${combined?.collected?.bookings ?? 0} settled bookings`,
         icon: CheckCircle2,
-        tint: "bg-emerald-50 text-emerald-600",
+        color: "text-emerald-600",
+        bg: "bg-emerald-50 border border-emerald-100",
       },
       {
         label: "GST charged",
         value: rupees(combined?.charged?.gst),
         note: `${combined?.charged?.bookings ?? 0} bookings billed`,
         icon: Receipt,
-        tint: "bg-slate-100 text-slate-700",
+        color: "text-slate-700",
+        bg: "bg-slate-100 border border-slate-200",
       },
       {
         label: "Not yet collected",
         value: rupees(combined?.outstanding?.gst),
         note: "Mostly COD still with riders",
         icon: Clock,
-        tint: "bg-amber-50 text-amber-600",
+        color: "text-amber-600",
+        bg: "bg-amber-50 border border-amber-100",
       },
       {
         label: "Taxable value collected",
         value: rupees(combined?.collected?.taxable),
         note: "Before tax",
         icon: Calendar,
-        tint: "bg-blue-50 text-blue-600",
+        color: "text-blue-600",
+        bg: "bg-blue-50 border border-blue-100",
       },
     ];
   }, [report]);
@@ -171,74 +179,62 @@ const PorterGst = () => {
   return (
     <div className="space-y-6 pb-12">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="flex items-center gap-2 text-xl font-bold text-slate-900 dark:text-white">
-            <Receipt className="h-5 w-5 text-primary" />
-            GST
-          </h1>
-          <p className="mt-1 text-xs text-slate-500">
-            Set the GST rate for local and outstation bookings, and see what it has brought in.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-end gap-2">
-          <label className="text-[11px] font-semibold text-slate-500">
-            From
-            <input
-              type="date"
-              value={window.from}
-              max={window.to}
-              onChange={(e) => {
-                setLedgerPage(1);
-                setWindow((prev) => ({ ...prev, from: e.target.value }));
-              }}
-              className="mt-1 block rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-            />
-          </label>
-          <label className="text-[11px] font-semibold text-slate-500">
-            To
-            <input
-              type="date"
-              value={window.to}
-              min={window.from}
-              onChange={(e) => {
-                setLedgerPage(1);
-                setWindow((prev) => ({ ...prev, to: e.target.value }));
-              }}
-              className="mt-1 block rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-            />
-          </label>
-          <button
-            onClick={load}
-            disabled={loading}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-xs font-bold text-white disabled:opacity-50 dark:bg-white dark:text-slate-900"
-          >
-            <RotateCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
-            Refresh
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        title="GST"
+        description="Set the GST rate for local and outstation bookings, and see what it has brought in."
+        icon={Receipt}
+        actions={
+          <div className="flex flex-wrap items-end gap-2">
+            <label className="text-[11px] font-semibold text-slate-500">
+              From
+              <input
+                type="date"
+                value={window.from}
+                max={window.to}
+                onChange={(e) => {
+                  setLedgerPage(1);
+                  setWindow((prev) => ({ ...prev, from: e.target.value }));
+                }}
+                className="mt-1 block rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              />
+            </label>
+            <label className="text-[11px] font-semibold text-slate-500">
+              To
+              <input
+                type="date"
+                value={window.to}
+                min={window.from}
+                onChange={(e) => {
+                  setLedgerPage(1);
+                  setWindow((prev) => ({ ...prev, to: e.target.value }));
+                }}
+                className="mt-1 block rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              />
+            </label>
+            <button
+              onClick={load}
+              disabled={loading}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-xs font-bold text-white disabled:opacity-50 dark:bg-white dark:text-slate-900"
+            >
+              <RotateCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
+              Refresh
+            </button>
+          </div>
+        }
+      />
 
       {/* Headline */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {headline.map((stat) => (
-          <Card key={stat.label}>
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                  {stat.label}
-                </p>
-                <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">
-                  {stat.value}
-                </p>
-                <p className="mt-1 text-[11px] text-slate-400">{stat.note}</p>
-              </div>
-              <span className={cn("rounded-xl p-2.5", stat.tint)}>
-                <stat.icon className="h-5 w-5" />
-              </span>
-            </div>
-          </Card>
+          <StatCard
+            key={stat.label}
+            label={stat.label}
+            value={stat.value}
+            description={stat.note}
+            icon={stat.icon}
+            color={stat.color}
+            bg={stat.bg}
+          />
         ))}
       </div>
 
@@ -254,16 +250,9 @@ const PorterGst = () => {
                   <Icon className="h-4 w-4 text-primary" />
                   {label}
                 </h2>
-                <span
-                  className={cn(
-                    "rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase",
-                    settings[key].enabled
-                      ? "bg-emerald-50 text-emerald-700"
-                      : "bg-slate-100 text-slate-500",
-                  )}
-                >
+                <Badge variant={settings[key].enabled ? "success" : "gray"}>
                   {settings[key].enabled ? `${settings[key].percent}% active` : "Off"}
-                </span>
+                </Badge>
               </div>
 
               {/* Figures for the window */}
@@ -483,8 +472,12 @@ const PorterGst = () => {
                 </tr>
               ) : ledger.items.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400">
-                    No settled bookings in this window.
+                  <td colSpan={8}>
+                    <EmptyState
+                      icon={Receipt}
+                      title="No settled bookings"
+                      description="No settled bookings in this window."
+                    />
                   </td>
                 </tr>
               ) : (

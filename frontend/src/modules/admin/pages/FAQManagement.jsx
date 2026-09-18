@@ -3,6 +3,8 @@ import React, { useState, useMemo } from 'react';
 import Card from '@shared/components/ui/Card';
 import Badge from '@shared/components/ui/Badge';
 import Modal from '@shared/components/ui/Modal';
+import PageHeader from '@shared/components/ui/PageHeader';
+import StatCard from '@shared/components/ui/StatCard';
 import {
     HelpCircle,
     Plus,
@@ -24,7 +26,8 @@ import {
     Save,
     X,
     CheckCircle2,
-    AlertCircle
+    AlertCircle,
+    Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@shared/components/ui/Toast';
@@ -195,56 +198,65 @@ const FAQManagement = () => {
     };
 
     return (
-        <div className="ds-section-spacing animate-in fade-in slide-in-from-bottom-4 duration-700 pb-12">
-            {/* Header Section */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 px-1">
-                <div>
-                    <h1 className="ds-h1 flex items-center gap-3">
-                        FAQ Management
-                        <div className="p-2 bg-pink-100 rounded-xl">
-                            <HelpCircle className="h-5 w-5 text-pink-600" />
-                        </div>
-                    </h1>
-                    <p className="ds-description mt-1">Manage categories and help customers with common questions.</p>
-                </div>
-                <div className="flex items-center gap-3">
-                    <button
-                        onClick={() => setIsCategoryModalOpen(true)}
-                        className="flex items-center gap-2 px-5 py-3 bg-white ring-1 ring-slate-200 text-slate-700 rounded-2xl text-xs font-bold hover:bg-slate-50 transition-all shadow-sm"
-                    >
-                        <Layers className="h-4 w-4 text-brand-500" />
-                        CATEGORIES
-                    </button>
-                    <button
-                        onClick={() => setIsAddModalOpen(true)}
-                        className="flex items-center gap-2 px-5 py-3 bg-pink-600 text-white rounded-2xl text-xs font-bold hover:bg-pink-700 transition-all shadow-lg active:scale-95 shadow-pink-200"
-                    >
-                        <Plus className="h-4 w-4" />
-                        ADD FAQ
-                    </button>
-                </div>
-            </div>
+        <div className="ds-section-spacing">
+            <PageHeader
+                title="FAQ Management"
+                description="Manage categories and help customers with common questions."
+                badge={
+                    <div className="p-2 bg-pink-100 rounded-xl">
+                        <HelpCircle className="h-5 w-5 text-pink-600" />
+                    </div>
+                }
+                actions={
+                    <>
+                        <button
+                            onClick={() => setIsCategoryModalOpen(true)}
+                            className="ds-btn ds-btn-md bg-white ring-1 ring-gray-200 text-gray-700 hover:bg-gray-50"
+                        >
+                            <Layers className="ds-icon-sm text-brand-500" />
+                            CATEGORIES
+                        </button>
+                        <button
+                            onClick={() => setIsAddModalOpen(true)}
+                            className="ds-btn ds-btn-md bg-pink-600 text-white shadow-lg shadow-pink-200 hover:bg-pink-700"
+                        >
+                            <Plus className="ds-icon-sm" />
+                            ADD FAQ
+                        </button>
+                    </>
+                }
+            />
 
             {/* Quick Intelligence Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {[
-                    { label: 'Total FAQs', value: faqs.length, icon: MessageSquare, bg: 'bg-pink-50', iconColor: 'text-pink-600' },
-                    { label: 'Total Views', value: faqs.reduce((acc, f) => acc + f.views, 0).toLocaleString(), icon: TrendingUp, bg: 'bg-brand-50', iconColor: 'text-brand-600' },
-                    { label: 'Published', value: faqs.filter(f => f.status === 'published').length, icon: CheckCircle2, bg: 'bg-brand-50', iconColor: 'text-brand-600' },
-                    { label: 'Drafts', value: faqs.filter(f => f.status === 'draft').length, icon: Edit3, bg: 'bg-amber-50', iconColor: 'text-amber-600' },
-                ].map((stat, i) => (
-                    <Card key={i} className="p-5 border-none shadow-sm ring-1 ring-slate-100 bg-white group hover:ring-pink-200 transition-all overflow-hidden relative text-left">
-                        <div className="relative z-10 flex items-center gap-4">
-                            <div className={cn("p-3 rounded-2xl h-12 w-12 flex items-center justify-center", stat.bg)}>
-                                <stat.icon className={cn("h-6 w-6", stat.iconColor)} />
-                            </div>
-                            <div>
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{stat.label}</p>
-                                <h3 className="text-2xl font-black text-slate-900">{stat.value}</h3>
-                            </div>
-                        </div>
-                    </Card>
-                ))}
+            <div className="ds-grid-cards-4">
+                <StatCard
+                    label="Total FAQs"
+                    value={faqs.length}
+                    icon={MessageSquare}
+                    color="text-pink-600"
+                    bg="bg-pink-50"
+                />
+                <StatCard
+                    label="Total Views"
+                    value={faqs.reduce((acc, f) => acc + f.views, 0).toLocaleString()}
+                    icon={TrendingUp}
+                    color="text-brand-600"
+                    bg="bg-brand-50"
+                />
+                <StatCard
+                    label="Published"
+                    value={faqs.filter(f => f.status === 'published').length}
+                    icon={CheckCircle2}
+                    color="text-brand-600"
+                    bg="bg-brand-50"
+                />
+                <StatCard
+                    label="Drafts"
+                    value={faqs.filter(f => f.status === 'draft').length}
+                    icon={Edit3}
+                    color="text-amber-600"
+                    bg="bg-amber-50"
+                />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
@@ -315,7 +327,25 @@ const FAQManagement = () => {
                     </Card>
 
                     {/* FAQ Grid/List */}
-                    <div className="space-y-4">
+                    <div className="space-y-4 relative min-h-[160px]">
+                        {isLoading && (
+                            <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] z-10 flex items-center justify-center rounded-xl">
+                                <div className="flex flex-col items-center gap-2">
+                                    <Loader2 className="h-8 w-8 text-pink-500 animate-spin" />
+                                    <p className="ds-caption text-gray-500 font-medium">Loading FAQs...</p>
+                                </div>
+                            </div>
+                        )}
+                        {!isLoading && filteredAndSortedFaqs.length === 0 && (
+                            <div className="px-6 py-20 text-center">
+                                <div className="flex flex-col items-center gap-3">
+                                    <div className="p-4 bg-gray-50 rounded-full">
+                                        <HelpCircle className="h-8 w-8 text-gray-300" />
+                                    </div>
+                                    <p className="ds-h4 text-gray-400">No FAQs found</p>
+                                </div>
+                            </div>
+                        )}
                         <AnimatePresence mode='popLayout'>
                             {filteredAndSortedFaqs.map((faq, index) => (
                                 <motion.div
@@ -338,10 +368,10 @@ const FAQManagement = () => {
                                                 <div className="flex-1">
                                                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
                                                         <div className="flex items-center gap-3">
-                                                            <Badge variant="outline" className="text-[8px] font-black uppercase tracking-widest border-slate-200 text-slate-400">
+                                                            <Badge variant="gray" className="text-[8px] font-black uppercase tracking-widest border-slate-200 text-slate-400">
                                                                 {faq.id}
                                                             </Badge>
-                                                            <Badge variant={faq.status === 'published' ? 'success' : 'secondary'} className="text-[8px] font-black uppercase tracking-widest">
+                                                            <Badge variant={faq.status === 'published' ? 'success' : 'gray'} className="text-[8px] font-black uppercase tracking-widest">
                                                                 {faq.status}
                                                             </Badge>
                                                         </div>
@@ -498,9 +528,9 @@ const FAQManagement = () => {
                         />
                     </div>
                     <div className="flex gap-4">
-                        <button type="button" onClick={() => setIsAddModalOpen(false)} className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-slate-200 transition-all">CANCEL</button>
-                        <button type="submit" className="flex-[2] py-4 bg-pink-600 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-pink-700 shadow-xl shadow-pink-100 transition-all flex items-center justify-center gap-2">
-                            <Save className="h-4 w-4" /> SAVE FAQ
+                        <button type="button" onClick={() => setIsAddModalOpen(false)} className="ds-btn ds-btn-md flex-1 bg-slate-100 text-slate-600 hover:bg-slate-200">CANCEL</button>
+                        <button type="submit" className="ds-btn ds-btn-md flex-[2] bg-pink-600 text-white hover:bg-pink-700 shadow-xl shadow-pink-100">
+                            <Save className="ds-icon-sm" /> SAVE FAQ
                         </button>
                     </div>
                 </form>
@@ -536,7 +566,7 @@ const FAQManagement = () => {
                             className="w-full pl-11 pr-4 py-4 bg-white ring-1 ring-slate-200 rounded-2xl text-[10px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-brand-500/10 transition-all"
                         />
                     </div>
-                    <button onClick={handleAddCategory} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-slate-800 transition-all">GENERATE NEW CATEGORY</button>
+                    <button onClick={handleAddCategory} className="ds-btn ds-btn-md w-full bg-slate-900 text-white hover:bg-slate-800">GENERATE NEW CATEGORY</button>
                 </div>
             </Modal>
         </div>

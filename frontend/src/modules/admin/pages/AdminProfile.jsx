@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Card from '@shared/components/ui/Card';
+import PageHeader from '@shared/components/ui/PageHeader';
 import {
     Save,
     User,
@@ -104,26 +105,24 @@ const AdminProfile = () => {
     return (
         <div className="ds-section-spacing animate-in fade-in slide-in-from-bottom-4 duration-700 pb-12">
             {/* Header Section */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 px-1">
-                <div>
-                    <h1 className="ds-h1 flex items-center gap-3">
-                        My Profile
-                        <div className="p-2 bg-brand-100 rounded-xl">
-                            <User className="h-5 w-5 text-brand-600" />
-                        </div>
-                    </h1>
-                    <p className="ds-description mt-1">Manage your account settings and security preferences.</p>
-                </div>
-                <div className="flex items-center gap-3">
+            <PageHeader
+                title="My Profile"
+                description="Manage your account settings and security preferences."
+                badge={
+                    <div className="p-2 bg-brand-100 rounded-xl">
+                        <User className="h-5 w-5 text-brand-600" />
+                    </div>
+                }
+                actions={
                     <button
                         onClick={logout}
-                        className="flex items-center gap-2 px-5 py-3 bg-white ring-1 ring-slate-200 text-slate-700 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 hover:text-red-600 transition-all shadow-sm"
+                        className="ds-btn ds-btn-md bg-white ring-1 ring-slate-200 text-slate-700 hover:bg-slate-50 hover:text-red-600 shadow-sm"
                     >
                         <LogOut className="h-4 w-4" />
                         Sign Out
                     </button>
-                </div>
-            </div>
+                }
+            />
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
                 {/* Sidebar / User Card */}

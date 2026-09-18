@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Card from '@shared/components/ui/Card';
+import PageHeader from '@shared/components/ui/PageHeader';
 import {
     Save,
     Settings,
@@ -554,22 +555,20 @@ const AdminSettings = () => {
     return (
         <div className="ds-section-spacing animate-in fade-in slide-in-from-bottom-4 duration-700 pb-12">
             {/* Header Section */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 px-1">
-                <div>
-                    <h1 className="ds-h1 flex items-center gap-3">
-                        Platform Settings
-                        <div className="p-2 bg-slate-100 rounded-xl">
-                            <Settings className="h-5 w-5 text-slate-600" />
-                        </div>
-                    </h1>
-                    <p className="ds-description mt-1">Manage global configurations, branding, and legal information.</p>
-                </div>
-                <div className="flex items-center gap-3">
+            <PageHeader
+                title="Platform Settings"
+                description="Manage global configurations, branding, and legal information."
+                badge={
+                    <div className="p-2 bg-slate-100 rounded-xl">
+                        <Settings className="h-5 w-5 text-slate-600" />
+                    </div>
+                }
+                actions={
                     <button
                         onClick={handleSave}
                         disabled={isSaving}
                         className={cn(
-                            "flex items-center gap-2 px-8 py-4 bg-black text-primary-foreground rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl shadow-brand-200 hover:shadow-brand-300 active:scale-95 active:shadow-inner",
+                            "ds-btn ds-btn-lg bg-black text-primary-foreground shadow-xl shadow-brand-200 hover:shadow-brand-300 active:shadow-inner",
                             isSaving ? "opacity-70 cursor-wait" : "hover:bg-brand-700"
                         )}
                     >
@@ -580,8 +579,8 @@ const AdminSettings = () => {
                         )}
                         {isSaving ? 'Updating...' : 'Save All Changes'}
                     </button>
-                </div>
-            </div>
+                }
+            />
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
                 {/* Sidebar Navigation */}

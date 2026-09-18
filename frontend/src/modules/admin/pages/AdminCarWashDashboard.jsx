@@ -349,8 +349,11 @@ const AdminCarWashDashboard = () => {
               </div>
 
               {bookings.length === 0 ? (
-                <div className="p-12 text-center text-slate-400">
-                  No car wash bookings found in the system.
+                <div className="flex flex-col items-center justify-center gap-2.5 py-16 px-6 text-center">
+                  <div className="p-3.5 rounded-2xl bg-slate-100 text-slate-400 mb-1">
+                    <ClipboardList size={26} />
+                  </div>
+                  <p className="text-sm font-bold text-slate-500">No car wash bookings found in the system.</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -462,8 +465,11 @@ const AdminCarWashDashboard = () => {
                 </div>
 
                 {getActiveBookings().length === 0 ? (
-                  <div className="p-12 text-center text-slate-400">
-                    No active wash services currently in progress.
+                  <div className="flex flex-col items-center justify-center gap-2.5 py-16 px-6 text-center">
+                    <div className="p-3.5 rounded-2xl bg-slate-100 text-slate-400 mb-1">
+                      <Activity size={26} />
+                    </div>
+                    <p className="text-sm font-bold text-slate-500">No active wash services currently in progress.</p>
                   </div>
                 ) : (
                   <div className="divide-y divide-slate-100">
@@ -529,7 +535,7 @@ const AdminCarWashDashboard = () => {
                       ? { text: "Offline", style: "bg-slate-100 text-slate-500" }
                       : rider.isBusy
                       ? { text: "Busy", style: "bg-amber-50 text-amber-700" }
-                      : { text: "Available", style: "bg-green-55 text-green-700 bg-green-50" };
+                      : { text: "Available", style: "bg-green-50 text-green-700" };
 
                     return (
                       <div key={rider._id} className="py-3 flex justify-between items-center text-xs">
@@ -544,7 +550,12 @@ const AdminCarWashDashboard = () => {
                     );
                   })}
                   {getCarWashTechnicians().length === 0 && (
-                    <p className="text-slate-400 text-xs py-4 text-center">No car-wash enabled partners.</p>
+                    <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
+                      <div className="p-3 rounded-2xl bg-slate-100 text-slate-400">
+                        <User size={20} />
+                      </div>
+                      <p className="text-slate-400 text-xs font-bold">No car-wash enabled partners.</p>
+                    </div>
                   )}
                 </div>
               </div>
@@ -586,7 +597,7 @@ const AdminCarWashDashboard = () => {
                         </div>
                         <p className="text-xs text-slate-400 truncate mt-0.5">{pkg.description}</p>
                         <div className="flex items-baseline gap-1 mt-1">
-                          <span className="text-[10px] text-slate-450 font-bold uppercase">Price:</span>
+                          <span className="text-[10px] text-slate-500 font-bold uppercase">Price:</span>
                           <span className="text-sm font-black text-slate-800">₹{pkg.basePrice}</span>
                         </div>
                       </div>
@@ -601,7 +612,7 @@ const AdminCarWashDashboard = () => {
                       </button>
                       <button
                         onClick={() => handleDeletePackage(pkg._id)}
-                        className="p-1.5 hover:bg-red-50 rounded-lg text-red-400 hover:text-red-655 transition-colors border-none"
+                        className="p-1.5 hover:bg-red-50 rounded-lg text-red-400 hover:text-red-600 transition-colors border-none"
                       >
                         <Trash2 size={15} />
                       </button>
@@ -667,7 +678,7 @@ const AdminCarWashDashboard = () => {
                   <div className="grid grid-cols-2 gap-3 text-xs">
                     {["Bike", "Hatchback", "Sedan", "SUV"].map((vType) => (
                       <div key={vType} className="space-y-1">
-                        <label className="text-slate-550 block font-bold">{vType}</label>
+                        <label className="text-slate-600 block font-bold">{vType}</label>
                         <input
                           type="number"
                           step="0.05"
@@ -804,7 +815,7 @@ const AdminCarWashDashboard = () => {
               </button>
               <button
                 type="submit"
-                className="flex-1 py-2.5 bg-cyan-600 hover:bg-cyan-705 text-white font-bold text-xs rounded-xl transition-all border-none"
+                className="flex-1 py-2.5 bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs rounded-xl transition-all border-none"
               >
                 Assign Partner
               </button>

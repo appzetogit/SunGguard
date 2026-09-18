@@ -15,6 +15,10 @@ import {
 import { toast } from "sonner";
 import { useMapsLoader, hasMapsKey } from "@core/maps/useMapsLoader";
 import Card from "@shared/components/ui/Card";
+import PageHeader from "@shared/components/ui/PageHeader";
+import StatCard from "@shared/components/ui/StatCard";
+import Badge from "@shared/components/ui/Badge";
+import EmptyState from "@shared/components/ui/EmptyState";
 import { adminDeliveryApi } from "../../services/api/deliveryApi";
 import { adminPorterApi } from "../../services/api/porterApi";
 import { cn } from "@/lib/utils";
@@ -186,66 +190,48 @@ const FleetZoneMap = () => {
   return (
     <div className="space-y-6 pb-20">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
+      <PageHeader
+        title="Live Fleet Map"
+        description="Where every online driver is right now, and which delivery zone they're in."
+        badge={<Badge variant="info">Porter Ops</Badge>}
+        actions={
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-              Live Fleet Map
-            </h1>
-            <span className="rounded-md bg-cyan-100 px-2 py-0.5 text-xs font-semibold text-cyan-800 dark:bg-cyan-950 dark:text-cyan-300">
-              Porter Ops
-            </span>
+            <button
+              type="button"
+              onClick={() => setAutoRefresh((v) => !v)}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors",
+                autoRefresh
+                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
+                  : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
+              )}
+              title={autoRefresh ? "Auto-refresh every 20s" : "Auto-refresh paused"}
+            >
+              {autoRefresh ? <Radio className="h-3.5 w-3.5 animate-pulse" /> : <Pause className="h-3.5 w-3.5" />}
+              {autoRefresh ? "Live" : "Paused"}
+            </button>
+            <button
+              type="button"
+              onClick={() => fetchRiders(true)}
+              disabled={ridersLoading}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+            >
+              <RotateCw className={cn("h-3.5 w-3.5", ridersLoading && "animate-spin")} />
+              Refresh
+            </button>
           </div>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Where every online driver is right now, and which delivery zone they're in.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setAutoRefresh((v) => !v)}
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors",
-              autoRefresh
-                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
-                : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
-            )}
-            title={autoRefresh ? "Auto-refresh every 20s" : "Auto-refresh paused"}
-          >
-            {autoRefresh ? <Radio className="h-3.5 w-3.5 animate-pulse" /> : <Pause className="h-3.5 w-3.5" />}
-            {autoRefresh ? "Live" : "Paused"}
-          </button>
-          <button
-            type="button"
-            onClick={() => fetchRiders(true)}
-            disabled={ridersLoading}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
-          >
-            <RotateCw className={cn("h-3.5 w-3.5", ridersLoading && "animate-spin")} />
-            Refresh
-          </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="ds-grid-cards-4">
         {[
-          { label: "Online Riders", value: stats.online, icon: Users, color: "text-slate-700", bg: "bg-slate-100" },
-          { label: "Inside a Zone", value: stats.inZone, icon: Layers, color: "text-emerald-600", bg: "bg-emerald-50" },
-          { label: "Outside Any Zone", value: stats.unzoned, icon: MapPin, color: "text-amber-600", bg: "bg-amber-50" },
-          { label: "Zones Covered", value: stats.zonesCovered, icon: Radio, color: "text-blue-600", bg: "bg-blue-50" },
+          { label: "Online Riders", value: stats.online, icon: Users, color: "text-slate-700", bg: "bg-slate-100 border border-slate-200" },
+          { label: "Inside a Zone", value: stats.inZone, icon: Layers, color: "text-emerald-600", bg: "bg-emerald-50 border border-emerald-200" },
+          { label: "Outside Any Zone", value: stats.unzoned, icon: MapPin, color: "text-amber-600", bg: "bg-amber-50 border border-amber-200" },
+          { label: "Zones Covered", value: stats.zonesCovered, icon: Radio, color: "text-blue-600", bg: "bg-blue-50 border border-blue-200" },
         ].map((s) => (
-          <div
-            key={s.label}
-            className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900"
-          >
-            <div className={cn("mb-2 inline-flex h-8 w-8 items-center justify-center rounded-lg", s.bg)}>
-              <s.icon className={cn("h-4 w-4", s.color)} />
-            </div>
-            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{s.label}</p>
-            <p className="mt-0.5 text-xl font-bold text-slate-900 dark:text-white">{s.value}</p>
-          </div>
+          <StatCard key={s.label} label={s.label} value={s.value} icon={s.icon} color={s.color} bg={s.bg} />
         ))}
       </div>
 
@@ -344,10 +330,7 @@ const FleetZoneMap = () => {
         >
           <div className="max-h-[560px] overflow-y-auto p-3">
             {!ridersLoading && riders.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
-                <Users className="h-8 w-8 text-slate-200" />
-                <p className="text-xs font-semibold text-slate-400">No riders are online right now</p>
-              </div>
+              <EmptyState icon={Users} title="No riders online" description="No riders are online right now." />
             ) : (
               <div className="space-y-4">
                 {grouped.zoneGroups.map(({ zone, riders: zoneRiders }) => (

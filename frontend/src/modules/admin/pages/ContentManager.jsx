@@ -3,6 +3,8 @@ import { useSearchParams } from 'react-router-dom';
 import Card from '@shared/components/ui/Card';
 import Badge from '@shared/components/ui/Badge';
 import Modal from '@shared/components/ui/Modal';
+import PageHeader from '@shared/components/ui/PageHeader';
+import EmptyState from '@shared/components/ui/EmptyState';
 import { useToast } from '@shared/components/ui/Toast';
 import {
     HiOutlinePlus,
@@ -16,6 +18,7 @@ import {
     HiOutlineSparkles,
     HiOutlineXMark
 } from 'react-icons/hi2';
+import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { adminApi } from '../services/adminApi';
@@ -365,91 +368,88 @@ const ContentManager = () => {
     };
 
     return (
-        <div className="ds-section-spacing animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
-            {/* Header */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                <div>
-                    <h1 className="ds-h1 flex items-center gap-3">
-                        Experience Studio
-                        <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                    </h1>
-                    <p className="ds-description">Add and arrange the banners, categories, and products that show in the app.</p>
-                </div>
-                <div className="flex items-center gap-3">
+        <div className="ds-section-spacing">
+            <PageHeader
+                title="Experience Studio"
+                description="Add and arrange the banners, categories, and products that show in the app."
+                badge={<div className="h-2 w-2 rounded-full bg-primary animate-pulse" />}
+                actions={
                     <button
                         onClick={openCreateModal}
-                        className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:scale-105 transition-all"
+                        className="ds-btn ds-btn-md bg-primary text-primary-foreground shadow-lg shadow-primary/20"
                     >
-                        <HiOutlinePlus className="h-5 w-5" />
+                        <HiOutlinePlus className="ds-icon-sm" />
                         ADD COMPONENT
                     </button>
-                </div>
-            </div>
+                }
+            />
 
-            <p className="mt-3 text-xs text-slate-500 max-w-2xl">
+            <p className="text-xs text-slate-500 max-w-2xl">
                 <strong>Top banners and page categories</strong> are set in &quot;Hero & categories per page&quot; in the sidebar. Use this page to manage the main content below them, like banners, categories, and products.
             </p>
 
             {/* Scope selectors */}
-            <div className="flex flex-wrap gap-4 items-center mt-6">
-                <div className="flex p-1.5 bg-slate-100 rounded-xl">
-                    {[
-                        { id: 'home', label: 'Home Page' },
-                        { id: 'header', label: 'Header Category Pages' },
-                    ].map((opt) => (
-                        <button
-                            key={opt.id}
-                            onClick={() => setPageType(opt.id)}
-                            className={cn(
-                                "px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all",
-                                pageType === opt.id ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600"
-                            )}
-                        >
-                            {opt.label}
-                        </button>
-                    ))}
-                </div>
-                {pageType === 'header' && (
-                    <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Header Category</span>
-                        <select
-                            value={selectedHeaderId}
-                            onChange={(e) => setSelectedHeaderId(e.target.value)}
-                            className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold"
-                        >
-                            {headerCategories.map((h) => (
-                                <option key={h._id} value={h._id}>{h.name}</option>
-                            ))}
-                        </select>
+            <Card className="ds-card-compact">
+                <div className="flex flex-wrap gap-4 items-center">
+                    <div className="flex p-1.5 bg-slate-100 rounded-xl">
+                        {[
+                            { id: 'home', label: 'Home Page' },
+                            { id: 'header', label: 'Header Category Pages' },
+                        ].map((opt) => (
+                            <button
+                                key={opt.id}
+                                onClick={() => setPageType(opt.id)}
+                                className={cn(
+                                    "px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all",
+                                    pageType === opt.id ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600"
+                                )}
+                            >
+                                {opt.label}
+                            </button>
+                        ))}
                     </div>
-                )}
-            </div>
+                    {pageType === 'header' && (
+                        <div className="flex items-center gap-2">
+                            <span className="ds-caption text-slate-400">Header Category</span>
+                            <select
+                                value={selectedHeaderId}
+                                onChange={(e) => setSelectedHeaderId(e.target.value)}
+                                className="ds-select"
+                            >
+                                {headerCategories.map((h) => (
+                                    <option key={h._id} value={h._id}>{h.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+                </div>
+            </Card>
 
             {/* Canvas Area */}
             <div className="grid grid-cols-1 gap-4">
                 {/* Visual Editor */}
                 <div className="space-y-6">
                     {/* Section list */}
-                    <div className="space-y-4">
+                    <div className="space-y-4 relative">
                         <div className="flex items-center justify-between px-2">
                             <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em]">
                                 Configured Sections ({sections.length})
                             </h3>
                             {isLoading && (
-                                <span className="text-[10px] font-bold text-slate-400">Loading...</span>
+                                <div className="flex items-center gap-2 text-slate-400">
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    <span className="ds-caption">Loading...</span>
+                                </div>
                             )}
                         </div>
 
                         {sections.length === 0 && !isLoading && (
-                            <div className="text-center py-16 bg-slate-50/50 rounded-2xl border-2 border-dashed border-slate-100">
-                                <HiOutlineSparkles className="h-10 w-10 text-slate-200 mx-auto mb-3" />
-                                <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">
-                                    No sections configured yet
-                                </p>
-                                <p className="text-xs text-slate-400 mt-1">
-                                    Click &quot;Add Component&quot; to start designing this page.
-                                </p>
-                            </div>
+                            <EmptyState
+                                icon={HiOutlineSparkles}
+                                title="No sections configured yet"
+                                description={'Click "Add Component" to start designing this page.'}
+                                className="bg-slate-50/50 rounded-2xl border-2 border-dashed border-slate-100"
+                            />
                         )}
 
                         <div className="space-y-4">
@@ -470,8 +470,7 @@ const ContentManager = () => {
                                                         #{idx + 1} • {displayMeta?.label || section.displayType}
                                                     </span>
                                                     <Badge
-                                                        variant={section.status === 'active' ? 'success' : 'secondary'}
-                                                        className="text-[8px] font-black uppercase"
+                                                        variant={section.status === 'active' ? 'success' : 'gray'}
                                                     >
                                                         {section.status}
                                                     </Badge>
@@ -512,15 +511,15 @@ const ContentManager = () => {
                                                 <div className="flex items-center gap-2">
                                                     <button
                                                         onClick={() => openEditModal(section)}
-                                                        className="p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-xl transition-all"
+                                                        className="p-2 bg-primary/10 text-primary rounded-lg hover:bg-primary hover:text-white transition-all"
                                                     >
-                                                        <HiOutlinePencilSquare className="h-5 w-5" />
+                                                        <HiOutlinePencilSquare className="ds-icon-sm" />
                                                     </button>
                                                     <button
                                                         onClick={() => handleDeleteSection(section._id)}
-                                                        className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
+                                                        className="p-2 bg-gray-50 text-gray-400 rounded-lg hover:bg-rose-500 hover:text-white transition-all"
                                                     >
-                                                        <HiOutlineTrash className="h-5 w-5" />
+                                                        <HiOutlineTrash className="ds-icon-sm" />
                                                     </button>
                                                 </div>
                                             </div>

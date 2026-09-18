@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Card from '@shared/components/ui/Card';
 import Badge from '@shared/components/ui/Badge';
+import PageHeader from '@shared/components/ui/PageHeader';
 import {
     Plus,
     ChevronRight,
@@ -366,28 +367,27 @@ const CategoryManagement = () => {
 
     return (
         <div className="ds-section-spacing animate-in fade-in slide-in-from-bottom-2 duration-700 pb-16">
-            {/* Page Header */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                <div>
-                    <h1 className="ds-h1 flex items-center gap-2">
-                        Manage Categories
-                        <Badge variant="primary" className="text-[9px] px-1.5 py-0 font-bold tracking-wider uppercase">Admin</Badge>
-                    </h1>
-                    <p className="ds-description mt-0.5">Organize your store by grouping items together into folders.</p>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                    <button className="p-2.5 bg-white ring-1 ring-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 transition-all shadow-sm">
-                        <Image className="h-5 w-5" />
-                    </button>
-                    <button
-                        onClick={() => openModal('header')}
-                        className="bg-slate-900 text-white px-6 py-2.5 rounded-xl text-xs font-bold shadow-xl hover:bg-slate-800 transition-all hover:-translate-y-0.5 active:translate-y-0 flex items-center space-x-2"
-                    >
-                        <Plus className="h-4 w-4" />
-                        <span>CREATE NEW HEADER</span>
-                    </button>
-                </div>
-            </div>
+            <PageHeader
+                title="Manage Categories"
+                description="Organize your store by grouping items together into folders."
+                badge={
+                    <Badge variant="primary" className="text-[9px] px-1.5 py-0 font-bold tracking-wider uppercase">Admin</Badge>
+                }
+                actions={
+                    <>
+                        <button className="ds-btn ds-btn-md bg-white ring-1 ring-gray-200 text-gray-700 hover:bg-gray-50">
+                            <Image className="ds-icon-sm" />
+                        </button>
+                        <button
+                            onClick={() => openModal('header')}
+                            className="ds-btn ds-btn-md bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                        >
+                            <Plus className="ds-icon-sm" />
+                            CREATE NEW HEADER
+                        </button>
+                    </>
+                }
+            />
 
             {/* Toolbox & View Switcher */}
             <div className="space-y-4">
@@ -413,16 +413,16 @@ const CategoryManagement = () => {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-                    <Card className="lg:col-span-3 border-none shadow-sm ring-1 ring-slate-100 p-3 bg-white/60 backdrop-blur-xl">
+                    <Card className="lg:col-span-3 ds-card-compact">
                         <div className="flex flex-col md:flex-row gap-3 items-center">
                             <div className="relative flex-1 group w-full">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-all" />
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 ds-icon-sm text-gray-400 group-focus-within:text-primary transition-colors" />
                                 <input
                                     type="text"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     placeholder={activeView === 'tree' ? "Search catalog..." : "Search subcategories..."}
-                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-100/50 border-none rounded-xl text-xs font-semibold text-slate-700 placeholder:text-slate-400 focus:ring-2 focus:ring-primary/5 transition-all outline-none"
+                                    className="ds-input pl-9"
                                 />
                                 {searchTerm && (
                                     <button onClick={() => setSearchTerm('')} className="absolute right-4 top-1/2 -translate-y-1/2 p-0.5 hover:bg-slate-200 rounded-full transition-colors">
@@ -520,21 +520,32 @@ const CategoryManagement = () => {
                                 </button>
                             </div>
                             <div className="overflow-x-auto">
-                                <table className="w-full text-left">
-                                    <thead>
-                                        <tr className="border-b border-slate-50">
-                                            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Subcategory</th>
-                                            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Parent Category</th>
-                                            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                                            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
+                                <table className="ds-table">
+                                    <thead className="ds-table-header">
+                                        <tr>
+                                            <th className="ds-table-header-cell">Subcategory</th>
+                                            <th className="ds-table-header-cell">Parent Category</th>
+                                            <th className="ds-table-header-cell">Status</th>
+                                            <th className="ds-table-header-cell text-right">Actions</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-slate-50">
-                                        {filteredSubcategories.map((sub) => {
+                                    <tbody>
+                                        {!isLoading && filteredSubcategories.length === 0 ? (
+                                            <tr>
+                                                <td colSpan="4" className="px-6 py-20 text-center">
+                                                    <div className="flex flex-col items-center gap-3">
+                                                        <div className="p-4 bg-gray-50 rounded-full">
+                                                            <Tag className="h-8 w-8 text-gray-300" />
+                                                        </div>
+                                                        <p className="ds-h4 text-gray-400">No subcategories found</p>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ) : filteredSubcategories.map((sub) => {
                                             const id = sub._id || sub.id;
                                             return (
-                                                <tr key={id} className="hover:bg-slate-50/50 transition-colors group">
-                                                    <td className="px-6 py-4">
+                                                <tr key={id} className="ds-table-row hover:bg-slate-50/70 transition-colors group">
+                                                    <td className="ds-table-cell py-4 px-6">
                                                         <div className="flex items-center gap-3">
                                                             {sub.image ? (
                                                                 <div className="h-10 w-10 bg-white rounded-xl shadow-sm ring-1 ring-slate-100 overflow-hidden">
@@ -551,18 +562,18 @@ const CategoryManagement = () => {
                                                             </div>
                                                         </div>
                                                     </td>
-                                                    <td className="px-6 py-4">
-                                                        <Badge variant="outline" className="text-[9px] font-bold bg-brand-50/50 text-brand-600 border-brand-100">
+                                                    <td className="ds-table-cell py-4 px-6">
+                                                        <Badge variant="gray" className="text-[9px] font-bold bg-brand-50/50 text-brand-600 border-brand-100">
                                                             {sub.parentCategory || 'Unknown'}
                                                         </Badge>
                                                     </td>
-                                                    <td className="px-6 py-4">
-                                                        <Badge variant={sub.status === 'active' ? 'emerald' : 'gray'} className="text-[9px] font-black uppercase tracking-widest">
+                                                    <td className="ds-table-cell py-4 px-6">
+                                                        <Badge variant={sub.status === 'active' ? 'success' : 'gray'} className="text-[9px] font-black uppercase tracking-widest">
                                                             {sub.status}
                                                         </Badge>
                                                     </td>
-                                                    <td className="px-6 py-4">
-                                                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <td className="ds-table-cell py-4 px-6 text-right">
+                                                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                                             <button
                                                                 onClick={() => openModal('subcategory', sub.parentId, sub)}
                                                                 className="p-1.5 hover:bg-white text-slate-400 hover:text-brand-600 rounded-lg transition-all shadow-sm ring-1 ring-slate-100 bg-white/50"

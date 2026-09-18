@@ -1,6 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import Card from '@shared/components/ui/Card';
 import Badge from '@shared/components/ui/Badge';
+import PageHeader from '@shared/components/ui/PageHeader';
+import StatCard from '@shared/components/ui/StatCard';
+import EmptyState from '@shared/components/ui/EmptyState';
 import {
     Users,
     UserCheck,
@@ -187,45 +190,39 @@ const stats = [
 return (
     <div className="ds-section-spacing animate-in fade-in duration-700">
         {/* Header Section */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            <div>
-                <h1 className="ds-h1 flex items-center gap-3">
-                    Delivery Boys
-                    <div className="h-2 w-2 rounded-full bg-brand-500 animate-pulse" />
-                </h1>
-                <p className="ds-description mt-1">Manage all your active delivery partners here.</p>
-            </div>
-            <button
-                onClick={() => setIsOnboardModalOpen(true)}
-                className="flex items-center space-x-2 bg-slate-900 text-white px-6 py-3.5 rounded-2xl text-xs font-bold hover:bg-slate-800 transition-all shadow-xl hover:shadow-slate-200 active:scale-95 group"
-            >
-                <Plus className="h-4 w-4 group-hover:rotate-90 transition-transform" />
-                <span>ADD NEW RIDER</span>
-            </button>
-        </div>
+        <PageHeader
+            title="Delivery Boys"
+            description="Manage all your active delivery partners here."
+            badge={<div className="h-2 w-2 rounded-full bg-brand-500 animate-pulse" />}
+            actions={
+                <button
+                    onClick={() => setIsOnboardModalOpen(true)}
+                    className="ds-btn ds-btn-md bg-slate-900 text-white hover:bg-slate-800 shadow-xl hover:shadow-slate-200 group"
+                >
+                    <Plus className="h-4 w-4 group-hover:rotate-90 transition-transform" />
+                    <span>ADD NEW RIDER</span>
+                </button>
+            }
+        />
 
         {/* Quick Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="ds-grid-cards-4">
             {stats.map((stat, idx) => (
-                <Card key={idx} className="p-6 border-none shadow-xl ring-1 ring-slate-100 hover:ring-primary/20 transition-all group overflow-hidden relative">
-                    <div className="flex justify-between items-start relative z-10">
-                        <div>
-                            <p className="ds-label mb-2">{stat.label}</p>
-                            <h3 className="ds-stat-medium">{stat.value}</h3>
-                        </div>
-                        <div className={cn(
-                            "p-3 rounded-2xl transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 shadow-lg",
-                            stat.color === 'indigo' ? "bg-brand-500/10 text-brand-600 shadow-brand-100" :
-                                stat.color === 'emerald' ? "bg-brand-500/10 text-brand-600 shadow-brand-100" :
-                                    stat.color === 'amber' ? "bg-amber-500/10 text-amber-600 shadow-amber-100" :
-                                        "bg-rose-500/10 text-rose-600 shadow-rose-100"
-                        )}>
-                            <stat.icon className="h-5 w-5" strokeWidth={2.5} />
-                        </div>
-                    </div>
-                    {/* Decorative background element */}
-                    <div className="absolute -bottom-6 -right-6 h-24 w-24 bg-slate-50 rounded-full group-hover:scale-150 transition-transform duration-700" />
-                </Card>
+                <StatCard
+                    key={idx}
+                    label={stat.label}
+                    value={stat.value}
+                    icon={stat.icon}
+                    description={stat.description}
+                    color={
+                        stat.color === 'amber' ? 'text-amber-600' :
+                            stat.color === 'rose' ? 'text-rose-600' : 'text-brand-600'
+                    }
+                    bg={
+                        stat.color === 'amber' ? 'bg-amber-50' :
+                            stat.color === 'rose' ? 'bg-rose-50' : 'bg-brand-50'
+                    }
+                />
             ))}
         </div>
 
@@ -278,9 +275,12 @@ return (
             )}
             <AnimatePresence mode='popLayout'>
                 {!isLoading && filteredRiders.length === 0 ?
-                    <div className="col-span-full py-20 text-center bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
-                        <User className="h-10 w-10 text-slate-300 mx-auto mb-4" />
-                        <p className="text-sm font-bold text-slate-500">No delivery partners found matching your filters.</p>
+                    <div className="col-span-full">
+                        <EmptyState
+                            icon={User}
+                            title="No delivery partners found"
+                            description="No delivery partners match your current search or filters."
+                        />
                     </div>
                     :
                     filteredRiders.map((rider) => (

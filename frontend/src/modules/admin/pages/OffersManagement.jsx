@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Card from '@shared/components/ui/Card';
 import Badge from '@shared/components/ui/Badge';
 import Modal from '@shared/components/ui/Modal';
+import PageHeader from '@shared/components/ui/PageHeader';
+import StatCard from '@shared/components/ui/StatCard';
 import { useToast } from '@shared/components/ui/Toast';
 import {
     HiOutlinePlus,
@@ -13,6 +15,7 @@ import {
     HiOutlineArrowUpCircle,
     HiOutlineArrowDownCircle,
 } from 'react-icons/hi2';
+import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { adminApi } from '../services/adminApi';
 
@@ -215,37 +218,73 @@ const OffersManagement = () => {
         return map;
     }, [products]);
 
+    const stats = useMemo(() => {
+        const active = offers.filter(o => o.status === 'active').length;
+        return {
+            total: offers.length,
+            active,
+            inactive: offers.length - active,
+        };
+    }, [offers]);
+
     return (
-        <div className="ds-section-spacing animate-in fade-in slide-in-from-bottom-4 duration-700 pb-12">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 px-1 mb-6">
-                <div>
-                    <h1 className="ds-h1 flex items-center gap-3">
-                        Offers Manager
-                        <Badge variant="primary" className="text-[10px] font-black uppercase tracking-widest">
-                            Beta
-                        </Badge>
-                    </h1>
-                    <p className="ds-description mt-1">
-                        Create offer cards, attach products & categories, and control the order they appear.
-                    </p>
-                </div>
-                <button
-                    onClick={openCreateModal}
-                    className="flex items-center gap-2 px-6 py-3.5 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] active:scale-95 transition-all"
-                >
-                    <HiOutlinePlus className="h-5 w-5" />
-                    NEW OFFER
-                </button>
+        <div className="ds-section-spacing">
+            <PageHeader
+                title="Offers Manager"
+                description="Create offer cards, attach products & categories, and control the order they appear."
+                badge={
+                    <Badge variant="primary" className="text-[10px] font-black uppercase tracking-widest">
+                        Beta
+                    </Badge>
+                }
+                actions={
+                    <button
+                        onClick={openCreateModal}
+                        className="ds-btn ds-btn-md bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                    >
+                        <HiOutlinePlus className="ds-icon-sm" />
+                        NEW OFFER
+                    </button>
+                }
+            />
+
+            <div className="ds-grid-cards-3">
+                <StatCard
+                    label="Total Offers"
+                    value={stats.total}
+                    icon={HiOutlineTag}
+                    color="text-brand-600"
+                    bg="bg-brand-50"
+                />
+                <StatCard
+                    label="Active"
+                    value={stats.active}
+                    icon={HiOutlineSparkles}
+                    color="text-emerald-600"
+                    bg="bg-emerald-50"
+                />
+                <StatCard
+                    label="Inactive"
+                    value={stats.inactive}
+                    icon={HiOutlineClock}
+                    color="text-slate-500"
+                    bg="bg-slate-100"
+                />
             </div>
 
-            <Card className="border-none shadow-xl ring-1 ring-slate-100 bg-white rounded-xl overflow-hidden">
+            <Card className="overflow-hidden relative min-h-[160px]">
+                {isLoading && (
+                    <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] z-10 flex items-center justify-center">
+                        <div className="flex flex-col items-center gap-2">
+                            <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                            <p className="ds-caption text-gray-500 font-medium">Loading offers...</p>
+                        </div>
+                    </div>
+                )}
                 <div className="p-4 border-b border-slate-50 flex items-center justify-between">
                     <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                         Active Offers ({offers.length})
                     </h2>
-                    {isLoading && (
-                        <span className="text-[10px] font-bold text-slate-400">Loading...</span>
-                    )}
                 </div>
 
                 <div className="divide-y divide-slate-50">
@@ -334,7 +373,7 @@ const OffersManagement = () => {
                                                 Order: {offer.order ?? idx}
                                             </span>
                                             <Badge
-                                                variant={offer.status === 'active' ? 'success' : 'secondary'}
+                                                variant={offer.status === 'active' ? 'success' : 'gray'}
                                                 className="text-[9px] font-black uppercase"
                                             >
                                                 {offer.status}
@@ -386,14 +425,14 @@ const OffersManagement = () => {
                     })}
 
                     {offers.length === 0 && !isLoading && (
-                        <div className="p-16 text-center">
-                            <div className="h-16 w-16 rounded-2xl bg-slate-50 flex items-center justify-center mx-auto mb-4">
-                                <HiOutlineSparkles className="h-8 w-8 text-slate-200" />
+                        <div className="px-6 py-20 text-center">
+                            <div className="flex flex-col items-center gap-3">
+                                <div className="p-4 bg-gray-50 rounded-full">
+                                    <HiOutlineSparkles className="h-8 w-8 text-gray-300" />
+                                </div>
+                                <p className="ds-h4 text-gray-400">No offers configured yet</p>
+                                <p className="ds-caption text-gray-400">Click &quot;New Offer&quot; to create your first offer card.</p>
                             </div>
-                            <h3 className="text-lg font-black text-slate-900">No offers configured yet</h3>
-                            <p className="text-sm font-bold text-slate-400 mt-2">
-                                Click &quot;New Offer&quot; to create your first offer card.
-                            </p>
                         </div>
                     )}
                 </div>
@@ -606,13 +645,13 @@ const OffersManagement = () => {
                         <button
                             type="button"
                             onClick={() => setIsModalOpen(false)}
-                            className="flex-1 py-4 bg-slate-100 text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest"
+                            className="ds-btn ds-btn-md flex-1 bg-slate-100 text-slate-500 hover:bg-slate-200"
                         >
                             CANCEL
                         </button>
                         <button
                             type="submit"
-                            className="flex-1 py-4 bg-primary text-primary-foreground rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-primary/20"
+                            className="ds-btn ds-btn-md flex-1 bg-primary text-primary-foreground shadow-xl shadow-primary/20"
                         >
                             {editingOffer ? 'SAVE CHANGES' : 'CREATE OFFER'}
                         </button>

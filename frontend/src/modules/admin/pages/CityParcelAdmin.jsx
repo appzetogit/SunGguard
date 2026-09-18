@@ -12,6 +12,9 @@ import { adminPorterApi } from "../services/api/porterApi";
 import InvoiceDownloadButton from "@shared/components/InvoiceDownloadButton";
 import ParcelDetailDrawer from "./cityparcel/ParcelDetailDrawer";
 import { unwrap, unwrapList } from "@core/api/unwrap";
+import PageHeader from "@shared/components/ui/PageHeader";
+import StatCard from "@shared/components/ui/StatCard";
+import EmptyState from "@shared/components/ui/EmptyState";
 
 /**
  * City Parcel operations console.
@@ -369,13 +372,11 @@ const CityParcelAdmin = () => {
 
   return (
     <div className="p-6">
-      <header className="mb-5">
-        <h1 className="text-2xl font-bold text-slate-900">City Parcel</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Local point-to-point deliveries. The outstation flow is managed under
-          Parcel Delivery.
-        </p>
-      </header>
+      <PageHeader
+        className="mb-5"
+        title="City Parcel"
+        description="Local point-to-point deliveries. The outstation flow is managed under Parcel Delivery."
+      />
 
       <div className="mb-5 flex flex-wrap items-center gap-2">
         {TABS.map((t) => (
@@ -417,7 +418,7 @@ const CityParcelAdmin = () => {
           <p className="text-sm text-slate-500">Rate card unavailable.</p>
         ) : (
           <div className="max-w-3xl space-y-6">
-            <section className="rounded-xl border border-slate-200 bg-white p-5">
+            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <h2 className="mb-1 font-semibold text-slate-900">Fares</h2>
               <p className="mb-4 text-[12px] text-slate-500">
                 Base fare is charged and the rider takes a share of it — it is what
@@ -433,7 +434,7 @@ const CityParcelAdmin = () => {
               </div>
             </section>
 
-            <section className="rounded-xl border border-slate-200 bg-white p-5">
+            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <h2 className="mb-4 font-semibold text-slate-900">Rider share</h2>
               <div className="grid gap-4 sm:grid-cols-2">
                 {num("riderBaseFareSharePercent", "Base fare share (%)")}
@@ -451,7 +452,7 @@ const CityParcelAdmin = () => {
               </div>
             </section>
 
-            <section className="rounded-xl border border-slate-200 bg-white p-5">
+            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <h2 className="mb-4 font-semibold text-slate-900">Verification</h2>
               <div className="grid gap-4 sm:grid-cols-3">
                 {num(
@@ -509,9 +510,13 @@ const CityParcelAdmin = () => {
       ) : tab === "attention" ? (
         <div className="space-y-6">
           {attentionCount === 0 ? (
-            <p className="rounded-xl border border-dashed border-slate-200 py-16 text-center text-sm text-slate-500">
-              Nothing needs you right now.
-            </p>
+            <div className="rounded-2xl border border-dashed border-slate-200 bg-white">
+              <EmptyState
+                icon={Check}
+                title="Nothing needs you right now."
+                description="Withheld payouts, unassigned parcels, and stuck returns will show up here."
+              />
+            </div>
           ) : null}
 
           {attention.withheld.length > 0 ? (
@@ -669,17 +674,14 @@ const CityParcelAdmin = () => {
                 { label: "Rider pay", value: money(stats.riderPay), icon: UserPlus },
                 { label: "Margin", value: money(stats.margin), icon: TrendingUp },
               ].map((card) => (
-                <div key={card.label} className="rounded-xl border border-slate-200 bg-white p-4">
-                  <div className="flex items-center justify-between">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                      {card.label}
-                    </p>
-                    <card.icon className="h-3.5 w-3.5 text-slate-400" />
-                  </div>
-                  <p className="mt-1 text-[22px] font-bold tabular-nums text-slate-900">
-                    {card.value}
-                  </p>
-                </div>
+                <StatCard
+                  key={card.label}
+                  label={card.label}
+                  value={card.value}
+                  icon={card.icon}
+                  color="text-slate-600"
+                  bg="bg-slate-100 border border-slate-200"
+                />
               ))}
             </div>
           ) : null}
@@ -759,8 +761,8 @@ const CityParcelAdmin = () => {
             <tbody>
               {parcels.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-slate-500">
-                    No city parcels yet.
+                  <td colSpan={7} className="p-0">
+                    <EmptyState icon={Package} title="No city parcels yet." />
                   </td>
                 </tr>
               ) : (

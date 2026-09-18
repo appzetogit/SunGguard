@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import Card from "@shared/components/ui/Card";
 import Badge from "@shared/components/ui/Badge";
 import Modal from "@shared/components/ui/Modal";
+import PageHeader from "@shared/components/ui/PageHeader";
+import EmptyState from "@shared/components/ui/EmptyState";
 import { useToast } from "@shared/components/ui/Toast";
 import {
   HiOutlinePlus,
@@ -11,6 +13,7 @@ import {
   HiOutlineArrowUpCircle,
   HiOutlineArrowDownCircle,
 } from "react-icons/hi2";
+import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { adminApi } from "../services/adminApi";
 import {
@@ -242,41 +245,39 @@ const OfferSectionsManagement = () => {
   };
 
   return (
-    <div className="ds-section-spacing animate-in fade-in slide-in-from-bottom-4 duration-700 pb-12">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 px-1 mb-6">
-        <div>
-          <h1 className="ds-h1 flex items-center gap-3">
-            Offer Sections
-            <Badge
-              variant="primary"
-              className="text-[10px] font-black uppercase tracking-widest"
-            >
-              Category → Products
-            </Badge>
-          </h1>
-          <p className="ds-description mt-1">
-            Categories → Sellers → Products. Pick multiple categories and sellers, then choose products. Set banner colour and side image per section.
-          </p>
-        </div>
-        <button
-          onClick={openCreateModal}
-          className="flex items-center gap-2 px-6 py-3.5 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] active:scale-95 transition-all"
-        >
-          <HiOutlinePlus className="h-5 w-5" />
-          New Section
-        </button>
-      </div>
+    <div className="ds-section-spacing">
+      <PageHeader
+        title="Offer Sections"
+        description="Categories → Sellers → Products. Pick multiple categories and sellers, then choose products. Set banner colour and side image per section."
+        badge={
+          <Badge variant="primary" className="uppercase tracking-widest">
+            Category → Products
+          </Badge>
+        }
+        actions={
+          <button
+            onClick={openCreateModal}
+            className="ds-btn ds-btn-md bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+          >
+            <HiOutlinePlus className="ds-icon-sm" />
+            New Section
+          </button>
+        }
+      />
 
-      <Card className="border-none shadow-xl ring-1 ring-slate-100 bg-white rounded-xl overflow-hidden">
-        <div className="p-4 border-b border-slate-50 flex items-center justify-between">
-          <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+      <Card className="overflow-hidden relative min-h-[240px]" contentClassName="p-0">
+        {isLoading && (
+          <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] z-10 flex items-center justify-center">
+            <div className="flex flex-col items-center gap-2">
+              <Loader2 className="h-8 w-8 text-primary animate-spin" />
+              <p className="ds-caption text-gray-500 font-medium">Loading sections...</p>
+            </div>
+          </div>
+        )}
+        <div className="p-4 border-b border-slate-100">
+          <h2 className="ds-caption text-slate-500">
             Sections ({sections.length})
           </h2>
-          {isLoading && (
-            <span className="text-[10px] font-bold text-slate-400">
-              Loading...
-            </span>
-          )}
         </div>
         <div className="divide-y divide-slate-50">
           {sections.map((section, idx) => {
@@ -308,10 +309,15 @@ const OfferSectionsManagement = () => {
                     }}
                   />
                   <div>
-                    <p className="text-sm font-black text-slate-900">
-                      #{idx + 1} {section.title}
-                    </p>
-                    <p className="text-[10px] font-bold text-slate-500">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold text-slate-900">
+                        #{idx + 1} {section.title}
+                      </p>
+                      <Badge variant={section.status === "active" ? "success" : "gray"}>
+                        {section.status || "active"}
+                      </Badge>
+                    </div>
+                    <p className="ds-caption text-slate-500 mt-0.5">
                       {catNames} · Sellers: {sellerNames} · {productCount} product(s)
                     </p>
                   </div>
@@ -324,7 +330,7 @@ const OfferSectionsManagement = () => {
                     }}
                     title={section.backgroundColor}
                   />
-                  <span className="text-[10px] font-bold text-slate-500">
+                  <span className="ds-caption text-slate-500">
                     {section.sideImageKey || "—"}
                   </span>
                 </div>
@@ -334,50 +340,46 @@ const OfferSectionsManagement = () => {
                       disabled={idx === 0}
                       onClick={() => handleReorder("up", section)}
                       className={cn(
-                        "p-1.5 rounded-xl border text-slate-400 hover:text-slate-700 hover:bg-slate-50",
+                        "p-1.5 rounded-xl border text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-all",
                         idx === 0 && "opacity-30 cursor-not-allowed"
                       )}
                     >
-                      <HiOutlineArrowUpCircle className="h-4 w-4" />
+                      <HiOutlineArrowUpCircle className="ds-icon-sm" />
                     </button>
                     <button
                       disabled={idx === sections.length - 1}
                       onClick={() => handleReorder("down", section)}
                       className={cn(
-                        "p-1.5 rounded-xl border text-slate-400 hover:text-slate-700 hover:bg-slate-50",
+                        "p-1.5 rounded-xl border text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-all",
                         idx === sections.length - 1 &&
                         "opacity-30 cursor-not-allowed"
                       )}
                     >
-                      <HiOutlineArrowDownCircle className="h-4 w-4" />
+                      <HiOutlineArrowDownCircle className="ds-icon-sm" />
                     </button>
                   </div>
                   <button
                     onClick={() => openEditModal(section)}
-                    className="p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-xl"
+                    className="p-2 bg-primary/10 text-primary rounded-lg hover:bg-primary hover:text-white transition-all"
                   >
-                    <HiOutlinePencilSquare className="h-5 w-5" />
+                    <HiOutlinePencilSquare className="ds-icon-sm" />
                   </button>
                   <button
                     onClick={() => handleDelete(section._id)}
-                    className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl"
+                    className="p-2 bg-gray-50 text-gray-400 rounded-lg hover:bg-rose-500 hover:text-white transition-all"
                   >
-                    <HiOutlineTrash className="h-5 w-5" />
+                    <HiOutlineTrash className="ds-icon-sm" />
                   </button>
                 </div>
               </div>
             );
           })}
           {sections.length === 0 && !isLoading && (
-            <div className="p-16 text-center">
-              <HiOutlinePhoto className="h-12 w-12 text-slate-200 mx-auto mb-3" />
-              <h3 className="text-lg font-black text-slate-900">
-                No offer sections yet
-              </h3>
-              <p className="text-sm font-bold text-slate-400 mt-2">
-                Click &quot;New Section&quot;: pick categories → sellers → products, then colour & side image.
-              </p>
-            </div>
+            <EmptyState
+              icon={HiOutlinePhoto}
+              title="No offer sections yet"
+              description={'Click "New Section": pick categories → sellers → products, then colour & side image.'}
+            />
           )}
         </div>
       </Card>
@@ -459,7 +461,7 @@ const OfferSectionsManagement = () => {
                     className={cn(
                       "px-2.5 py-1.5 rounded-full text-[11px] font-bold border transition-all",
                       selected
-                        ? "bg-black  text-primary-foreground border-brand-600"
+                        ? "bg-primary text-primary-foreground border-primary"
                         : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
                     )}
                   >

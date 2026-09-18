@@ -10,9 +10,12 @@ import { normalizeGstConfig } from "../../utils/gst.js";
  *
  * Two numbers that are commonly confused and must not be:
  *
- *   CHARGED   — tax on every booking that was made in the window, whether or
- *               not the money has arrived. This is what the customer was
- *               billed.
+ *   CHARGED   — tax on every booking that was actually billed, whether or not
+ *               the money has arrived yet. COD is billed at booking, since the
+ *               rider will collect regardless. An online payment isn't billed
+ *               until the gateway confirms it PAID — a checkout the customer
+ *               opened but never paid for (and never cancelled either) has no
+ *               real tax liability, so it's excluded from this figure.
  *   COLLECTED — tax on bookings whose money is genuinely with the platform:
  *               an online payment that captured, or COD cash that a rider has
  *               deposited AND an admin has approved.
@@ -36,6 +39,24 @@ const SETTLED_MATCH = {
     // COD that reached the admin — the rider deposited and it was approved.
     { paymentMethod: "COD", "codCollection.status": "REMITTED_TO_ADMIN" },
     { paymentMethod: "COD", "codSettlement.status": "REMITTED_TO_ADMIN" },
+  ],
+};
+
+/**
+ * Bookings that were actually billed to the customer.
+ *
+ * COD is billed the moment it's booked — the rider will collect cash on
+ * delivery regardless of whether the gateway saw a rupee. An online payment
+ * (UPI/card/wallet) is different: until the gateway confirms it PAID, no
+ * money has actually been asked of the customer. A booking where the
+ * customer opened checkout, never completed the payment, and never
+ * cancelled either has no real GST liability — counting it as "charged"
+ * invents tax on a sale that never happened.
+ */
+const BILLED_MATCH = {
+  $or: [
+    { paymentMethod: "COD" },
+    { paymentMethod: { $ne: "COD" }, paymentStatus: "PAID" },
   ],
 };
 
@@ -138,7 +159,7 @@ function dateWindow({ from, to }) {
 async function summariseCollection(Model, window) {
   const [chargedRows, collectedRows] = await Promise.all([
     Model.aggregate([
-      { $match: { status: { $ne: "CANCELLED" }, ...window } },
+      { $match: { status: { $ne: "CANCELLED" }, ...window, ...BILLED_MATCH } },
       { $group: { _id: null, ...TAX_SUMS } },
     ]),
     Model.aggregate([
@@ -274,7 +295,7 @@ export async function getPorterGstLedger({
   const match = {
     status: { $ne: "CANCELLED" },
     ...window,
-    ...(settledOnly ? SETTLED_MATCH : {}),
+    ...(settledOnly ? SETTLED_MATCH : BILLED_MATCH),
   };
 
   const skip = (Math.max(1, page) - 1) * limit;

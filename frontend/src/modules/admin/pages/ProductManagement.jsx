@@ -1,6 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Card from '@shared/components/ui/Card';
 import Badge from '@shared/components/ui/Badge';
+import PageHeader from '@shared/components/ui/PageHeader';
+import StatCard from '@shared/components/ui/StatCard';
 import { adminApi } from '../services/adminApi';
 import { toast } from 'sonner';
 import {
@@ -391,40 +393,23 @@ const ProductManagement = () => {
 
     return (
         <div className="ds-section-spacing animate-in fade-in slide-in-from-bottom-2 duration-700 pb-16">
-            {/* Page Header */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                <div>
-                    <h1 className="ds-h1 flex items-center gap-2">
-                        Product List
-                        <Badge variant="primary" className="text-[9px] px-1.5 py-0 font-bold tracking-wider uppercase">Live</Badge>
-                    </h1>
-                    <p className="ds-description mt-0.5">Track your items, prices, and how many are left in stock.</p>
-                </div>
-            </div>
+            <PageHeader
+                title="Product List"
+                description="Track your items, prices, and how many are left in stock."
+                badge={
+                    <Badge variant="primary" className="text-[9px] px-1.5 py-0 font-bold tracking-wider uppercase">Live</Badge>
+                }
+            />
 
             {/* Quick Stats */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {[
-                    { label: 'All Items', val: stats.total, icon: HiOutlineCube, color: 'text-brand-600', bg: 'bg-brand-50' },
-                    { label: 'Active Items', val: stats.active, icon: HiOutlineCheckCircle, color: 'text-brand-600', bg: 'bg-brand-50' },
-                    { label: 'Low Stock', val: stats.lowStock, icon: HiOutlineExclamationCircle, color: 'text-amber-600', bg: 'bg-amber-50' },
-                    { label: 'Out of Stock', val: stats.outOfStock, icon: HiOutlineArchiveBox, color: 'text-rose-600', bg: 'bg-rose-50' }
-                ].map((stat, i) => (
-                    <Card key={i} className="border-none shadow-sm ring-1 ring-slate-100 p-4 relative overflow-hidden group">
-                        <div className="flex items-center gap-3">
-                            <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 duration-300", stat.bg, stat.color)}>
-                                <stat.icon className="h-5 w-5" />
-                            </div>
-                            <div>
-                                <p className="ds-label">{stat.label}</p>
-                                <h4 className="ds-stat-medium">{stat.val}</h4>
-                            </div>
-                        </div>
-                    </Card>
-                ))}
+            <div className="ds-grid-cards-4">
+                <StatCard label="All Items" value={stats.total} icon={HiOutlineCube} color="text-brand-600" bg="bg-brand-50" />
+                <StatCard label="Active Items" value={stats.active} icon={HiOutlineCheckCircle} color="text-brand-600" bg="bg-brand-50" />
+                <StatCard label="Low Stock" value={stats.lowStock} icon={HiOutlineExclamationCircle} color="text-amber-600" bg="bg-amber-50" />
+                <StatCard label="Out of Stock" value={stats.outOfStock} icon={HiOutlineArchiveBox} color="text-rose-600" bg="bg-rose-50" />
             </div>
 
-            <Card className="border-none shadow-sm ring-1 ring-slate-100 p-3 bg-white/60 backdrop-blur-xl">
+            <Card className="ds-card-compact">
                 <div className="flex flex-wrap gap-2">
                     {[
                         { key: 'all', label: 'All', count: moderationCounts.all },
@@ -450,23 +435,23 @@ const ProductManagement = () => {
             </Card>
 
             {/* Toolbox */}
-            <Card className="border-none shadow-sm ring-1 ring-slate-100 p-3 bg-white/60 backdrop-blur-xl">
+            <Card className="ds-card-compact">
                 <div className="flex flex-col lg:flex-row gap-3 items-center">
                     <div className="relative flex-1 group w-full">
-                        <HiOutlineMagnifyingGlass className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-all" />
+                        <HiOutlineMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 ds-icon-sm text-gray-400 group-focus-within:text-primary transition-colors" />
                         <input
                             type="text"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             placeholder="Search by name, SKU or slug..."
-                            className="w-full pl-10 pr-4 py-2.5 bg-slate-100/50 border-none rounded-xl text-xs font-semibold text-slate-700 placeholder:text-slate-400 focus:ring-2 focus:ring-primary/5 transition-all outline-none"
+                            className="ds-input pl-9"
                         />
                     </div>
                     <div className="flex gap-2 shrink-0 w-full lg:w-auto">
                         <select
                             value={filterCategory}
                             onChange={(e) => setFilterCategory(e.target.value)}
-                            className="flex-1 lg:flex-none px-4 py-2.5 bg-white ring-1 ring-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:ring-2 focus:ring-primary/5 outline-none appearance-none cursor-pointer"
+                            className="ds-select flex-1 lg:flex-none"
                         >
                             <option value="all">All Categories</option>
                             {categories.map(h => (
@@ -516,7 +501,15 @@ const ProductManagement = () => {
             </Card>
 
             {/* Product Table */}
-            <Card className="border-none shadow-xl ring-1 ring-slate-100 overflow-hidden rounded-xl">
+            <Card className="border-none shadow-xl ring-1 ring-slate-100 overflow-hidden rounded-xl relative min-h-[300px]">
+                {isLoading && (
+                    <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] z-10 flex items-center justify-center">
+                        <div className="flex flex-col items-center gap-2">
+                            <HiOutlineArrowPath className="h-8 w-8 text-primary animate-spin" />
+                            <p className="ds-caption text-gray-500 font-medium">Loading Products...</p>
+                        </div>
+                    </div>
+                )}
                 <div className="overflow-x-auto">
                     <table className="w-full min-w-[1180px] table-fixed text-left border-collapse">
                         <colgroup>
@@ -540,18 +533,16 @@ const ProductManagement = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                            {isLoading ? (
+                            {!isLoading && productsList.length === 0 ? (
                                 <tr>
                                     <td colSpan="7" className="px-6 py-20 text-center">
                                         <div className="flex flex-col items-center gap-3">
-                                            <HiOutlineArrowPath className="h-8 w-8 text-primary animate-spin" />
-                                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Loading Products...</p>
+                                            <div className="p-4 bg-gray-50 rounded-full">
+                                                <HiOutlineCube className="h-8 w-8 text-gray-300" />
+                                            </div>
+                                            <p className="ds-h4 text-gray-400">No products found</p>
                                         </div>
                                     </td>
-                                </tr>
-                            ) : productsList.length === 0 ? (
-                                <tr>
-                                    <td colSpan="7" className="px-6 py-20 text-center text-slate-400 font-bold text-xs uppercase tracking-widest">No products found</td>
                                 </tr>
                             ) : productsList.map((p) => (
                                 <tr
@@ -1229,7 +1220,7 @@ const ProductManagement = () => {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-center">
-                                            <Badge variant={v.stock === 0 ? "rose" : v.stock <= 10 ? "amber" : "emerald"} className="text-[10px] font-black uppercase tracking-widest px-2 shadow-sm">
+                                            <Badge variant={v.stock === 0 ? "error" : v.stock <= 10 ? "warning" : "success"} className="text-[10px] font-black uppercase tracking-widest px-2 shadow-sm">
                                                 {v.stock === 0 ? 'OUT OF STOCK' : `${v.stock} UNITS`}
                                             </Badge>
                                         </td>

@@ -9,6 +9,10 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import Card from "@shared/components/ui/Card";
+import PageHeader from "@shared/components/ui/PageHeader";
+import StatCard from "@shared/components/ui/StatCard";
+import Badge from "@shared/components/ui/Badge";
+import EmptyState from "@shared/components/ui/EmptyState";
 import { adminPorterApi } from "../../services/api/porterApi";
 import { cn } from "@/lib/utils";
 
@@ -74,64 +78,56 @@ const PorterRiderPayouts = () => {
             label: "Paid to riders",
             value: rupees(summary.totalPaid),
             icon: Banknote,
-            tint: "bg-emerald-500/10 text-emerald-600 border-emerald-200 dark:border-emerald-900",
+            color: "text-emerald-600",
+            bg: "bg-emerald-500/10 border border-emerald-200 dark:border-emerald-900",
             note: `${summary.entries || 0} settlements`,
         },
         {
             label: "Riders paid",
             value: Number(summary.riders || 0).toLocaleString("en-IN"),
             icon: Users,
-            tint: "bg-blue-500/10 text-blue-600 border-blue-200 dark:border-blue-900",
+            color: "text-blue-600",
+            bg: "bg-blue-500/10 border border-blue-200 dark:border-blue-900",
             note: "With at least one porter job",
         },
         {
             label: "Held back",
             value: rupees(summary.withheldAmount),
             icon: AlertTriangle,
-            tint: "bg-amber-500/10 text-amber-600 border-amber-200 dark:border-amber-900",
+            color: "text-amber-600",
+            bg: "bg-amber-500/10 border border-amber-200 dark:border-amber-900",
             note: `${summary.withheldCount || 0} awaiting review`,
         },
     ];
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                    <h1 className="flex items-center gap-2.5 text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-                        <Receipt className="h-6 w-6 text-primary" />
-                        Rider Payouts
-                    </h1>
-                    <p className="mt-1 max-w-2xl text-sm text-slate-500">
-                        Earnings from parcel jobs only. Withdrawals stay under Money
-                        Requests — riders draw against one balance shared with grocery
-                        work, so a withdrawal can't be split by service.
-                    </p>
-                </div>
-                <button
-                    onClick={() => fetchPayouts(true)}
-                    className="inline-flex items-center gap-2 rounded-2xl bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-primary/90"
-                >
-                    <RotateCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
-                    Refresh
-                </button>
-            </div>
+            <PageHeader
+                title="Rider Payouts"
+                description="Earnings from parcel jobs only. Withdrawals stay under Money Requests — riders draw against one balance shared with grocery work, so a withdrawal can't be split by service."
+                icon={Receipt}
+                actions={
+                    <button
+                        onClick={() => fetchPayouts(true)}
+                        className="inline-flex items-center gap-2 rounded-2xl bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-primary/90"
+                    >
+                        <RotateCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
+                        Refresh
+                    </button>
+                }
+            />
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 {stats.map((stat) => (
-                    <Card key={stat.label} className="flex items-center gap-4 p-5">
-                        <div className={cn("rounded-2xl border p-3", stat.tint)}>
-                            <stat.icon className="h-5 w-5" />
-                        </div>
-                        <div className="min-w-0">
-                            <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                                {stat.label}
-                            </p>
-                            <p className="font-mono text-2xl font-extrabold text-slate-900 dark:text-white">
-                                {stat.value}
-                            </p>
-                            <p className="truncate text-xs text-slate-400">{stat.note}</p>
-                        </div>
-                    </Card>
+                    <StatCard
+                        key={stat.label}
+                        label={stat.label}
+                        value={stat.value}
+                        description={stat.note}
+                        icon={stat.icon}
+                        color={stat.color}
+                        bg={stat.bg}
+                    />
                 ))}
             </div>
 
@@ -187,9 +183,11 @@ const PorterRiderPayouts = () => {
                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     </div>
                 ) : items.length === 0 ? (
-                    <p className="py-20 text-center text-sm font-semibold text-slate-400">
-                        No porter settlements in this view
-                    </p>
+                    <EmptyState
+                        icon={Banknote}
+                        title="No porter settlements"
+                        description="No porter settlements in this view."
+                    />
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
@@ -222,18 +220,17 @@ const PorterRiderPayouts = () => {
                                             </p>
                                         </td>
                                         <td className="px-5 py-3.5">
-                                            <span
-                                                className={cn(
-                                                    "rounded-lg px-2.5 py-1 text-[10px] font-black uppercase tracking-wide",
+                                            <Badge
+                                                variant={
                                                     row.kind === "parcel"
-                                                        ? "bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400"
+                                                        ? "info"
                                                         : row.kind === "city_parcel_return"
-                                                          ? "bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400"
-                                                          : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400",
-                                                )}
+                                                          ? "warning"
+                                                          : "success"
+                                                }
                                             >
                                                 {row.kindLabel}
-                                            </span>
+                                            </Badge>
                                         </td>
                                         <td className="px-5 py-3.5 font-mono text-xs text-slate-500">
                                             {row.parcelRef || "—"}
@@ -242,16 +239,9 @@ const PorterRiderPayouts = () => {
                                             {rupees(row.amount)}
                                         </td>
                                         <td className="px-5 py-3.5">
-                                            <span
-                                                className={cn(
-                                                    "rounded-lg px-2.5 py-1 text-[10px] font-black uppercase",
-                                                    row.status === "Settled"
-                                                        ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400"
-                                                        : "bg-slate-100 text-slate-500 dark:bg-slate-800",
-                                                )}
-                                            >
+                                            <Badge variant={row.status === "Settled" ? "success" : "gray"}>
                                                 {row.status}
-                                            </span>
+                                            </Badge>
                                         </td>
                                         <td className="px-5 py-3.5 text-xs text-slate-500">
                                             {row.date

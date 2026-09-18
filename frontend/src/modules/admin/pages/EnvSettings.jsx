@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Card from '@shared/components/ui/Card';
 import Badge from '@shared/components/ui/Badge';
+import PageHeader from '@shared/components/ui/PageHeader';
 import {
     Save,
     Terminal,
@@ -109,28 +110,28 @@ const EnvSettings = () => {
     return (
         <div className="ds-section-spacing animate-in fade-in slide-in-from-bottom-4 duration-700 pb-12">
             {/* Header Section */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 px-1">
-                <div>
-                    <h1 className="ds-h1 flex items-center gap-3">
-                        Environment Controls
-                        <div className="p-2 bg-slate-900 rounded-xl">
-                            <Terminal className="h-5 w-5 text-white" />
-                        </div>
-                    </h1>
-                    <p className="ds-description mt-1 text-slate-500">
+            <PageHeader
+                title="Environment Controls"
+                description={
+                    <>
                         Manage critical application secrets and configurations.
-                        <span className="text-red-500 font-bold ml-1 flex items-center gap-1 inline-flex">
+                        <span className="text-red-500 font-bold ml-1 inline-flex items-center gap-1">
                             <AlertTriangle className="h-3 w-3" />
                             Handle with care.
                         </span>
-                    </p>
-                </div>
-                <div className="flex items-center gap-3">
+                    </>
+                }
+                badge={
+                    <div className="p-2 bg-slate-900 rounded-xl">
+                        <Terminal className="h-5 w-5 text-white" />
+                    </div>
+                }
+                actions={
                     <button
                         onClick={handleSave}
                         disabled={isSaving}
                         className={cn(
-                            "flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl shadow-slate-200 active:scale-95",
+                            "ds-btn ds-btn-md bg-slate-900 text-white shadow-xl shadow-slate-200",
                             isSaving ? "opacity-70 cursor-wait" : "hover:bg-slate-800"
                         )}
                     >
@@ -141,8 +142,8 @@ const EnvSettings = () => {
                         )}
                         {isSaving ? 'Deploying...' : 'Save & Deploy'}
                     </button>
-                </div>
-            </div>
+                }
+            />
 
             <div className="flex gap-4 border-b border-slate-100">
                 <button

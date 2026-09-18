@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import {
   X, Loader2, MapPin, Package, User, Bike, IndianRupee, Camera,
-  ShieldCheck, ShieldAlert, RotateCcw, Clock,
+  ShieldCheck, ShieldAlert, RotateCcw, Clock, PackageSearch,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { unwrap } from "@core/api/unwrap";
+import EmptyState from "@shared/components/ui/EmptyState";
 import { cityParcelAdminApi } from "../../services/cityParcelAdminApi";
 
 /**
@@ -22,6 +23,19 @@ const ACTOR_TONE = {
   system: "bg-slate-100 text-slate-600",
 };
 
+// Same tone families as the STATUS_TONE map on the parent list/attention
+// views, kept local since that one isn't shared/exported — the point is a
+// consistent look, not a shared object.
+const STATUS_TONE = {
+  DELIVERED: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  RETURNED: "bg-slate-100 text-slate-600 border-slate-200",
+  CANCELLED: "bg-slate-100 text-slate-500 border-slate-200",
+  DELIVERY_FAILED: "bg-rose-50 text-rose-700 border-rose-200",
+  RETURN_IN_TRANSIT: "bg-amber-50 text-amber-700 border-amber-200",
+  REQUESTED: "bg-amber-50 text-amber-700 border-amber-200",
+  SEARCHING: "bg-amber-50 text-amber-700 border-amber-200",
+};
+
 const money = (n) => `₹${Number(n || 0).toFixed(2)}`;
 const when = (d) =>
   d
@@ -30,15 +44,28 @@ const when = (d) =>
       })
     : "—";
 
+const StatusChip = ({ status }) => (
+  <span
+    className={cn(
+      "inline-flex shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-wide",
+      STATUS_TONE[status] || "bg-blue-50 text-blue-700 border-blue-200",
+    )}
+  >
+    {String(status || "").replace(/_/g, " ")}
+  </span>
+);
+
 const Row = ({ label, children }) => (
   <div className="flex items-start justify-between gap-4 py-1.5">
-    <span className="shrink-0 text-[12px] text-slate-500">{label}</span>
+    <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+      {label}
+    </span>
     <span className="text-right text-[13px] font-medium text-slate-900">{children}</span>
   </div>
 );
 
 const Section = ({ title, icon: Icon, children }) => (
-  <section className="rounded-xl border border-slate-200 bg-white p-4">
+  <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
     <h3 className="mb-2 flex items-center gap-2 text-[12px] font-semibold uppercase tracking-wider text-slate-500">
       {Icon ? <Icon className="h-3.5 w-3.5" /> : null}
       {title}
@@ -83,20 +110,28 @@ const ParcelDetailDrawer = ({ cityParcelId, onClose }) => {
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/40" onClick={onClose}>
       <div
-        className="h-full w-full max-w-xl overflow-y-auto bg-slate-50 shadow-2xl"
+        className="h-full w-full max-w-xl overflow-y-auto border-l border-slate-200 bg-slate-50 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b bg-white px-5 py-4">
-          <div>
-            <p className="font-mono text-[15px] font-bold text-slate-900">
-              {parcel?.referenceId || "…"}
-            </p>
-            <p className="text-[12px] text-slate-500">
+        <header className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-200 bg-white px-5 py-4">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="font-mono text-[15px] font-bold text-slate-900">
+                {parcel?.referenceId || "…"}
+              </p>
+              {parcel?.status ? <StatusChip status={parcel.status} /> : null}
+            </div>
+            <p className="mt-0.5 text-[12px] text-slate-500">
               {parcel ? `Booked ${when(parcel.createdAt)}` : "Loading"}
             </p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close">
-            <X className="h-5 w-5 text-slate-400" />
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="shrink-0 rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+          >
+            <X className="h-5 w-5" />
           </button>
         </header>
 
@@ -105,13 +140,19 @@ const ParcelDetailDrawer = ({ cityParcelId, onClose }) => {
             <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
           </div>
         ) : !parcel ? (
-          <p className="p-8 text-center text-sm text-slate-500">Parcel not found.</p>
+          <EmptyState
+            icon={PackageSearch}
+            title="Parcel not found"
+            description="This booking couldn't be loaded — it may have been removed."
+          />
         ) : (
           <div className="space-y-3 p-4">
             <Section title="Route" icon={MapPin}>
               <div className="space-y-2.5">
                 <div>
-                  <p className="text-[11px] uppercase tracking-wider text-slate-400">Pickup</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                    Pickup
+                  </p>
                   <p className="text-[13px] text-slate-800">
                     {parcel.pickupAddress?.fullAddress}
                   </p>
@@ -122,7 +163,9 @@ const ParcelDetailDrawer = ({ cityParcelId, onClose }) => {
                   ) : null}
                 </div>
                 <div>
-                  <p className="text-[11px] uppercase tracking-wider text-slate-400">Drop</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                    Drop
+                  </p>
                   <p className="text-[13px] text-slate-800">
                     {parcel.dropAddress?.fullAddress}
                   </p>
@@ -304,7 +347,7 @@ const ParcelDetailDrawer = ({ cityParcelId, onClose }) => {
             parcel.deliveryProofImage ||
             parcel.returnProofImage ? (
               <Section title="Photo proof" icon={Camera}>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-3">
                   {[
                     ["Pickup", parcel.pickupProofImage],
                     ["Delivery", parcel.deliveryProofImage],
@@ -317,9 +360,18 @@ const ParcelDetailDrawer = ({ cityParcelId, onClose }) => {
                         href={url}
                         target="_blank"
                         rel="noreferrer"
-                        className="rounded-lg border border-slate-200 px-3 py-1.5 text-[12px] font-medium text-slate-700 hover:bg-slate-50"
+                        className="group block w-28 overflow-hidden rounded-xl border border-slate-200 bg-slate-100 transition hover:border-slate-400 hover:shadow-md"
                       >
-                        {label} photo
+                        <div className="aspect-square w-full overflow-hidden">
+                          <img
+                            src={url}
+                            alt={`${label} proof`}
+                            className="h-full w-full object-cover transition group-hover:scale-105"
+                          />
+                        </div>
+                        <p className="border-t border-slate-200 bg-white px-2 py-1 text-center text-[11px] font-medium text-slate-600">
+                          {label}
+                        </p>
                       </a>
                     ))}
                 </div>

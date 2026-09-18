@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import InvoiceDownloadButton from "@shared/components/InvoiceDownloadButton";
+import PageHeader from "@shared/components/ui/PageHeader";
 import { adminPorterApi } from "../services/api/porterApi";
 import { createPortal } from "react-dom";
 import { useSearchParams, useParams, useNavigate, useLocation } from "react-router-dom";
@@ -1163,15 +1164,12 @@ const AdminParcelDashboard = () => {
     <div className="p-6 font-outfit max-w-6xl mx-auto space-y-6">
       {/* Page Title */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-100 pb-5">
-        <div>
-          <h1 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
-            <Truck className="text-primary" size={28} /> Parcel Delivery Panel
-          </h1>
-          <p className="text-sm text-slate-400 font-medium mt-1">
-            Manage parcel delivery bookings, configure global rates, assign
-            riders, and monitor operations.
-          </p>
-        </div>
+        <PageHeader
+          className="p-0"
+          icon={Truck}
+          title="Parcel Delivery Panel"
+          description="Manage parcel delivery bookings, configure global rates, assign riders, and monitor operations."
+        />
 
         {/* Tab Controls */}
         <div className="flex flex-wrap bg-slate-100 p-1 rounded-xl gap-0.5">

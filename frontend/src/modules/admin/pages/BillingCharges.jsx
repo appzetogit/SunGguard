@@ -1,6 +1,7 @@
 // Premium Billing & Financial Configuration System
 import React, { useState, useEffect } from 'react';
 import Card from '@shared/components/ui/Card';
+import PageHeader from '@shared/components/ui/PageHeader';
 import {
     RotateCcw,
     Save,
@@ -109,38 +110,38 @@ const BillingCharges = () => {
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-12">
             {/* Header Section */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 px-1">
-                <div>
-                    <h1 className="admin-h1 flex items-center gap-3">
-                        Fees & Charges
-                        <div className="p-2 bg-red-100 rounded-xl">
-                            <RotateCcw className="h-5 w-5 text-red-600" />
-                        </div>
-                    </h1>
-                    <p className="admin-description mt-1">Set up delivery fees, platform charges, and free delivery limits.</p>
-                </div>
-                <div className="flex items-center gap-3">
-                    <button className="flex items-center gap-2 px-5 py-3 bg-white ring-1 ring-slate-200 text-slate-700 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm">
-                        <History className="h-4 w-4 text-slate-400" />
-                        AUDIT LOGS
-                    </button>
-                    <button
-                        onClick={handleSave}
-                        disabled={isSaving}
-                        className={cn(
-                            "flex items-center gap-2 px-6 py-3 bg-black  text-primary-foreground rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl shadow-brand-100 active:scale-95",
-                            isSaving ? "opacity-70 cursor-wait" : "hover:bg-brand-700"
-                        )}
-                    >
-                        {isSaving ? (
-                            <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        ) : (
-                            <Save className="h-4 w-4" />
-                        )}
-                        {isSaving ? 'Saving...' : 'Save Changes'}
-                    </button>
-                </div>
-            </div>
+            <PageHeader
+                title="Fees & Charges"
+                description="Set up delivery fees, platform charges, and free delivery limits."
+                badge={
+                    <div className="p-2 bg-red-100 rounded-xl">
+                        <RotateCcw className="h-5 w-5 text-red-600" />
+                    </div>
+                }
+                actions={
+                    <>
+                        <button className="ds-btn ds-btn-md bg-white ring-1 ring-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm">
+                            <History className="h-4 w-4 text-slate-400" />
+                            AUDIT LOGS
+                        </button>
+                        <button
+                            onClick={handleSave}
+                            disabled={isSaving}
+                            className={cn(
+                                "ds-btn ds-btn-md bg-black text-primary-foreground shadow-xl shadow-brand-100",
+                                isSaving ? "opacity-70 cursor-wait" : "hover:bg-brand-700"
+                            )}
+                        >
+                            {isSaving ? (
+                                <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            ) : (
+                                <Save className="h-4 w-4" />
+                            )}
+                            {isSaving ? 'Saving...' : 'Save Changes'}
+                        </button>
+                    </>
+                }
+            />
 
 
             <div className="max-w-4xl mx-auto text-left">
