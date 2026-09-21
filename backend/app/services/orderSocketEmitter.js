@@ -142,6 +142,34 @@ export function emitToOrder(orderId, { event, payload }) {
 }
 
 /**
+ * Push `data` for a rider job offer, built from the same payload the socket
+ * broadcast carries so a backgrounded/killed app sees the same details.
+ * Every field is optional; empty ones are dropped before sending.
+ */
+function offerPushData(payload = {}) {
+  const preview = payload.preview || {};
+  const expiresAt = payload.deliverySearchExpiresAt || payload.searchExpiresAt;
+  const deadline = expiresAt ? new Date(expiresAt) : null;
+  const hasDeadline = deadline && !Number.isNaN(deadline.getTime());
+  return {
+    role: "delivery",
+    type: preview.type || payload.type,
+    pickupAddress: preview.pickup,
+    dropAddress: preview.drop,
+    distanceKm: preview.distance ?? preview.distanceKm,
+    earnings: preview.earnings,
+    riderEarnings: preview.earnings,
+    paymentMethod: preview.paymentMethod,
+    collectAmount: preview.collectAmount,
+    total: preview.total,
+    acceptanceDeadlineAt: hasDeadline ? deadline.toISOString() : undefined,
+    timeoutSeconds: hasDeadline
+      ? Math.max(0, Math.round((deadline.getTime() - Date.now()) / 1000))
+      : undefined,
+  };
+}
+
+/**
  * Notify only delivery partners whose live location is within the seller's
  * service radius (see Delivery model location + Seller.serviceRadius).
  */
@@ -190,6 +218,7 @@ export async function emitDeliveryBroadcastForSeller(sellerId, payload) {
     emitNotificationEvent(NOTIFICATION_EVENTS.NEW_DELIVERY_BROADCAST, {
       orderId: payload.orderId,
       deliveryIds: ids,
+      data: offerPushData(payload),
     });
   }
 
@@ -365,6 +394,7 @@ export async function emitReturnBroadcastForCustomer(customerLocation, payload) 
   emitNotificationEvent(NOTIFICATION_EVENTS.NEW_RETURN_BROADCAST, {
     orderId: payload.orderId,
     deliveryIds: ids,
+    data: offerPushData(payload),
   });
 
   // DB Sync for in-app notification list
@@ -442,6 +472,7 @@ export async function emitParcelBroadcast(lat, lng, radiusKm, payload, { zone = 
     emitNotificationEvent(NOTIFICATION_EVENTS.NEW_PARCEL_BROADCAST, {
       parcelId: payload.parcelId,
       deliveryIds: ids,
+      data: offerPushData(payload),
     });
 
     try {
