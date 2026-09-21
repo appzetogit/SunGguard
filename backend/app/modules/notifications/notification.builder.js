@@ -433,6 +433,43 @@ function eventDefinition(eventType) {
         title: () => "Parcel Delivered",
         body: (payload) => payload.body || "Your parcel has been delivered successfully.",
       };
+
+    // ── City Parcel (separate module — cityParcelNotifyService.js) ─────────
+    // All of these are emitted with the same payload shape:
+    // { userId/customerId/deliveryId/deliveryIds, cityParcelId, body, data: { title, ... } }.
+    case NOTIFICATION_EVENTS.CITY_PARCEL_BROADCAST:
+      return {
+        role: NOTIFICATION_ROLES.DELIVERY,
+        recipientIds: (payload) => normalizeIdList(payload.deliveryIds),
+        title: (payload) => payload.data?.title || "New city delivery",
+        body: (payload) => payload.body || "A new city delivery is available nearby.",
+      };
+    case NOTIFICATION_EVENTS.CITY_PARCEL_ASSIGNED:
+      return {
+        role: NOTIFICATION_ROLES.DELIVERY,
+        recipientIds: (payload) => normalizeIdList(payload.deliveryId || payload.userId),
+        title: (payload) => payload.data?.title || "City delivery assigned",
+        body: (payload) => payload.body || "You have been assigned a city delivery.",
+      };
+    case NOTIFICATION_EVENTS.CITY_PARCEL_RIDER_CANCELLED:
+      return {
+        role: NOTIFICATION_ROLES.DELIVERY,
+        recipientIds: (payload) => normalizeIdList(payload.deliveryId || payload.userId),
+        title: (payload) => payload.data?.title || "Job cancelled",
+        body: (payload) => payload.body || "This job was cancelled by an admin.",
+      };
+    case NOTIFICATION_EVENTS.CITY_PARCEL_STATUS_UPDATE:
+    case NOTIFICATION_EVENTS.CITY_PARCEL_PICKUP_CODE:
+    case NOTIFICATION_EVENTS.CITY_PARCEL_DELIVERED:
+    case NOTIFICATION_EVENTS.CITY_PARCEL_DECISION_NEEDED:
+    case NOTIFICATION_EVENTS.CITY_PARCEL_RETURN_STARTED:
+    case NOTIFICATION_EVENTS.CITY_PARCEL_RETURNED:
+      return {
+        role: NOTIFICATION_ROLES.CUSTOMER,
+        recipientIds: (payload) => normalizeIdList(payload.customerId || payload.userId),
+        title: (payload) => payload.data?.title || "Parcel update",
+        body: (payload) => payload.body || "Your parcel status has been updated.",
+      };
     default:
       return null;
   }
@@ -484,6 +521,24 @@ function eventData(eventType, payload = {}, role) {
       parcelId,
       fare: payload.fare != null ? Number(payload.fare) : undefined,
       link,
+      ...(payload.data || {}),
+    };
+  }
+
+  if ([
+    NOTIFICATION_EVENTS.CITY_PARCEL_BROADCAST,
+    NOTIFICATION_EVENTS.CITY_PARCEL_ASSIGNED,
+    NOTIFICATION_EVENTS.CITY_PARCEL_RIDER_CANCELLED,
+    NOTIFICATION_EVENTS.CITY_PARCEL_STATUS_UPDATE,
+    NOTIFICATION_EVENTS.CITY_PARCEL_PICKUP_CODE,
+    NOTIFICATION_EVENTS.CITY_PARCEL_DELIVERED,
+    NOTIFICATION_EVENTS.CITY_PARCEL_DECISION_NEEDED,
+    NOTIFICATION_EVENTS.CITY_PARCEL_RETURN_STARTED,
+    NOTIFICATION_EVENTS.CITY_PARCEL_RETURNED,
+  ].includes(eventType)) {
+    return {
+      eventType,
+      cityParcelId: String(payload.cityParcelId || "").trim() || undefined,
       ...(payload.data || {}),
     };
   }

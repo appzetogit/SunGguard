@@ -96,6 +96,7 @@ jest.unstable_mockModule("../app/services/porter/porterDispatchService.js", () =
 jest.unstable_mockModule("../app/services/cityParcelNotifyService.js", () => ({
   notifyRiderAssigned: jest.fn(),
   notifyCustomerOfStatus: jest.fn(),
+  notifyRiderCancelled: jest.fn(),
 }));
 jest.unstable_mockModule("../app/services/orderSocketEmitter.js", () => ({
   emitToCustomer: jest.fn(),

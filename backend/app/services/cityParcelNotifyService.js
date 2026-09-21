@@ -175,3 +175,22 @@ export function notifyRiderAssigned(parcel, deliveryId) {
     },
   });
 }
+
+/** This rider's job was pulled — an admin cancelled it out from under them. */
+export function notifyRiderCancelled(parcel, deliveryId, reason) {
+  if (!deliveryId) return;
+  send(NOTIFICATION_EVENTS.CITY_PARCEL_RIDER_CANCELLED, {
+    userId: deliveryId,
+    deliveryId,
+    cityParcelId: String(parcel._id),
+    body: reason ? `Cancelled: ${reason}` : "This job was cancelled by an admin.",
+    data: {
+      title: "Job cancelled",
+      cityParcelId: String(parcel._id),
+      referenceId: parcel.referenceId,
+      status: S.CANCELLED,
+      role: "delivery",
+      route: `/delivery/city-parcel/${parcel._id}`,
+    },
+  });
+}

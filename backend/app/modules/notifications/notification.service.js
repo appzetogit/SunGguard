@@ -28,6 +28,23 @@ const localDedupeStore = new Map();
 let listenerRegistered = false;
 
 function dedupeKeyForNotification(eventType, notification, payload = {}) {
+  // City parcel statuses mostly share a handful of generic event types
+  // (e.g. SEARCHING/ACCEPTED/PICKED_UP/CANCELLED all resolve to
+  // CITY_PARCEL_STATUS_UPDATE), so the fallback below — which only keys on
+  // eventType/role/recipient — would treat the second status change to the
+  // same parcel as a duplicate of the first and silently drop it. Keying on
+  // the parcel + status instead keeps each lifecycle step distinct.
+  if (payload.cityParcelId) {
+    return [
+      "notify",
+      String(eventType || "UNKNOWN"),
+      String(notification?.role || "unknown"),
+      String(notification?.userId || "unknown"),
+      String(payload.cityParcelId),
+      String(payload.data?.status || notification?.data?.status || ""),
+    ].join(":");
+  }
+
   const orderRef =
     payload.messageId ||
     payload.messageCreatedAt ||

@@ -57,6 +57,7 @@ import {
 import {
   notifyRiderAssigned,
   notifyCustomerOfStatus,
+  notifyRiderCancelled,
 } from "../services/cityParcelNotifyService.js";
 import { emitToCustomer, emitToAdmins, emitToDelivery } from "../services/orderSocketEmitter.js";
 import {
@@ -1031,6 +1032,7 @@ export const riderUpdateStatus = async (req, res) => {
       payload: { cityParcelId, status, parcel: updated },
     });
     emitToAdmins("cityparcel:status:update", updated);
+    notifyCustomerOfStatus(updated);
 
     return handleResponse(res, 200, "Status updated", { parcel: updated });
   } catch (error) {
@@ -1132,6 +1134,7 @@ export const riderVerifyPickup = async (req, res) => {
       payload: { cityParcelId, status: S.PICKED_UP, parcel: updated },
     });
     emitToAdmins("cityparcel:status:update", updated);
+    notifyCustomerOfStatus(updated);
 
     return handleResponse(res, 200, "Picked up", { parcel: updated });
   } catch (error) {
@@ -1281,6 +1284,7 @@ export const riderVerifyDelivery = async (req, res) => {
       payload: { cityParcelId, status: S.DELIVERED, parcel: updated },
     });
     emitToAdmins("cityparcel:status:update", updated);
+    notifyCustomerOfStatus(updated);
 
     if (verdict.overridden) {
       emitToAdmins("cityparcel:override-review", {
@@ -1385,6 +1389,7 @@ export const riderVerifyReturn = async (req, res) => {
       payload: { cityParcelId, status: S.RETURNED, parcel: updated },
     });
     emitToAdmins("cityparcel:status:update", updated);
+    notifyCustomerOfStatus(updated);
 
     return handleResponse(res, 200, "Returned to the customer", { parcel: updated });
   } catch (error) {
@@ -1835,6 +1840,7 @@ export const adminCancelParcel = async (req, res) => {
         event: "cityparcel:cancelled",
         payload: { cityParcelId: String(cancelled._id), reason },
       });
+      notifyRiderCancelled(cancelled, previousRider, reason);
       await syncDeliveryPartnerBusyFlag(previousRider);
     }
 
@@ -1848,6 +1854,7 @@ export const adminCancelParcel = async (req, res) => {
       },
     });
     emitToAdmins("cityparcel:status:update", cancelled);
+    notifyCustomerOfStatus(cancelled);
 
     logger.info("City parcel cancelled by admin", {
       referenceId: cancelled.referenceId,
