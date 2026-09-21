@@ -122,7 +122,7 @@ async function fanOutToNearbyRiders(parcel, radiusKm, extra = {}) {
   // Retries stay silent so a widening search does not buzz the same phone
   // three times over.
   if (!extra.retryAttempt) {
-    notifyRidersOfBroadcast(parcel, ids);
+    notifyRidersOfBroadcast(parcel, ids, payload);
   }
 
   return { ids };

@@ -142,8 +142,17 @@ export function notifyCustomerDecisionNeeded(parcel, { outcome, deadlineAt } = {
 }
 
 /** A job is open near this rider. */
-export function notifyRidersOfBroadcast(parcel, deliveryIds = []) {
+export function notifyRidersOfBroadcast(parcel, deliveryIds = [], offer = {}) {
   if (!deliveryIds.length) return;
+
+  // `offer` is the socket broadcast payload, so push and socket carry the same
+  // numbers. Every field is optional — the client falls back to defaults.
+  const preview = offer.preview || {};
+  const expiresAt = offer.searchExpiresAt || parcel.searchExpiresAt;
+  const timeoutSeconds = expiresAt
+    ? Math.max(0, Math.round((new Date(expiresAt).getTime() - Date.now()) / 1000))
+    : undefined;
+
   send(NOTIFICATION_EVENTS.CITY_PARCEL_BROADCAST, {
     deliveryIds,
     cityParcelId: String(parcel._id),
@@ -154,6 +163,15 @@ export function notifyRidersOfBroadcast(parcel, deliveryIds = []) {
       referenceId: parcel.referenceId,
       role: "delivery",
       route: `/delivery/city-parcel/${parcel._id}`,
+      pickupAddress: preview.pickup || parcel.pickupAddress?.fullAddress,
+      dropAddress: preview.drop || parcel.dropAddress?.fullAddress,
+      distanceKm: parcel.distanceKm,
+      earnings: preview.earnings,
+      riderEarnings: preview.earnings,
+      paymentMethod: preview.paymentMethod || parcel.paymentMethod,
+      collectAmount: preview.collectAmount,
+      acceptanceDeadlineAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
+      timeoutSeconds,
     },
   });
 }

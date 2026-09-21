@@ -85,6 +85,23 @@ export const NOTIFICATION_QUEUE_JOB_TIMEOUT_MS = () =>
 export const NOTIFICATIONS_ENABLED = () =>
   String(process.env.PUSH_NOTIFICATIONS_ENABLED || "true").toLowerCase() !== "false";
 
+/**
+ * Rider job-offer pushes that a client may need to intercept while the app is
+ * backgrounded/killed (custom overlay, alert). Only sent data-only when
+ * FCM_DATA_ONLY_JOB_OFFERS=true, so the driver app must be updated first;
+ * default off keeps the current notification+data behaviour.
+ */
+export const DATA_ONLY_EVENT_TYPES = new Set([
+  NOTIFICATION_EVENTS.CITY_PARCEL_BROADCAST,
+  NOTIFICATION_EVENTS.NEW_DELIVERY_BROADCAST,
+  NOTIFICATION_EVENTS.NEW_RETURN_BROADCAST,
+  NOTIFICATION_EVENTS.NEW_PARCEL_BROADCAST,
+]);
+
+export const isDataOnlyEvent = (eventType) =>
+  String(process.env.FCM_DATA_ONLY_JOB_OFFERS || "false").toLowerCase() === "true" &&
+  DATA_ONLY_EVENT_TYPES.has(eventType);
+
 export const INVALID_FCM_TOKEN_CODES = new Set([
   "messaging/invalid-registration-token",
   "messaging/registration-token-not-registered",

@@ -79,15 +79,27 @@ export async function sendFCM(tokens = [], payload = {}) {
     responses: [],
   };
 
+  // Data-only: no top-level `notification`, so Android always hands the push to
+  // the app's own messaging service (even backgrounded/killed) instead of the
+  // OS tray. Title/body travel inside `data` so the client can still render it.
+  const dataOnly = payload.dataOnly === true;
+  const finalData = dataOnly
+    ? { ...data, title: data.title || String(title), body: data.body || String(body) }
+    : data;
+
   for (const chunk of chunks) {
     const result = await messaging.sendEachForMulticast({
       tokens: chunk,
-      notification: {
-        title,
-        body,
-        ...(image ? { image } : {}),
-      },
-      data,
+      ...(dataOnly
+        ? { android: { priority: "high", ttl: 60 * 1000 } }
+        : {
+            notification: {
+              title,
+              body,
+              ...(image ? { image } : {}),
+            },
+          }),
+      data: finalData,
       webpush: {
         headers: {
           Urgency: "high",

@@ -9,6 +9,7 @@ import {
 import { sendFCM } from "./firebase.service.js";
 import {
   INVALID_FCM_TOKEN_CODES,
+  isDataOnlyEvent,
   NOTIFICATION_QUEUE_CONCURRENCY,
   NOTIFICATION_QUEUE_JOB_TIMEOUT_MS,
 } from "./notification.constants.js";
@@ -135,6 +136,7 @@ export async function deliverNotificationById(notificationId) {
           body: notification.body || notification.message,
           message: notification.message,
           data: notification.data || {},
+          dataOnly: isDataOnlyEvent(notification.type),
         },
       ),
       new Promise((_, reject) =>
