@@ -12,7 +12,7 @@ import {
   NOTIFICATION_QUEUE_CONCURRENCY,
   NOTIFICATION_QUEUE_JOB_TIMEOUT_MS,
 } from "./notification.constants.js";
-import { isRedisEnabled } from "../../config/redis.js";
+import { isBullMQEnabled } from "../../config/redis.js";
 import logger from "../../services/logger.js";
 import {
   incrementCounter,
@@ -200,8 +200,8 @@ export async function processNotificationJob(job) {
 }
 
 export function registerNotificationQueueProcessors() {
-  if (!isRedisEnabled()) {
-    logger.info("Redis disabled, skipping notification queue processor registration");
+  if (!isBullMQEnabled()) {
+    logger.info("Redis/BullMQ disabled, skipping notification queue processor registration");
     return;
   }
 

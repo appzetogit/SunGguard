@@ -8,7 +8,7 @@ import {
   NOTIFICATION_ROLES,
   NOTIFICATIONS_ENABLED,
 } from "./notification.constants.js";
-import { getRedisClient, isRedisEnabled } from "../../config/redis.js";
+import { getRedisClient, isBullMQEnabled } from "../../config/redis.js";
 import logger from "../../services/logger.js";
 import { incrementCounter, setGauge } from "../../services/metrics.js";
 import { deliverNotificationById } from "./notification.worker.js";
@@ -283,7 +283,7 @@ export async function notify(eventType, payload = {}) {
       // disabled (e.g. local dev / tests) we fall back to the legacy inline
       // call so behaviour is preserved end-to-end.
       const notificationIdStr = notificationDoc._id.toString();
-      const useQueue = isRedisEnabled();
+      const useQueue = isBullMQEnabled();
 
       try {
         if (useQueue) {

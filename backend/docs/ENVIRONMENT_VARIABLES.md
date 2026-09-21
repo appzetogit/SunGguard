@@ -24,14 +24,13 @@ Complete reference for all environment variables. See `.env.example` for a templ
 
 Redis is **mandatory in production** (`NODE_ENV=production`). Startup fails if not configured.
 
+Redis and BullMQ (Bull) are gated by exactly two flags — no other env vars affect whether they connect:
+
 | Variable | Default | Required | Description |
 |----------|---------|----------|-------------|
-| `REDIS_URL` | — | Prod: **Yes** | Full Redis connection URL (takes priority) |
-| `REDIS_HOST` | `127.0.0.1` | No | Redis host (used if `REDIS_URL` not set) |
-| `REDIS_PORT` | `6379` | No | Redis port |
-| `REDIS_PASSWORD` | — | No | Redis password |
-| `REDIS_ENABLED` | — | No | Explicitly enable Redis (`true`/`1`) |
-| `REDIS_DISABLED` | `false` | No | Disable Redis (not allowed in production) |
+| `REDIS_ENABLED` | `false` (`true` in prod) | No | Enable/disable Redis (`true`/`1` or `false`/`0`). Not allowed to be `false` in production. |
+| `REDIS_URL` | — | Yes when `REDIS_ENABLED=true` | Full Redis connection URL — the only connection source |
+| `BULLMQ_ENABLED` | `true` | No | Enable/disable Bull queues/workers (`true`/`1` or `false`/`0`). Only takes effect when `REDIS_ENABLED=true`. |
 | `REDIS_ERROR_LOG_INTERVAL_MS` | `60000` | No | Rate limit for Redis error logs |
 
 ## Authentication
@@ -135,8 +134,8 @@ Redis is **mandatory in production** (`NODE_ENV=production`). Startup fails if n
 
 At startup with `NODE_ENV=production`, the following are enforced:
 
-1. `REDIS_URL` or `REDIS_HOST` must be set
-2. `REDIS_DISABLED=true` is rejected
+1. `REDIS_URL` must be set
+2. `REDIS_ENABLED=false` is rejected
 3. `JWT_SECRET` must not be a default/placeholder value
 4. `MONGO_URI` must be set
 5. Worker role requires Redis

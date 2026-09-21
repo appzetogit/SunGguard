@@ -188,11 +188,13 @@ services:
           type: keyvalue
           name: sungguard-redis
           property: connectionString
-      # Pinned to "false" on purpose. Your local .env sets REDIS_DISABLED=true,
-      # which throws on boot in production; pinning it here means a copied
-      # value can never silently re-disable Redis.
-      - key: REDIS_DISABLED
-        value: "false"
+      # Pinned to "true" on purpose so a copied local .env (which may disable
+      # Redis for dev) can never silently disable it here; disabling Redis
+      # throws on boot in production anyway (app/config/redis.js).
+      - key: REDIS_ENABLED
+        value: "true"
+      - key: BULLMQ_ENABLED
+        value: "true"
       - key: TRUST_PROXY
         value: "true"
       - key: LOG_LEVEL
@@ -225,8 +227,10 @@ services:
           type: keyvalue
           name: sungguard-redis
           property: connectionString
-      - key: REDIS_DISABLED
-        value: "false"
+      - key: REDIS_ENABLED
+        value: "true"
+      - key: BULLMQ_ENABLED
+        value: "true"
       - key: LOG_LEVEL
         value: info
 
@@ -253,8 +257,10 @@ services:
           type: keyvalue
           name: sungguard-redis
           property: connectionString
-      - key: REDIS_DISABLED
-        value: "false"
+      - key: REDIS_ENABLED
+        value: "true"
+      - key: BULLMQ_ENABLED
+        value: "true"
       - key: LOG_LEVEL
         value: info
       - key: AUTO_CANCEL_INTERVAL_MS

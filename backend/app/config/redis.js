@@ -8,34 +8,28 @@ const REDIS_ERROR_LOG_INTERVAL_MS = () =>
   parseInt(process.env.REDIS_ERROR_LOG_INTERVAL_MS || "60000", 10);
 
 /**
+ * Single source of truth for whether Redis is used at all. Gated ONLY by
+ * REDIS_ENABLED (connection details come solely from REDIS_URL).
+ *
  * When false, no Redis connections are created: shared client is null and Bull
  * queues are no-op stubs (use MongoDB orderAutoCancelJob for timeouts).
- * 
+ *
  * In production mode (NODE_ENV=production), Redis is MANDATORY and this function
  * will throw an error if Redis is not properly configured.
  */
 export function isRedisEnabled() {
-  const d = process.env.REDIS_DISABLED;
   const e = process.env.REDIS_ENABLED;
   const isProduction = process.env.NODE_ENV === "production";
 
   // Default: disable Redis in Jest to avoid open handles + noisy retries.
   // Opt-in by setting REDIS_ENABLED=true.
   if (process.env.NODE_ENV === "test" && !(e === "true" || e === "1")) return false;
-  if (d === "true" || d === "1") {
-    if (isProduction) {
-      throw new Error(
-        "Redis cannot be disabled in production mode (NODE_ENV=production). " +
-        "Redis is required for distributed operations, queues, and caching."
-      );
-    }
-    return false;
-  }
+
   if (e === "false" || e === "0") {
     if (isProduction) {
       throw new Error(
         "Redis is required in production mode (NODE_ENV=production). " +
-        "Set REDIS_ENABLED=true or provide REDIS_URL/REDIS_HOST configuration."
+        "Set REDIS_ENABLED=true and provide REDIS_URL."
       );
     }
     return false;
@@ -43,20 +37,29 @@ export function isRedisEnabled() {
 
   // In production, verify Redis configuration is present
   if (isProduction) {
-    const hasConfig = !!(
-      process.env.REDIS_URL ||
-      process.env.REDIS_HOST ||
-      e === "true" ||
-      e === "1"
-    );
+    const hasConfig = !!(process.env.REDIS_URL || e === "true" || e === "1");
     if (!hasConfig) {
       throw new Error(
         "Redis is required in production mode (NODE_ENV=production). " +
-        "Please set REDIS_URL or REDIS_HOST environment variable."
+        "Please set REDIS_ENABLED=true and REDIS_URL."
       );
     }
   }
 
+  return e === "true" || e === "1" || isProduction;
+}
+
+/**
+ * Whether Bull queues/workers should run. Gated by BULLMQ_ENABLED, but only
+ * ever true when Redis itself is enabled (queues need a Redis connection).
+ * Defaults to enabled (true) when unset, so existing REDIS_ENABLED-only
+ * deployments keep working without also having to set this flag.
+ */
+export function isBullMQEnabled() {
+  if (!isRedisEnabled()) return false;
+
+  const b = process.env.BULLMQ_ENABLED;
+  if (b === "false" || b === "0") return false;
   return true;
 }
 
@@ -84,7 +87,7 @@ function attachRedisErrorHandler(client) {
       const isProduction = process.env.NODE_ENV === "production";
       const message = isProduction
         ? `[Redis] ERROR: ${err?.code || err?.message || String(err)} - Redis is required in production`
-        : `[Redis] ${err?.code || err?.message || String(err)} — set REDIS_DISABLED=true to run without Redis.`;
+        : `[Redis] ${err?.code || err?.message || String(err)} — set REDIS_ENABLED=false to run without Redis.`;
       console.warn(message);
     }
   });
@@ -96,21 +99,6 @@ function attachRedisErrorHandler(client) {
   client.on("reconnecting", () => {
     _connectionAttempts++;
   });
-}
-
-function standaloneOptions() {
-  return {
-    host: process.env.REDIS_HOST || "127.0.0.1",
-    port: parseInt(process.env.REDIS_PORT || "6379", 10),
-    password: process.env.REDIS_PASSWORD || undefined,
-    lazyConnect: true,
-    enableReadyCheck: true,
-    maxRetriesPerRequest: null,
-    retryStrategy(times) {
-      if (times > 20) return null;
-      return Math.min(times * 200, 3000);
-    },
-  };
 }
 
 function urlOptions() {
@@ -126,16 +114,17 @@ function urlOptions() {
 
 /**
  * Shared Redis client for caching / rate limits (optional).
- * Returns null when REDIS_DISABLED=true.
+ * Returns null when REDIS_ENABLED=false.
  */
 export function getRedisClient() {
   if (!isRedisEnabled()) return null;
   if (_client) return _client;
 
   const url = process.env.REDIS_URL;
-  _client = url
-    ? new Redis(url, urlOptions())
-    : new Redis(standaloneOptions());
+  if (!url) {
+    throw new Error("REDIS_ENABLED=true requires REDIS_URL to be set.");
+  }
+  _client = new Redis(url, urlOptions());
 
   attachRedisErrorHandler(_client);
   return _client;
@@ -174,19 +163,14 @@ export function createBullRedisClient(type, config) {
 }
 
 /**
- * Parse REDIS_URL or host/port for Bull.
+ * Connection string for Bull, sourced solely from REDIS_URL.
  */
 export function getRedisOptionsForBull() {
   const url = process.env.REDIS_URL;
-  if (url) {
-    return url;
+  if (!url) {
+    throw new Error("REDIS_ENABLED=true requires REDIS_URL to be set.");
   }
-  return {
-    host: process.env.REDIS_HOST || "127.0.0.1",
-    port: parseInt(process.env.REDIS_PORT || "6379", 10),
-    password: process.env.REDIS_PASSWORD || undefined,
-    maxRetriesPerRequest: null,
-  };
+  return url;
 }
 
 /**

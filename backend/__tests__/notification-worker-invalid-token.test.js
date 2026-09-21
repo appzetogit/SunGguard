@@ -48,6 +48,7 @@ jest.unstable_mockModule("../app/modules/notifications/notification.queue.js", (
 
 jest.unstable_mockModule("../app/config/redis.js", () => ({
   isRedisEnabled: () => true,
+  isBullMQEnabled: () => true,
 }));
 
 jest.unstable_mockModule("../app/services/logger.js", () => ({

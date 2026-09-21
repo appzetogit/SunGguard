@@ -57,6 +57,7 @@ jest.unstable_mockModule("../app/config/redis.js", () => ({
   // Force inline-delivery fallback so this test continues to assert the
   // dedupe-then-deliver path without depending on a real Bull queue.
   isRedisEnabled: () => false,
+  isBullMQEnabled: () => false,
 }));
 
 jest.unstable_mockModule("../app/services/logger.js", () => ({

@@ -222,6 +222,7 @@ jest.unstable_mockModule("../app/config/redis.js", () => ({
   validateRedisConnection: jest.fn().mockResolvedValue(false),
   waitForRedis: jest.fn().mockResolvedValue(false),
   isRedisEnabled: jest.fn().mockReturnValue(false),
+  isBullMQEnabled: jest.fn().mockReturnValue(false),
 }));
 
 // Real business services

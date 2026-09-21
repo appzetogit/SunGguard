@@ -24,7 +24,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
-process.env.REDIS_DISABLED = process.env.REDIS_DISABLED || "true";
+process.env.REDIS_ENABLED = process.env.REDIS_ENABLED || "false";
 
 const { verifyToken, allowRoles } = await import("../app/middleware/authMiddleware.js");
 const {

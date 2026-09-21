@@ -1,11 +1,9 @@
 import Bull from "bull";
 import {
   getRedisOptionsForBull,
-  isRedisEnabled,
+  isBullMQEnabled,
   createBullRedisClient,
 } from "../config/redis.js";
-
-const redisOpts = getRedisOptionsForBull();
 
 const queueSettings = {
   stalledInterval: 30000,
@@ -22,7 +20,10 @@ function createNoopQueue() {
   };
 }
 
-export const sellerTimeoutQueue = isRedisEnabled()
+const queuesEnabled = isBullMQEnabled();
+const redisOpts = queuesEnabled ? getRedisOptionsForBull() : null;
+
+export const sellerTimeoutQueue = queuesEnabled
   ? new Bull("seller-timeout", {
       redis: redisOpts,
       createClient: createBullRedisClient,
@@ -30,7 +31,7 @@ export const sellerTimeoutQueue = isRedisEnabled()
     })
   : createNoopQueue();
 
-export const deliveryTimeoutQueue = isRedisEnabled()
+export const deliveryTimeoutQueue = queuesEnabled
   ? new Bull("delivery-timeout", {
       redis: redisOpts,
       createClient: createBullRedisClient,
@@ -38,7 +39,7 @@ export const deliveryTimeoutQueue = isRedisEnabled()
     })
   : createNoopQueue();
 
-export const returnPickupTimeoutQueue = isRedisEnabled()
+export const returnPickupTimeoutQueue = queuesEnabled
   ? new Bull("return-pickup-timeout", {
       redis: redisOpts,
       createClient: createBullRedisClient,

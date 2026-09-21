@@ -9,13 +9,13 @@ import {
   processDeliveryTimeoutJob,
   processReturnPickupTimeoutJob,
 } from "../services/orderWorkflowService.js";
-import { isRedisEnabled } from "../config/redis.js";
+import { isBullMQEnabled } from "../config/redis.js";
 import logger from "../services/logger.js";
 import { incrementCounter, recordHistogram } from "../services/metrics.js";
 
 export function registerOrderQueueProcessors() {
-  if (!isRedisEnabled()) {
-    logger.info('Redis disabled, skipping queue processor registration');
+  if (!isBullMQEnabled()) {
+    logger.info('Redis/BullMQ disabled, skipping queue processor registration');
     return;
   }
 

@@ -8,12 +8,8 @@
 
 **Fix:**
 ```bash
-# Set Redis URL
+REDIS_ENABLED=true
 REDIS_URL=redis://your-redis-host:6379
-
-# Or set host/port
-REDIS_HOST=your-redis-host
-REDIS_PORT=6379
 ```
 
 ---

@@ -27,7 +27,7 @@ if (
 process.env.MONGO_URI = uri;
 process.env.NODE_ENV = process.env.NODE_ENV || "development";
 process.env.PROCESS_ROLE = "api";
-process.env.REDIS_DISABLED = "true";
+process.env.REDIS_ENABLED = "false";
 // Local-only signing secret. Not a Razorpay credential; it only lets this
 // process verify webhook payloads that this same process signed.
 process.env.RAZORPAY_WEBHOOK_SECRET =
