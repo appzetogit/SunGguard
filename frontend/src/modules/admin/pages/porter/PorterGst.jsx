@@ -3,7 +3,6 @@ import {
   Receipt,
   Loader2,
   RotateCw,
-  MapPin,
   Package,
   CheckCircle2,
   Clock,
@@ -21,12 +20,13 @@ import { adminPorterApi } from "../../services/api/porterApi";
 import { cn } from "@/lib/utils";
 
 /**
- * GST on porter bookings: the rates, and what they have brought in.
+ * GST on porter bookings: the rate, and what it has brought in.
  *
- * Local and outstation are configured separately because operations bring
- * them under tax at different times and sometimes at different rates. They
- * are reported side by side for the same reason — an admin needs to see both
- * at once to reconcile a return.
+ * LOCAL CITY PARCEL DISABLED — the local-delivery GST rate card is no longer
+ * editable (the backend rejects `local` patches); only outstation's settings
+ * render below. The report/ledger below still show historical "local" figures
+ * for past bookings — that data stays for audit even though no new local
+ * bookings can be created. Re-enable by restoring "local" to PRODUCTS.
  *
  * The report distinguishes CHARGED from COLLECTED on purpose. A COD booking
  * whose cash is still in a rider's pocket has charged GST nobody has received.
@@ -40,8 +40,8 @@ const rupees = (value) =>
     maximumFractionDigits: 2,
   })}`;
 
+// LOCAL CITY PARCEL DISABLED — only the outstation rate card is editable.
 const PRODUCTS = [
-  { key: "local", label: "Local delivery", icon: MapPin },
   { key: "outstation", label: "Outstation parcel", icon: Package },
 ];
 
@@ -144,8 +144,8 @@ const PorterGst = () => {
         value: rupees(combined?.collected?.gst),
         note: `${combined?.collected?.bookings ?? 0} settled bookings`,
         icon: CheckCircle2,
-        color: "text-emerald-600",
-        bg: "bg-emerald-50 border border-emerald-100",
+        color: "text-orange-600",
+        bg: "bg-orange-50 border border-orange-100",
       },
       {
         label: "GST charged",
@@ -168,8 +168,8 @@ const PorterGst = () => {
         value: rupees(combined?.collected?.taxable),
         note: "Before tax",
         icon: Calendar,
-        color: "text-blue-600",
-        bg: "bg-blue-50 border border-blue-100",
+        color: "text-orange-600",
+        bg: "bg-orange-50 border border-orange-100",
       },
     ];
   }, [report]);
@@ -181,7 +181,7 @@ const PorterGst = () => {
       {/* Header */}
       <PageHeader
         title="GST"
-        description="Set the GST rate for local and outstation bookings, and see what it has brought in."
+        description="Set the GST rate for outstation bookings, and see what it has brought in (local delivery is disabled)."
         icon={Receipt}
         actions={
           <div className="flex flex-wrap items-end gap-2">
@@ -258,7 +258,7 @@ const PorterGst = () => {
               {/* Figures for the window */}
               <div className="mt-4 grid grid-cols-3 gap-2">
                 {[
-                  ["Collected", figures?.collected?.gst, "text-emerald-600"],
+                  ["Collected", figures?.collected?.gst, "text-orange-600"],
                   ["Charged", figures?.charged?.gst, "text-slate-900 dark:text-white"],
                   ["Outstanding", figures?.outstanding?.gst, "text-amber-600"],
                 ].map(([title, amount, tone]) => (

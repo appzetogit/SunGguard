@@ -1,6 +1,5 @@
 import handleResponse from "../utils/helper.js";
 import getPagination from "../utils/pagination.js";
-import CityParcelConfig from "../models/cityParcelConfig.js";
 import ParcelConfig from "../models/parcelConfig.js";
 import { normalizeGstConfig } from "../utils/gst.js";
 import { getPorterGstReport, getPorterGstLedger } from "../services/porter/gstReportService.js";
@@ -41,21 +40,15 @@ function parseKind(value) {
    ========================================================================== */
 
 /**
- * Both rate cards' GST settings in one call.
- *
- * The admin screen edits them side by side, and fetching them separately
- * would let the two halves of one form load out of step — an admin would see
- * local's saved value next to outstation's stale one and have no way to tell.
+ * LOCAL CITY PARCEL DISABLED — local-city GST is no longer readable or
+ * editable from this endpoint; only the outstation rate card is live.
+ * Re-enable by restoring the `local` block from git history.
  */
 export const adminGetGstSettings = async (req, res) => {
   try {
-    const [cityConfig, parcelConfig] = await Promise.all([
-      CityParcelConfig.getConfig(),
-      ParcelConfig.getOrCreate(),
-    ]);
+    const parcelConfig = await ParcelConfig.getOrCreate();
 
     return handleResponse(res, 200, "GST settings", {
-      local: normalizeGstConfig(cityConfig.gst),
       outstation: normalizeGstConfig(parcelConfig.gst),
     });
   } catch (error) {
@@ -123,26 +116,17 @@ export const adminUpdateGstSettings = async (req, res) => {
   try {
     const { local, outstation } = req.body || {};
 
-    if (!local && !outstation) {
+    // LOCAL CITY PARCEL DISABLED — local-city GST can no longer be changed
+    // from here; reject explicitly instead of silently dropping the patch.
+    if (local) {
+      return handleResponse(res, 400, "Local delivery GST is disabled and cannot be edited");
+    }
+
+    if (!outstation) {
       return handleResponse(res, 400, "Nothing to update");
     }
 
     const results = {};
-
-    if (local) {
-      const config = await CityParcelConfig.getConfig();
-      const patch = validateGstPatch(local, "Local delivery");
-      // Enabling with no rate previously saved is the same mistake as
-      // enabling with a zero rate, so it is checked against the merged value
-      // rather than the incoming one alone.
-      const merged = { ...normalizeGstConfig(config.gst), ...patch };
-      if (merged.enabled && !(merged.percent > 0)) {
-        return handleResponse(res, 400, "Local delivery: set a GST rate above zero before enabling it");
-      }
-      config.gst = merged;
-      await config.save();
-      results.local = normalizeGstConfig(config.gst);
-    }
 
     if (outstation) {
       const config = await ParcelConfig.getOrCreate();
