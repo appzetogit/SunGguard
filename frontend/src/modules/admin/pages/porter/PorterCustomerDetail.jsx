@@ -147,7 +147,7 @@ const PorterCustomerDetail = () => {
               <div className="flex items-center gap-2">
                 <h1 className="ds-h1">{customer.name}</h1>
                 <Badge variant={customer.isActive ? "success" : "error"}>
-                  <span className={cn("h-1.5 w-1.5 rounded-full", customer.isActive ? "bg-emerald-500" : "bg-rose-500")} />
+                  <span className={cn("h-1.5 w-1.5 rounded-full", customer.isActive ? "bg-orange-500" : "bg-rose-500")} />
                   {customer.isActive ? "Active" : "Inactive"}
                 </Badge>
               </div>
@@ -168,7 +168,7 @@ const PorterCustomerDetail = () => {
             "flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold uppercase tracking-widest shadow-sm transition-all",
             customer.isActive
               ? "bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white dark:bg-rose-950/30"
-              : "bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white dark:bg-emerald-950/30",
+              : "bg-orange-50 text-orange-600 hover:bg-orange-500 hover:text-white dark:bg-orange-950/30",
           )}
         >
           {customer.isActive ? <Ban className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}
@@ -194,8 +194,8 @@ const PorterCustomerDetail = () => {
         <div className="grid grid-cols-2 gap-4 lg:col-span-2">
           {stats.map((s) => {
             const colorMap = {
-              blue: { color: "text-blue-600", bg: "bg-blue-50 border border-blue-200" },
-              emerald: { color: "text-emerald-600", bg: "bg-emerald-50 border border-emerald-200" },
+              blue: { color: "text-orange-600", bg: "bg-orange-50 border border-orange-200" },
+              emerald: { color: "text-orange-600", bg: "bg-orange-50 border border-orange-200" },
               rose: { color: "text-rose-600", bg: "bg-rose-50 border border-rose-200" },
               amber: { color: "text-amber-600", bg: "bg-amber-50 border border-amber-200" },
             };
@@ -236,13 +236,11 @@ const PorterCustomerDetail = () => {
                   customer.recentBookings.map((b) => (
                     <tr
                       key={`${b.source}-${b.id}`}
-                      onClick={() =>
-                        navigate(
-                          b.source === "city"
-                            ? `/admin/city-parcels?cityParcelId=${b.id}`
-                            : `/admin/parcels?parcelId=${b.id}`,
-                        )
-                      }
+                      onClick={() => {
+                        // LOCAL CITY PARCEL DISABLED — admin page for "city" source is gone.
+                        if (b.source === "city") return;
+                        navigate(`/admin/parcels?parcelId=${b.id}`);
+                      }}
                       title="View full booking detail and status history"
                       className="cursor-pointer hover:bg-slate-50/70 dark:hover:bg-slate-800/40"
                     >
@@ -317,7 +315,7 @@ const PorterCustomerDetail = () => {
                 "mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-xs font-bold uppercase tracking-widest transition-all",
                 customer.isActive
                   ? "bg-rose-500/15 text-rose-400 hover:bg-rose-500 hover:text-white"
-                  : "bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500 hover:text-white",
+                  : "bg-orange-500/15 text-orange-400 hover:bg-orange-500 hover:text-white",
               )}
             >
               {customer.isActive ? <Ban className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}

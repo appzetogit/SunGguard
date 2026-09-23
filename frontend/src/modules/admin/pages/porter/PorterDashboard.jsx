@@ -181,28 +181,28 @@ const PorterDashboard = () => {
             label: "Total Parcels",
             value: Number(overview.totalParcels || 0).toLocaleString("en-IN"),
             icon: Package,
-            tint: "bg-blue-500/10 text-blue-600 border-blue-200 dark:border-blue-900",
+            tint: "bg-orange-500/10 text-orange-600 border-orange-200 dark:border-orange-900",
             note: `${overview.activeParcels || 0} still in flight`,
         },
         {
             label: "Today's Parcels",
             value: Number(overview.todayParcels || 0).toLocaleString("en-IN"),
             icon: CalendarCheck,
-            tint: "bg-indigo-500/10 text-indigo-600 border-indigo-200 dark:border-indigo-900",
+            tint: "bg-orange-500/10 text-orange-600 border-orange-200 dark:border-orange-900",
             note: "Booked since midnight",
         },
         {
             label: "Active Deliveries",
             value: Number(overview.activeParcels || 0).toLocaleString("en-IN"),
             icon: Bike,
-            tint: "bg-cyan-500/10 text-cyan-600 border-cyan-200 dark:border-cyan-900",
+            tint: "bg-orange-500/10 text-orange-600 border-orange-200 dark:border-orange-900",
             note: "Real-time in-transit count",
         },
         {
             label: "Delivered",
             value: Number(overview.deliveredParcels || 0).toLocaleString("en-IN"),
             icon: Truck,
-            tint: "bg-emerald-500/10 text-emerald-600 border-emerald-200 dark:border-emerald-900",
+            tint: "bg-orange-500/10 text-orange-600 border-orange-200 dark:border-orange-900",
             note: "Completed bookings",
         },
         {
@@ -223,7 +223,7 @@ const PorterDashboard = () => {
             label: "Admin Commission",
             value: rupees(overview.margin),
             icon: TrendingUp,
-            tint: "bg-violet-500/10 text-violet-600 border-violet-200 dark:border-violet-900",
+            tint: "bg-orange-500/10 text-orange-600 border-orange-200 dark:border-orange-900",
             note: `${overview.distanceKm || 0} km covered`,
         },
         {
@@ -374,14 +374,14 @@ const PorterDashboard = () => {
                         label: "Total Porters",
                         value: Number(overview.fleet?.total || 0).toLocaleString("en-IN"),
                         icon: Users,
-                        tint: "bg-sky-500/10 text-sky-600 border-sky-200 dark:border-sky-900",
+                        tint: "bg-orange-500/10 text-orange-600 border-orange-200 dark:border-orange-900",
                         note: `${overview.fleet?.online || 0} online right now`,
                     },
                     {
                         label: "Verified Riders",
                         value: Number(overview.fleet?.verified || 0).toLocaleString("en-IN"),
                         icon: ShieldCheck,
-                        tint: "bg-teal-500/10 text-teal-600 border-teal-200 dark:border-teal-900",
+                        tint: "bg-orange-500/10 text-orange-600 border-orange-200 dark:border-orange-900",
                         note: overview.fleet?.total
                             ? `${Math.round(((overview.fleet?.verified || 0) / overview.fleet.total) * 100)}% of fleet KYC-verified`
                             : "No porters yet",
@@ -479,7 +479,7 @@ const PorterDashboard = () => {
                 <Card className="flex flex-col rounded-3xl p-6 shadow-sm md:p-7">
                     <div>
                         <h3 className="flex items-center gap-2.5 text-lg font-extrabold text-slate-900 dark:text-white md:text-xl">
-                            <Boxes className="h-5 w-5 text-emerald-600" />
+                            <Boxes className="h-5 w-5 text-orange-600" />
                             Module split
                         </h3>
                         <p className="mt-1 text-xs text-slate-500 md:text-sm">
@@ -607,7 +607,7 @@ const PorterDashboard = () => {
                 <Card className="flex flex-col rounded-3xl p-6 shadow-sm md:p-7">
                     <div>
                         <h3 className="flex items-center gap-2.5 text-lg font-extrabold text-slate-900 dark:text-white md:text-xl">
-                            <Users className="h-5 w-5 text-emerald-600" />
+                            <Users className="h-5 w-5 text-orange-600" />
                             Delivery Boy Status
                         </h3>
                         <p className="mt-1 text-xs text-slate-500 md:text-sm">
@@ -740,7 +740,7 @@ const PorterDashboard = () => {
 
                 <Card className="rounded-3xl p-6 shadow-sm md:p-7">
                     <h3 className="flex items-center gap-2.5 text-lg font-extrabold text-slate-900 dark:text-white md:text-xl">
-                        <Boxes className="h-5 w-5 text-emerald-600" />
+                        <Boxes className="h-5 w-5 text-orange-600" />
                         Booking Type Distribution
                     </h3>
                     <p className="mt-1 text-xs text-slate-500 md:text-sm">Pickup service vs city parcel</p>
@@ -757,7 +757,7 @@ const PorterDashboard = () => {
                             </div>
                             <div className="h-3 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                                 <div
-                                    className="h-full rounded-full bg-blue-600"
+                                    className="h-full rounded-full bg-orange-600"
                                     style={{ width: `${pickupPct}%` }}
                                 />
                             </div>
@@ -773,7 +773,7 @@ const PorterDashboard = () => {
                             </div>
                             <div className="h-3 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                                 <div
-                                    className="h-full rounded-full bg-emerald-500"
+                                    className="h-full rounded-full bg-orange-500"
                                     style={{ width: `${cityPct}%` }}
                                 />
                             </div>
@@ -794,12 +794,7 @@ const PorterDashboard = () => {
                             Newest bookings from both porter modules
                         </p>
                     </div>
-                    <button
-                        onClick={() => navigate("/admin/city-parcels")}
-                        className="flex items-center gap-1.5 text-sm font-bold text-primary hover:underline"
-                    >
-                        City parcels <ArrowRight className="h-4 w-4" />
-                    </button>
+                    {/* LOCAL CITY PARCEL DISABLED — /admin/city-parcels route is commented out */}
                 </div>
 
                 <div className="overflow-x-auto">
@@ -838,8 +833,8 @@ const PorterDashboard = () => {
                                                 className={cn(
                                                     "rounded-lg px-2.5 py-1 text-[10px] font-black uppercase tracking-wide",
                                                     row.source === "city"
-                                                        ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400"
-                                                        : "bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400",
+                                                        ? "bg-orange-50 text-orange-700 dark:bg-orange-950/50 dark:text-orange-400"
+                                                        : "bg-orange-50 text-orange-700 dark:bg-orange-950/50 dark:text-orange-400",
                                                 )}
                                             >
                                                 {row.source === "city" ? "City" : "Pickup"}

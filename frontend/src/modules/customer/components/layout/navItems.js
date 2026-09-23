@@ -9,7 +9,9 @@ import { Home, Package, User, History } from 'lucide-react';
  */
 export const navItems = [
     { label: 'Home', icon: Home, path: '/' },
-    { label: 'Parcel', icon: Package, path: '/parcel/local' },
+    // LOCAL CITY PARCEL DISABLED — was '/parcel/local'; now lands on the hub,
+    // which only offers outstation booking.
+    { label: 'Parcel', icon: Package, path: '/parcel' },
     { label: 'History', icon: History, path: '/profile/parcel-history' },
     { label: 'Profile', icon: User, path: '/profile' },
 ];

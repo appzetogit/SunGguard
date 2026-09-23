@@ -28,8 +28,9 @@ import Warehouses from "../pages/profile/Warehouses";
 import Wallet from "../pages/profile/Wallet";
 import Notifications from "../pages/Notifications";
 import ParcelTaskPage from "../pages/ParcelTaskPage";
-import CityParcelTaskPage from "../pages/CityParcelTaskPage";
-import CityParcelJobs from "../pages/CityParcelJobs";
+// LOCAL CITY PARCEL DISABLED — re-enable by uncommenting these imports + routes below
+// import CityParcelTaskPage from "../pages/CityParcelTaskPage";
+// import CityParcelJobs from "../pages/CityParcelJobs";
 import NotFoundPage from "@shared/components/NotFoundPage";
 // Legal / informational pages for delivery partners
 import DeliveryPrivacyPage from "../pages/DeliveryPrivacyPage";
@@ -76,9 +77,9 @@ const DeliveryRoutes = () => {
         <Route path="profile/about" element={<DeliveryAboutPage />} />
         <Route path="notifications" element={<Notifications />} />
         <Route path="parcel-task/:parcelId" element={<ParcelTaskPage />} />
-        {/* City Parcel is a separate module; the pickup-service route above is unchanged. */}
-        <Route path="city-parcel-jobs" element={<CityParcelJobs />} />
-        <Route path="city-parcel/:cityParcelId" element={<CityParcelTaskPage />} />
+        {/* LOCAL CITY PARCEL DISABLED — re-enable with the imports above */}
+        {/* <Route path="city-parcel-jobs" element={<CityParcelJobs />} /> */}
+        {/* <Route path="city-parcel/:cityParcelId" element={<CityParcelTaskPage />} /> */}
         <Route path="/" element={<Navigate to="dashboard" replace />} />
       </Route>
       <Route path="*" element={<NotFoundPage homePath="/delivery/dashboard" />} />

@@ -52,8 +52,9 @@ const EditProfilePage = lazy(() => import('../../modules/customer/pages/EditProf
 const PaymentStatusPage = lazy(() => import('../../modules/customer/pages/PaymentStatusPage'));
 const WalletPage = lazy(() => import('../../modules/customer/pages/WalletPage'));
 const ParcelHome = lazy(() => import('../../modules/customer/pages/ParcelHome'));
-const CityParcelBooking = lazy(() => import('../../modules/customer/pages/CityParcelBooking'));
-const CityParcelTracking = lazy(() => import('../../modules/customer/pages/CityParcelTracking'));
+// LOCAL CITY PARCEL DISABLED — re-enable by uncommenting these two imports + routes below
+// const CityParcelBooking = lazy(() => import('../../modules/customer/pages/CityParcelBooking'));
+// const CityParcelTracking = lazy(() => import('../../modules/customer/pages/CityParcelTracking'));
 const WaybillHistory = lazy(() => import('../../modules/customer/pages/WaybillHistory'));
 const ParcelDeliveryPage = lazy(() => import('../../modules/customer/pages/ParcelDeliveryPage'));
 const ParcelSearchTrackingPage = lazy(() => import('../../modules/customer/pages/ParcelSearchTrackingPage'));
@@ -218,8 +219,9 @@ const AppRouter = () => {
                         { path: 'wallet', element: <ProtectedRoute><WalletPage /></ProtectedRoute> },
                         { path: 'parcel', element: <ProtectedRoute><ParcelHome /></ProtectedRoute> },
                         { path: 'parcel/outstation', element: <ProtectedRoute><ParcelDeliveryPage /></ProtectedRoute> },
-                        { path: 'parcel/local', element: <ProtectedRoute><CityParcelBooking /></ProtectedRoute> },
-                        { path: 'parcel/local/track/:cityParcelId', element: <ProtectedRoute><CityParcelTracking /></ProtectedRoute> },
+                        // LOCAL CITY PARCEL DISABLED — re-enable with the imports above
+                        // { path: 'parcel/local', element: <ProtectedRoute><CityParcelBooking /></ProtectedRoute> },
+                        // { path: 'parcel/local/track/:cityParcelId', element: <ProtectedRoute><CityParcelTracking /></ProtectedRoute> },
                         { path: 'parcel/search/:id', element: <ProtectedRoute><ParcelSearchTrackingPage /></ProtectedRoute> },
                         { path: 'parcel/outstation/:parcelId', element: <ProtectedRoute><ParcelDetail /></ProtectedRoute> },
                         // CAR WASH DISABLED — customer booking / tracking

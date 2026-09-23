@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Bike, MapPin, Clock, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { cityParcelApi } from "../services/cityParcelApi";
 import { parcelApi } from "../services/parcelApi";
 import {
   Card, Label, Data, Barcode, StatusChip, EmptyNote, PrimaryButton,
@@ -148,28 +147,10 @@ const WaybillHistory = () => {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [city, legacy] = await Promise.allSettled([
-      cityParcelApi.getHistory({ forceRefresh: true }),
-      parcelApi.getHistory(),
-    ]);
+    // LOCAL CITY PARCEL DISABLED — history now only fetches outstation waybills.
+    const [legacy] = await Promise.allSettled([parcelApi.getHistory()]);
 
     const out = [];
-
-    if (city.status === "fulfilled") {
-      const d = city.value?.data;
-      for (const p of unwrapList({ data: d }, "parcels")) {
-        out.push({
-          kind: "local",
-          id: p._id,
-          reference: p.referenceId,
-          status: p.status,
-          from: p.pickupAddress?.fullAddress || "Pickup",
-          to: p.dropAddress?.fullAddress || "Drop",
-          when: fmt(p.deliveredAt || p.deliveryEta || p.createdAt),
-          sortAt: new Date(p.createdAt).getTime(),
-        });
-      }
-    }
 
     if (legacy.status === "fulfilled") {
       const d = legacy.value?.data;
@@ -260,7 +241,7 @@ const WaybillHistory = () => {
             }
             action={
               tab === "active" ? (
-                <PrimaryButton onClick={() => navigate("/parcel/local")}>
+                <PrimaryButton onClick={() => navigate("/parcel/outstation")}>
                   Book a parcel
                 </PrimaryButton>
               ) : null

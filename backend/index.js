@@ -46,11 +46,12 @@ import {
   getFirebaseTrackingCleanupJobInterval,
   isFirebaseTrackingCleanupJobEnabled,
 } from "./app/jobs/firebaseTrackingCleanupJob.js";
-import {
-  getCityParcelSweeperJobHandler,
-  getCityParcelSweeperJobInterval,
-  isCityParcelSweeperEnabled,
-} from "./app/jobs/cityParcelSweeperJob.js";
+// LOCAL CITY PARCEL DISABLED — re-enable by uncommenting import + usage below
+// import {
+//   getCityParcelSweeperJobHandler,
+//   getCityParcelSweeperJobInterval,
+//   isCityParcelSweeperEnabled,
+// } from "./app/jobs/cityParcelSweeperJob.js";
 import {
   getAbandonedCheckoutJobHandler,
   getAbandonedCheckoutJobInterval,
@@ -401,17 +402,14 @@ async function startScheduler() {
     );
   }
 
-  // City Parcel deadlines: widen a stalled rider search, and auto-return a
-  // parcel whose customer never answered "we could not deliver, what now?".
-  // Both are idempotent, which is what lets them run on a schedule instead
-  // of on in-process timers that die with the process.
-  if (isCityParcelSweeperEnabled()) {
-    registerScheduledJob(
-      'cityParcelSweeperJob',
-      getCityParcelSweeperJobInterval(),
-      getCityParcelSweeperJobHandler()
-    );
-  }
+  // LOCAL CITY PARCEL DISABLED — only the outstation parcel flow is live.
+  // if (isCityParcelSweeperEnabled()) {
+  //   registerScheduledJob(
+  //     'cityParcelSweeperJob',
+  //     getCityParcelSweeperJobInterval(),
+  //     getCityParcelSweeperJobHandler()
+  //   );
+  // }
 
   // Bookings whose payment sheet was never completed. Listings already hide
   // them; this stops them accumulating in the collection forever.
@@ -431,7 +429,8 @@ async function startScheduler() {
   if (isPayoutBatchJobEnabled()) scheduledJobs.push('payoutBatchJob');
   if (isWalletLedgerVerifierEnabled()) scheduledJobs.push('walletLedgerVerifierJob');
   if (isFirebaseTrackingCleanupJobEnabled()) scheduledJobs.push('firebaseTrackingCleanupJob');
-  if (isCityParcelSweeperEnabled()) scheduledJobs.push('cityParcelSweeperJob');
+  // LOCAL CITY PARCEL DISABLED
+  // if (isCityParcelSweeperEnabled()) scheduledJobs.push('cityParcelSweeperJob');
   if (isAbandonedCheckoutJobEnabled()) scheduledJobs.push('abandonedCheckoutJob');
   logger.info('Scheduler started', {
     jobs: scheduledJobs,

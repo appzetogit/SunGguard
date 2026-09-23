@@ -4,18 +4,12 @@ import {
   Plus, Shield, TrendingUp, ArrowRight, Package, Truck, MapPin, Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { cityParcelApi } from "../services/cityParcelApi";
 import { parcelApi } from "../services/parcelApi";
 import { createSocketTokenReader } from "@core/utils/authStorage";
 import { STORAGE_KEYS } from "@core/utils/storage";
+import { getOrderSocket } from "@core/services/orderSocket";
 import {
-  getOrderSocket,
-  onCityParcelStatusUpdate,
-  onCityParcelDecisionNeeded,
-} from "@core/services/orderSocket";
-import { toast } from "sonner";
-import {
-  Card, Label, Data, Barcode, StatusChip, ServiceToggle, PrimaryButton,
+  Card, Label, Data, Barcode, StatusChip, PrimaryButton,
   EmptyNote,
 } from "../components/sunguard/kit";
 import { unwrapList } from "@core/api/unwrap";
@@ -26,15 +20,10 @@ const getCustomerToken = createSocketTokenReader(STORAGE_KEYS.AUTH_CUSTOMER);
 /**
  * The parcel home.
  *
- * Two products, unequal by design: local delivery gets the booking surface,
- * outstation gets a single confident card. Presenting them as equal tiles
- * forces a choice before the customer understands the difference.
+ * LOCAL CITY PARCEL DISABLED — only the outstation flow is booked here now.
+ * Re-enable by restoring the cityParcelApi import/calls, the ServiceToggle,
+ * and the local-branch rendering below (see git history for this file).
  */
-
-const SERVICES = [
-  { value: "local", label: "Local Delivery" },
-  { value: "outstation", label: "Outstation" },
-];
 
 const STATUS_TONE = {
   REQUESTED: { tone: "idle", label: "Awaiting Pickup" },
@@ -51,12 +40,6 @@ const STATUS_TONE = {
   RETURNED: { tone: "idle", label: "Returned" },
   CANCELLED: { tone: "idle", label: "Cancelled" },
 };
-
-const LIVE = new Set([
-  "REQUESTED", "SEARCHING", "ACCEPTED", "RIDER_ASSIGNED", "PICKUP_REACHED",
-  "PICKED_UP", "OUT_FOR_DELIVERY", "DROP_REACHED", "DELIVERY_FAILED",
-  "RETURN_IN_TRANSIT",
-]);
 
 /* -------------------------------------------------------------------------- */
 
@@ -164,25 +147,14 @@ const ShipmentCard = ({ parcel, onOpen }) => {
 
 const ParcelHome = () => {
   const navigate = useNavigate();
-  const [service, setService] = useState("local");
-  const [cityParcels, setCityParcels] = useState([]);
   const [outstation, setOutstation] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     setLoading(true);
-    // Neither list should be able to take the other down.
-    const [city, legacy] = await Promise.allSettled([
-      cityParcelApi.getHistory(),
-      parcelApi.getHistory(),
-    ]);
-
-    if (city.status === "fulfilled") {
-      const d = city.value?.data;
-      setCityParcels(unwrapList({ data: d }, "parcels"));
-    }
-    if (legacy.status === "fulfilled") {
-      const d = legacy.value?.data;
+    const legacy = await parcelApi.getHistory().catch(() => null);
+    if (legacy) {
+      const d = legacy?.data;
       setOutstation(unwrapList({ data: d }, "parcels"));
     }
     setLoading(false);
@@ -193,51 +165,20 @@ const ParcelHome = () => {
 
     const getToken = getCustomerToken;
     getOrderSocket(getToken);
-
-    // Patch the row in place rather than refetching the whole list: the
-    // customer may be mid-scroll and a wholesale replace jumps under them.
-    const offStatus = onCityParcelStatusUpdate(getToken, (payload) => {
-      if (!payload?.cityParcelId) return;
-      setCityParcels((rows) =>
-        rows.map((row) =>
-          String(row._id) === String(payload.cityParcelId)
-            ? { ...row, ...(payload.parcel || { status: payload.status }) }
-            : row,
-        ),
-      );
-    });
-
-    const offDecision = onCityParcelDecisionNeeded(getToken, (payload) => {
-      toast.error(payload?.message || "A parcel needs your decision", {
-        duration: 10000,
-      });
-      load();
-    });
-
-    return () => {
-      offStatus();
-      offDecision();
-    };
   }, [load]);
 
-  const activeLocal = useMemo(
-    () => cityParcels.filter((p) => LIVE.has(p.status)),
-    [cityParcels],
-  );
   const activeOutstation = useMemo(
     () => outstation.filter((p) => !["DELIVERED", "CANCELLED"].includes(p.status)),
     [outstation],
   );
 
-  const isLocal = service === "local";
-  const active = isLocal ? activeLocal : activeOutstation;
+  const isLocal = false;
+  const active = activeOutstation;
 
   return (
     <div className="mx-auto w-full max-w-lg px-5 pb-28 pt-4">
-      <ServiceToggle value={service} onChange={setService} options={SERVICES} />
-
       {/* ---- porter promotional banner carousel ---- */}
-      <PorterBannerCarousel service={service} />
+      <PorterBannerCarousel service="outstation" />
 
       {/* ---- start a shipment ---- */}
       <Card className="mt-5 overflow-hidden p-5">
@@ -255,9 +196,7 @@ const ParcelHome = () => {
         <PrimaryButton
           className="mt-5"
           icon={ArrowRight}
-          onClick={() =>
-            navigate(isLocal ? "/parcel/local" : "/parcel/outstation")
-          }
+          onClick={() => navigate("/parcel/outstation")}
         >
           Create New Booking
         </PrimaryButton>

@@ -23,7 +23,8 @@ import healthRoute from "./healthRoutes.js";
 import metricsRoute from "./metricsRoutes.js";
 import authOtpRoute from "../modules/otp/otp.routes.js";
 import parcelRoute from "./parcelRoutes.js";
-import cityParcelRoute from "./cityParcelRoutes.js";
+// LOCAL CITY PARCEL DISABLED — outstation (parcelRoute) is the only live parcel flow.
+// import cityParcelRoute from "./cityParcelRoutes.js";
 import warehouseRoute from "./warehouseRoutes.js";
 import porterRoute from "./porterRoutes.js";
 // CAR WASH DISABLED — re-enable by uncommenting import + mount below
@@ -76,9 +77,9 @@ const setupRoutes = (app) => {
     router.use("/admin/faqs", faqRoute);
     router.use("/public/faqs", faqRoute); // For public access without admin prefix
     router.use("/parcel", parcelRoute);
-    // City Parcel is a separate module on its own prefix. /parcel keeps its
-    // exact existing contract — nothing here shadows or overrides it.
-    router.use("/city-parcel", cityParcelRoute);
+    // LOCAL CITY PARCEL DISABLED — re-enable by uncommenting the import above
+    // and this mount. /parcel (outstation) is unaffected either way.
+    // router.use("/city-parcel", cityParcelRoute);
     router.use("/warehouse", warehouseRoute);
     // Porter desk: parcel-side dashboard and delivery zones. Reads from both
     // parcel modules above; owns nothing they depend on.

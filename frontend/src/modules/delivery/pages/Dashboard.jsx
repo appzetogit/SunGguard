@@ -30,19 +30,19 @@ import { useAuth } from "@core/context/AuthContext";
 import { deliveryApi } from "../services/deliveryApi";
 import CashLimitBanner from "../components/CashLimitBanner";
 import { parcelApi } from "../../customer/services/parcelApi";
-import { cityParcelApi } from "../services/cityParcelApi";
 import { unwrap, unwrapList } from "@core/api/unwrap";
 import {
   getOrderSocket,
-  onCityParcelBroadcast,
-  onCityParcelRetract,
-  onCityParcelAssigned,
   onOrderStatusUpdate,
 } from "@core/services/orderSocket";
 import { createSocketTokenReader } from "@core/utils/authStorage";
 import { STORAGE_KEYS } from "@core/utils/storage";
 
 const getDeliveryToken = createSocketTokenReader(STORAGE_KEYS.AUTH_DELIVERY);
+
+// LOCAL CITY PARCEL DISABLED — flip to true (and restore fetchCityParcels /
+// the city-parcel socket listeners below) to bring the flow back.
+const LOCAL_CITY_PARCEL_ENABLED = false;
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -56,9 +56,10 @@ const Dashboard = () => {
   const [availableOrders, setAvailableOrders] = useState([]);
   const [assignedStoreOrder, setAssignedStoreOrder] = useState(null);
   const [assignedParcel, setAssignedParcel] = useState(null);
-  // City Parcel is a separate module with its own collection, so it needs
-  // its own fetch — the pickup-service endpoint above never returns these.
-  const [assignedCityParcel, setAssignedCityParcel] = useState(null);
+  // LOCAL CITY PARCEL DISABLED — always null/empty now (fetchCityParcels is a
+  // no-op below), kept only so the dead render blocks further down still
+  // type-check; re-enable by restoring the setter from git history.
+  const [assignedCityParcel] = useState(null);
   const [openCityJobs, setOpenCityJobs] = useState([]);
   const [earnings, setEarnings] = useState({
     today: 0,
@@ -71,8 +72,6 @@ const Dashboard = () => {
     inFlight: false,
     lastFetchedAt: 0,
   });
-  const cityParcelRequestRef = useRef({ inFlight: false, lastFetchedAt: 0 });
-
   const profileImage = useMemo(() => {
     if (user?.profileImage) return user.profileImage;
     const seed = encodeURIComponent(user?.name || user?.phone || "delivery");
@@ -190,67 +189,21 @@ const Dashboard = () => {
     }
   }, []);
 
-  const fetchCityParcels = useCallback(async (force = false) => {
-    const now = Date.now();
-    if (!force && now - cityParcelRequestRef.current.lastFetchedAt < 30000)
-      return;
-    if (cityParcelRequestRef.current.inFlight) return;
-    cityParcelRequestRef.current.inFlight = true;
-    try {
-      const [assigned, available] = await Promise.allSettled([
-        cityParcelApi.getAssigned({ ttl: 30000, forceRefresh: force }),
-        cityParcelApi.getAvailable({ ttl: 20000, forceRefresh: force }),
-      ]);
-
-      if (assigned.status === "fulfilled") {
-        const list = unwrapList(assigned.value, "parcels");
-        setAssignedCityParcel(list[0] || null);
-      }
-      if (user?.isBusy) {
-        setOpenCityJobs([]);
-      } else if (available.status === "fulfilled") {
-        // The endpoint now answers with { parcels, reason, hint }, so read the
-        // collection out of the payload rather than the payload itself.
-        setOpenCityJobs(unwrap(available.value)?.parcels || []);
-      }
-    } catch {
-      /* a failed poll should never blank the dashboard */
-    } finally {
-      cityParcelRequestRef.current.inFlight = false;
-      cityParcelRequestRef.current.lastFetchedAt = Date.now();
-    }
-  }, []);
+  // LOCAL CITY PARCEL DISABLED — no-op stub keeps state empty and skips the
+  // network calls entirely (assignedCityParcel/openCityJobs stay at their
+  // initial empty values, so the render blocks below never show).
+  // Re-enable by restoring the body from git history.
+  const fetchCityParcels = useCallback(async () => {}, []);
 
   /**
-   * City Parcel offers arrive over their own socket channel, separate from
-   * the pickup-service `parcel:*` events the layout listens to.
-   *
-   * The 30-second poll below is the fallback for a dropped connection; without
-   * these listeners a rider would sit staring at an empty dashboard for up to
-   * half a minute after a booking landed nearby.
+   * LOCAL CITY PARCEL DISABLED — the onCityParcelBroadcast/Retract/Assigned
+   * listeners are removed; only the outstation order-status listener remains.
+   * Re-enable by restoring the three listeners from git history.
    */
   useEffect(() => {
     if (!isOnline) return undefined;
     const getToken = getDeliveryToken;
     getOrderSocket(getToken);
-
-    const offBroadcast = onCityParcelBroadcast(getToken, () => {
-      fetchCityParcels(true);
-    });
-
-    // Someone else took it — drop it from the list rather than leaving a job
-    // on screen that will fail the moment it is tapped.
-    const offRetract = onCityParcelRetract(getToken, (payload) => {
-      const id = payload?.cityParcelId;
-      if (!id) return;
-      setOpenCityJobs((jobs) =>
-        jobs.filter((j) => String(j._id) !== String(id)),
-      );
-    });
-
-    const offAssigned = onCityParcelAssigned(getToken, () => {
-      fetchCityParcels(true);
-    });
 
     const offOrderStatus = onOrderStatusUpdate(getToken, () => {
       fetchAssignedOrder(true);
@@ -258,12 +211,9 @@ const Dashboard = () => {
     });
 
     return () => {
-      offBroadcast();
-      offRetract();
-      offAssigned();
       offOrderStatus();
     };
-  }, [isOnline, fetchCityParcels, fetchAssignedOrder, refreshUser]);
+  }, [isOnline, fetchAssignedOrder, refreshUser]);
 
   useEffect(() => {
     fetchStats();
@@ -567,9 +517,11 @@ const Dashboard = () => {
           </Card>
         )}
 
-        {/* City Parcel — separate module, its own card. Placed first because a
-            job already in hand outranks one still on offer. */}
-        {assignedCityParcel && (
+        {/* LOCAL CITY PARCEL DISABLED — assignedCityParcel/openCityJobs stay
+            empty forever (fetchCityParcels is a no-op above), so these blocks
+            never rendered anyway; kept behind `false` for clarity. Re-enable
+            by restoring the condition from git history. */}
+        {LOCAL_CITY_PARCEL_ENABLED && assignedCityParcel && (
           <Card className="bg-emerald-50/60 border border-emerald-100 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
@@ -621,7 +573,7 @@ const Dashboard = () => {
         {isOnline && (
           <CashLimitBanner refreshKey={openCityJobs.length} className="mb-3" />
         )}
-        {!assignedCityParcel && openCityJobs.length === 0 && isOnline && (
+        {LOCAL_CITY_PARCEL_ENABLED && !assignedCityParcel && openCityJobs.length === 0 && isOnline && (
           <button
             type="button"
             onClick={() => navigate("/delivery/city-parcel-jobs")}
@@ -633,7 +585,7 @@ const Dashboard = () => {
           </button>
         )}
 
-        {!assignedCityParcel && openCityJobs.length > 0 && (
+        {LOCAL_CITY_PARCEL_ENABLED && !assignedCityParcel && openCityJobs.length > 0 && (
           <Card className="bg-white border border-emerald-100 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <p className="text-[10px] font-black uppercase tracking-wider text-emerald-700">

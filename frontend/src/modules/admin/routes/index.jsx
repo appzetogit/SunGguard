@@ -74,7 +74,8 @@ const PorterGst = React.lazy(() => import("../pages/porter/PorterGst"));
 const PorterCashDeposits = React.lazy(
   () => import("../pages/porter/PorterCashDeposits"),
 );
-const CityParcelAdmin = React.lazy(() => import("../pages/CityParcelAdmin"));
+// LOCAL CITY PARCEL DISABLED — re-enable by uncommenting this import + the routes below
+// const CityParcelAdmin = React.lazy(() => import("../pages/CityParcelAdmin"));
 const DeliveryFunds = React.lazy(() => import("../pages/DeliveryFunds"));
 const AdminWallet = React.lazy(() => import("../pages/AdminWallet"));
 const WithdrawalRequests = React.lazy(
@@ -261,17 +262,18 @@ const navItems = [
       { label: "Revenue Reports", path: "/admin/parcels/reports" },
     ],
   },
-  {
-    label: "City Parcel",
-    icon: Truck,
-    color: "emerald",
-    group: "porter",
-    children: [
-      { label: "Needs Attention", path: "/admin/city-parcels/attention" },
-      { label: "All Parcels", path: "/admin/city-parcels/all" },
-      { label: "Rate Card", path: "/admin/city-parcels/pricing" },
-    ],
-  },
+  // LOCAL CITY PARCEL DISABLED — sidebar entry removed along with the routes above.
+  // {
+  //   label: "City Parcel",
+  //   icon: Truck,
+  //   color: "emerald",
+  //   group: "porter",
+  //   children: [
+  //     { label: "Needs Attention", path: "/admin/city-parcels/attention" },
+  //     { label: "All Parcels", path: "/admin/city-parcels/all" },
+  //     { label: "Rate Card", path: "/admin/city-parcels/pricing" },
+  //   ],
+  // },
   {
     // Same page/route as the "Coupons & Promos" entry under Marketing Tools
     // below — that whole group is hidden while the sidebar runs porter-only
@@ -406,8 +408,9 @@ const AdminRoutes = () => {
         />
         <Route path="/parcels" element={<AdminParcelDashboard />} />
         <Route path="/parcels/:tab" element={<AdminParcelDashboard />} />
-        <Route path="/city-parcels" element={<CityParcelAdmin />} />
-        <Route path="/city-parcels/:tab" element={<CityParcelAdmin />} />
+        {/* LOCAL CITY PARCEL DISABLED — re-enable with the import above */}
+        {/* <Route path="/city-parcels" element={<CityParcelAdmin />} /> */}
+        {/* <Route path="/city-parcels/:tab" element={<CityParcelAdmin />} /> */}
         <Route path="/porter" element={<PorterDashboard />} />
         <Route path="/porter/banners" element={<PorterBanners />} />
         <Route path="/porter/zones" element={<DeliveryZones />} />
