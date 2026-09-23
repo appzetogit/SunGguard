@@ -110,8 +110,9 @@ export const createCoupon = async (req, res) => {
         // scope and would silently create a product-order coupon for any
         // caller that omits `appliesTo` — this admin never intends that, so
         // an omitted scope defaults to Porter here instead.
+        // LOCAL CITY PARCEL DISABLED — default is outstation-only now.
         if (data.appliesTo === undefined) {
-            data.appliesTo = ["porter_local", "porter_outstation"];
+            data.appliesTo = ["porter_outstation"];
         }
         const validationError = validateCouponPayload(data, { isCreate: true });
         if (validationError) {

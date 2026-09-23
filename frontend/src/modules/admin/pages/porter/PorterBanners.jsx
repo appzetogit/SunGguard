@@ -34,17 +34,17 @@ import { cn } from "@/lib/utils";
 const STATUS_CONFIG = {
   active: {
     label: "Active Now",
-    bg: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800",
+    bg: "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/40 dark:text-orange-400 dark:border-orange-800",
     icon: CheckCircle2,
   },
   scheduled: {
     label: "Scheduled",
-    bg: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800",
+    bg: "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/40 dark:text-orange-400 dark:border-orange-800",
     icon: Clock,
   },
   default: {
     label: "Always Show (Default)",
-    bg: "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-800",
+    bg: "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/40 dark:text-orange-400 dark:border-orange-800",
     icon: Sparkles,
   },
   expired: {
@@ -380,22 +380,22 @@ const PorterBanners = () => {
           label="Active Now"
           value={counts.active}
           icon={CheckCircle2}
-          color="text-emerald-600"
-          bg="bg-emerald-50 border border-emerald-200 dark:bg-emerald-950/40 dark:border-emerald-800"
+          color="text-orange-600"
+          bg="bg-orange-50 border border-orange-200 dark:bg-orange-950/40 dark:border-orange-800"
         />
         <StatCard
           label="Scheduled"
           value={counts.scheduled}
           icon={Clock}
-          color="text-blue-600"
-          bg="bg-blue-50 border border-blue-200 dark:bg-blue-950/40 dark:border-blue-800"
+          color="text-orange-600"
+          bg="bg-orange-50 border border-orange-200 dark:bg-orange-950/40 dark:border-orange-800"
         />
         <StatCard
           label="Always Show"
           value={counts.default}
           icon={Sparkles}
-          color="text-purple-600"
-          bg="bg-purple-50 border border-purple-200 dark:bg-purple-950/40 dark:border-purple-800"
+          color="text-orange-600"
+          bg="bg-orange-50 border border-orange-200 dark:bg-orange-950/40 dark:border-orange-800"
         />
         <StatCard
           className="col-span-2 sm:col-span-1"
@@ -427,7 +427,7 @@ const PorterBanners = () => {
                 className={cn(
                   "rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors",
                   statusFilter === tab.id
-                    ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
+                    ? "bg-[color:var(--primary)] text-white dark:bg-white dark:text-slate-900"
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                 )}
               >
@@ -547,7 +547,7 @@ const PorterBanners = () => {
                       <span className="text-slate-400">Schedule:</span>
                       <span className="font-medium text-right truncate">
                         {b.isDefault ? (
-                          <span className="font-semibold text-purple-600 dark:text-purple-400">
+                          <span className="font-semibold text-orange-600 dark:text-orange-400">
                             Always Active (Default)
                           </span>
                         ) : (
@@ -573,7 +573,7 @@ const PorterBanners = () => {
                       <span
                         className={cn(
                           "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
-                          b.isActive ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-700"
+                          b.isActive ? "bg-orange-500" : "bg-slate-300 dark:bg-slate-700"
                         )}
                       >
                         <span
@@ -587,7 +587,7 @@ const PorterBanners = () => {
                         className={cn(
                           "transition-colors",
                           b.isActive
-                            ? "text-emerald-600 dark:text-emerald-400"
+                            ? "text-orange-600 dark:text-orange-400"
                             : "text-slate-400 dark:text-slate-500"
                         )}
                       >
@@ -599,7 +599,7 @@ const PorterBanners = () => {
                       <button
                         type="button"
                         onClick={() => handleOpenEdit(b)}
-                        className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                        className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:hover:opacity-90 dark:hover:text-slate-200"
                         title="Edit Banner"
                       >
                         <Pencil className="h-4 w-4" />
@@ -653,7 +653,7 @@ const PorterBanners = () => {
                   <button
                     type="button"
                     onClick={() => setForm((prev) => ({ ...prev, imageUrl: "" }))}
-                    className="absolute right-2 top-2 rounded-lg bg-black/70 px-2 py-1 text-xs text-white backdrop-blur-sm hover:bg-black"
+                    className="absolute right-2 top-2 rounded-lg bg-black/70 px-2 py-1 text-xs text-white backdrop-blur-sm hover:bg-[color:var(--primary)]"
                   >
                     Change
                   </button>
@@ -731,13 +731,13 @@ const PorterBanners = () => {
           </div>
 
           {/* Default / Always Show Switch */}
-          <div className="rounded-xl border border-purple-200 bg-purple-50/60 p-3.5 dark:border-purple-900/50 dark:bg-purple-950/20">
+          <div className="rounded-xl border border-orange-200 bg-orange-50/60 p-3.5 dark:border-orange-900/50 dark:bg-orange-950/20">
             <label className="flex items-center justify-between cursor-pointer">
               <div>
-                <span className="block text-xs font-bold text-purple-900 dark:text-purple-200">
+                <span className="block text-xs font-bold text-orange-900 dark:text-orange-200">
                   Always Show (Default Banner)
                 </span>
-                <span className="block text-[11px] text-purple-700 dark:text-purple-400">
+                <span className="block text-[11px] text-orange-700 dark:text-orange-400">
                   Does not expire. Acts as fallback when no time-specific promotions are running.
                 </span>
               </div>
@@ -745,7 +745,7 @@ const PorterBanners = () => {
                 type="checkbox"
                 checked={form.isDefault}
                 onChange={(e) => setForm({ ...form, isDefault: e.target.checked })}
-                className="h-4 w-4 rounded border-purple-300 text-purple-600 focus:ring-purple-500"
+                className="h-4 w-4 rounded border-orange-300 text-orange-600 focus:ring-orange-500"
               />
             </label>
           </div>
@@ -814,7 +814,7 @@ const PorterBanners = () => {
                       End date & time must be strictly later than start date & time.
                     </p>
                   ) : new Date(form.startDate).toDateString() === new Date(form.endDate).toDateString() ? (
-                    <p className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                    <p className="flex items-center gap-1.5 text-[11px] font-medium text-orange-600 dark:text-orange-400">
                       <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
                       Same-Day Banner: Active today from{" "}
                       {new Date(form.startDate).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}{" "}
@@ -838,8 +838,10 @@ const PorterBanners = () => {
                 onChange={(e) => setForm({ ...form, serviceType: e.target.value })}
                 className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary dark:border-slate-700 dark:bg-slate-900 dark:text-white"
               >
-                <option value="all">Both (Local & Outstation)</option>
-                <option value="local">Local Delivery Only</option>
+                {/* LOCAL CITY PARCEL DISABLED — "Local Delivery Only" option removed;
+                    local bookings can no longer be created so a local-only banner would
+                    never be seen. "all" is kept for existing banners saved with it. */}
+                <option value="all">All</option>
                 <option value="outstation">Outstation Only</option>
               </select>
             </div>

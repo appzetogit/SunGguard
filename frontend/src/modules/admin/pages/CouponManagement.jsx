@@ -42,8 +42,9 @@ const CouponManagement = () => {
     // "Product Orders" is deliberately not offered as a scope here. The
     // underlying `Coupon` model/engine still supports it (untouched) in case
     // Quick is ever switched back on; only this creation form is scoped down.
+    // LOCAL CITY PARCEL DISABLED — "Local Delivery" scope removed from the
+    // creation form; new coupons can only target outstation delivery.
     const APPLIES_TO_OPTIONS = [
-        { value: 'porter_local', label: 'Local Delivery' },
         { value: 'porter_outstation', label: 'Outstation Delivery' },
     ];
 
@@ -83,7 +84,8 @@ const CouponManagement = () => {
         validFrom: '',
         validTill: '',
         description: '',
-        appliesTo: ['porter_local', 'porter_outstation'],
+        // LOCAL CITY PARCEL DISABLED — new coupons default to outstation scope only.
+        appliesTo: ['porter_outstation'],
     };
 
     const [formData, setFormData] = useState(emptyFormData);
@@ -281,8 +283,8 @@ const CouponManagement = () => {
                     label="Active Codes"
                     value={stats.active}
                     icon={HiOutlineCheckCircle}
-                    color="text-emerald-600"
-                    bg="bg-emerald-50"
+                    color="text-orange-600"
+                    bg="bg-orange-50"
                 />
                 <StatCard
                     label="Redemptions"

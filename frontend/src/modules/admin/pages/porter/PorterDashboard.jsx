@@ -26,8 +26,6 @@ import {
 import {
     AreaChart,
     Area,
-    BarChart,
-    Bar,
     XAxis,
     YAxis,
     CartesianGrid,
@@ -146,7 +144,6 @@ const PorterDashboard = () => {
     }
 
     const overview = data?.overview || {};
-    const breakdown = data?.breakdown || {};
     const attention = data?.needsAttention || {};
     const trend = data?.trend || [];
     const recent = data?.recent || [];
@@ -169,12 +166,6 @@ const PorterDashboard = () => {
         { ...FLEET_DONUT[1], value: fleet.busy || 0 },
         { ...FLEET_DONUT[2], value: fleet.offline || 0 },
     ];
-
-    const pickupShare = breakdown.pickup?.total || 0;
-    const cityShare = breakdown.city?.total || 0;
-    const shareTotal = pickupShare + cityShare || 1;
-    const pickupPct = Math.round((pickupShare / shareTotal) * 100);
-    const cityPct = 100 - pickupPct;
 
     const kpis = [
         {
@@ -251,8 +242,7 @@ const PorterDashboard = () => {
                             Parcel operations
                         </h1>
                         <p className="max-w-xl text-sm text-slate-300 md:text-base">
-                            Pickup-service and city-parcel bookings, added together and shown
-                            side by side, for the last {days} days.
+                            Outstation parcel bookings for the last {days} days.
                         </p>
                     </div>
 
@@ -416,15 +406,18 @@ const PorterDashboard = () => {
             </div>
 
             {/* Charts */}
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                <Card className="overflow-hidden rounded-3xl p-6 shadow-sm lg:col-span-2 md:p-7">
+            {/* LOCAL CITY PARCEL DISABLED — the "Module split" card that compared
+                pickup vs. city bookings is removed; this chart now spans full
+                width. Re-enable by restoring the card from git history. */}
+            <div className="grid grid-cols-1 gap-6">
+                <Card className="overflow-hidden rounded-3xl p-6 shadow-sm md:p-7">
                     <div className="border-b border-slate-100 pb-5 dark:border-slate-800">
                         <h3 className="flex items-center gap-2.5 text-lg font-extrabold text-slate-900 dark:text-white md:text-xl">
                             <Route className="h-5 w-5 text-primary" />
                             Bookings & revenue
                         </h3>
                         <p className="mt-1 text-xs text-slate-500 md:text-sm">
-                            Daily parcel volume across both porter modules
+                            Daily parcel volume
                         </p>
                     </div>
 
@@ -472,74 +465,6 @@ const PorterDashboard = () => {
                                 />
                             </AreaChart>
                         </ResponsiveContainer>
-                    </div>
-                </Card>
-
-                {/* Module split */}
-                <Card className="flex flex-col rounded-3xl p-6 shadow-sm md:p-7">
-                    <div>
-                        <h3 className="flex items-center gap-2.5 text-lg font-extrabold text-slate-900 dark:text-white md:text-xl">
-                            <Boxes className="h-5 w-5 text-orange-600" />
-                            Module split
-                        </h3>
-                        <p className="mt-1 text-xs text-slate-500 md:text-sm">
-                            Pickup service vs city parcel
-                        </p>
-                    </div>
-
-                    <div className="h-[180px] w-full pt-4">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={trendChart} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" opacity={0.6} />
-                                <XAxis dataKey="label" hide />
-                                <YAxis
-                                    tickLine={false}
-                                    axisLine={false}
-                                    allowDecimals={false}
-                                    tick={{ fontSize: 11, fill: "#64748B", fontWeight: 600 }}
-                                />
-                                <Tooltip contentStyle={tooltipStyle} />
-                                <Bar dataKey="pickup" stackId="a" fill="#2563EB" radius={[0, 0, 0, 0]} />
-                                <Bar dataKey="city" stackId="a" fill="#10B981" radius={[4, 4, 0, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-
-                    <div className="mt-4 space-y-3 border-t border-slate-100 pt-4 dark:border-slate-800">
-                        {[
-                            {
-                                name: "Pickup service",
-                                color: "#2563EB",
-                                total: breakdown.pickup?.total || 0,
-                                revenue: breakdown.pickup?.revenue || 0,
-                            },
-                            {
-                                name: "City parcel",
-                                color: "#10B981",
-                                total: breakdown.city?.total || 0,
-                                revenue: breakdown.city?.revenue || 0,
-                            },
-                        ].map((row) => (
-                            <div key={row.name} className="flex items-center justify-between text-sm">
-                                <span className="flex items-center gap-2.5">
-                                    <span
-                                        className="h-3 w-3 shrink-0 rounded-full"
-                                        style={{ backgroundColor: row.color }}
-                                    />
-                                    <span className="font-semibold text-slate-700 dark:text-slate-200">
-                                        {row.name}
-                                    </span>
-                                </span>
-                                <span className="text-right">
-                                    <span className="block font-mono font-bold text-slate-900 dark:text-white">
-                                        {row.total}
-                                    </span>
-                                    <span className="block font-mono text-[11px] text-slate-400">
-                                        {rupees(row.revenue)}
-                                    </span>
-                                </span>
-                            </div>
-                        ))}
                     </div>
                 </Card>
             </div>
@@ -660,8 +585,10 @@ const PorterDashboard = () => {
                 </Card>
             </div>
 
-            {/* Alerts, top areas & booking type distribution */}
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            {/* Alerts & top areas. LOCAL CITY PARCEL DISABLED — the "Booking Type
+                Distribution" card (pickup vs city %) is removed; grid is now 2
+                columns instead of 3. Re-enable by restoring it from git history. */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 <Card className="rounded-3xl p-6 shadow-sm md:p-7">
                     <div className="flex items-center justify-between">
                         <h3 className="flex items-center gap-2.5 text-lg font-extrabold text-slate-900 dark:text-white md:text-xl">
@@ -678,7 +605,7 @@ const PorterDashboard = () => {
                             ALERTS.filter((a) => (attention[a.key] || 0) > 0).map((a) => (
                                 <div
                                     key={a.key}
-                                    className="flex items-center gap-3 rounded-xl px-2 py-3 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                                    className="flex items-center gap-3 rounded-xl px-2 py-3 transition-colors hover:bg-slate-50 dark:hover:opacity-90/40"
                                 >
                                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 text-sm font-black text-amber-700 dark:bg-amber-950/50 dark:text-amber-400">
                                         {attention[a.key]}
@@ -737,49 +664,6 @@ const PorterDashboard = () => {
                         )}
                     </div>
                 </Card>
-
-                <Card className="rounded-3xl p-6 shadow-sm md:p-7">
-                    <h3 className="flex items-center gap-2.5 text-lg font-extrabold text-slate-900 dark:text-white md:text-xl">
-                        <Boxes className="h-5 w-5 text-orange-600" />
-                        Booking Type Distribution
-                    </h3>
-                    <p className="mt-1 text-xs text-slate-500 md:text-sm">Pickup service vs city parcel</p>
-
-                    <div className="mt-6 space-y-6">
-                        <div>
-                            <div className="mb-2 flex items-center justify-between text-sm">
-                                <span className="font-semibold text-slate-700 dark:text-slate-200">
-                                    Pickup Service Bookings
-                                </span>
-                                <span className="font-mono font-bold text-slate-900 dark:text-white">
-                                    {pickupPct}%
-                                </span>
-                            </div>
-                            <div className="h-3 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                                <div
-                                    className="h-full rounded-full bg-orange-600"
-                                    style={{ width: `${pickupPct}%` }}
-                                />
-                            </div>
-                        </div>
-                        <div>
-                            <div className="mb-2 flex items-center justify-between text-sm">
-                                <span className="font-semibold text-slate-700 dark:text-slate-200">
-                                    City Parcel Bookings
-                                </span>
-                                <span className="font-mono font-bold text-slate-900 dark:text-white">
-                                    {cityPct}%
-                                </span>
-                            </div>
-                            <div className="h-3 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                                <div
-                                    className="h-full rounded-full bg-orange-500"
-                                    style={{ width: `${cityPct}%` }}
-                                />
-                            </div>
-                        </div>
-                    </div>
-                </Card>
             </div>
 
             {/* Recent parcels */}
@@ -791,7 +675,7 @@ const PorterDashboard = () => {
                             Latest parcels
                         </h3>
                         <p className="mt-1 text-xs text-slate-500 md:text-sm">
-                            Newest bookings from both porter modules
+                            Newest bookings
                         </p>
                     </div>
                     {/* LOCAL CITY PARCEL DISABLED — /admin/city-parcels route is commented out */}
@@ -826,7 +710,7 @@ const PorterDashboard = () => {
                                 recent.map((row) => (
                                     <tr
                                         key={`${row.source}-${row.id}`}
-                                        className="transition-colors hover:bg-slate-50/60 dark:hover:bg-slate-800/40"
+                                        className="transition-colors hover:bg-slate-50/60 dark:hover:opacity-90/40"
                                     >
                                         <td className="px-6 py-4">
                                             <span
