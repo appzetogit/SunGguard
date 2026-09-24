@@ -326,6 +326,10 @@ const DeliveryLayout = () => {
         paymentMethod: String(p.paymentMethod || "").toUpperCase() || "COD",
         collectAmount: Number(p.collectAmount) || 0,
         parcelType: p.parcelType || "outstation",
+        // Outstation earning is distance-based (accept point → pickup point),
+        // so it can't be a real number until the rider actually accepts —
+        // this is the rate the eventual amount will be computed from.
+        riderPerKmRate: Number(p.riderPerKmRate) || 0,
         expiresAt: payload.searchExpiresAt || null,
         isBroadcast: true,
       });
@@ -1535,14 +1539,32 @@ const DeliveryLayout = () => {
                       First to accept gets the delivery
                     </p>
 
-                    <div className="flex items-center gap-2 mb-6">
-                      <span className="text-2xl font-black text-brand-600">
-                        ₹{activeParcelOffer.earnings}
-                      </span>
-                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                        You&apos;ll get
-                      </span>
-                    </div>
+                    {activeParcelOffer.isCityParcel ||
+                    activeParcelOffer.parcelType === "local" ? (
+                      <div className="flex items-center gap-2 mb-6">
+                        <span className="text-2xl font-black text-brand-600">
+                          ₹{activeParcelOffer.earnings}
+                        </span>
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                          You&apos;ll get
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-0.5 mb-6">
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl font-black text-brand-600">
+                            ₹{activeParcelOffer.riderPerKmRate}/km
+                          </span>
+                          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                            Your rate
+                          </span>
+                        </div>
+                        <p className="text-[10px] font-semibold text-slate-400">
+                          Final amount = this rate × your distance to pickup,
+                          shown once you accept
+                        </p>
+                      </div>
+                    )}
 
                     {String(activeParcelOffer.paymentMethod).toUpperCase() ===
                       "COD" &&

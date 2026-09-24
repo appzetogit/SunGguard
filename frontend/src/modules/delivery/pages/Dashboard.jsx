@@ -674,6 +674,16 @@ const Dashboard = () => {
                     ).toFixed(2)}
                   </p>
                 )}
+                {assignedParcel.riderEarningBreakdown?.earning > 0 && (
+                  <p className="text-xs font-black text-emerald-700 mt-1.5">
+                    You earn ₹
+                    {assignedParcel.riderEarningBreakdown.earning.toFixed(2)}{" "}
+                    <span className="font-semibold text-emerald-600">
+                      ({assignedParcel.riderEarningBreakdown.distanceKm} km × ₹
+                      {assignedParcel.riderEarningBreakdown.ratePerKm}/km)
+                    </span>
+                  </p>
+                )}
               </div>
               <Button
                 variant="primary"

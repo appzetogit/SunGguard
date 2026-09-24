@@ -206,6 +206,11 @@ const ParcelTaskPage = () => {
   const isParcelCod = String(parcel?.paymentMethod).toUpperCase() === "COD";
   const codAmount = Number(parcel?.codSettlement?.collectAmount || parcel?.fare || 0);
 
+  // Distance from where you accepted the job to the pickup point × the
+  // admin's per-km rate — set once at accept time, so this number never
+  // changes for the rest of the job.
+  const earningBreakdown = parcel?.riderEarningBreakdown || null;
+
   /**
    * What the customer described at booking. The backend already sends all of
    * it (riderGetAssignedParcels only strips the OTP) — the rider screen just
@@ -625,6 +630,20 @@ const ParcelTaskPage = () => {
             : `Drop at ${courierName || "courier company"}`}
           {parcel.deliverySpeed === "express" ? " · 10 min" : " · 30 min"}
         </p>
+        {earningBreakdown && earningBreakdown.earning > 0 && (
+          <div className="mt-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2">
+            <p className="text-[10px] font-black uppercase tracking-wider text-emerald-700">
+              Your Earning
+            </p>
+            <p className="text-lg font-black text-emerald-900">
+              ₹{earningBreakdown.earning.toFixed(2)}
+            </p>
+            <p className="text-[10px] font-semibold text-emerald-700/80">
+              {earningBreakdown.distanceKm} km (accept point → pickup) × ₹
+              {earningBreakdown.ratePerKm}/km
+            </p>
+          </div>
+        )}
         {isParcelCod && (
           <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2">
             <p className="text-[10px] font-black uppercase tracking-wider text-amber-700">

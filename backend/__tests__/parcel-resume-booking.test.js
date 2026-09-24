@@ -73,6 +73,7 @@ jest.unstable_mockModule("../app/services/parcelWorkflowService.js", () => ({
   fetchParcelsForSeller: jest.fn(),
   cancelParcelSearch: jest.fn(),
   computeRiderParcelEarnings: jest.fn(),
+  computeRiderParcelEarningBreakdown: jest.fn(() => ({ earning: 0, distanceKm: 0, ratePerKm: 0 })),
 }));
 jest.unstable_mockModule("../app/services/parcelDataResetService.js", () => ({
   resetAllParcelData: jest.fn(),

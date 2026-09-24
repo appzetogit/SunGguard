@@ -254,6 +254,7 @@ const AdminParcelDashboard = () => {
     riderPerKmRate: 0,
     riderPayout: 0,
     adminCommission: 0,
+    courierChargeCollected: 0,
   });
 
   const fetchParcelReviews = useCallback(async () => {
@@ -2149,6 +2150,9 @@ const AdminParcelDashboard = () => {
                     <span className="text-lg font-black text-slate-800 mt-1 block">
                       ₹{Number(reports.adminCommission || 0).toFixed(2)}
                     </span>
+                    <span className="text-[10px] text-slate-400 font-medium block mt-1">
+                      Delivery charge − Rider payout
+                    </span>
                   </div>
                   <div className="bg-slate-50 p-4 rounded-2xl">
                     <span className="text-slate-400 font-bold block uppercase">
@@ -2157,6 +2161,21 @@ const AdminParcelDashboard = () => {
                     </span>
                     <span className="text-lg font-black text-slate-800 mt-1 block">
                       ₹{Number(reports.riderPayout || 0).toFixed(2)}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-medium block mt-1">
+                      Distance (accept → pickup) × rate
+                    </span>
+                  </div>
+                  <div className="bg-slate-50 p-4 rounded-2xl col-span-2">
+                    <span className="text-slate-400 font-bold block uppercase">
+                      Courier Charge Collected (pass-through)
+                    </span>
+                    <span className="text-lg font-black text-slate-800 mt-1 block">
+                      ₹{Number(reports.courierChargeCollected || 0).toFixed(2)}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-medium block mt-1">
+                      Collected on behalf of courier companies — not platform
+                      revenue, excluded from Admin Commission above
                     </span>
                   </div>
                 </div>
@@ -2484,6 +2503,30 @@ const AdminParcelDashboard = () => {
                     </span>
                   )}
                 </div>
+
+                {selectedParcel.riderEarningBreakdown && (
+                  <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                      Rider Payout vs Admin Margin
+                    </span>
+                    <span className="text-sm font-black text-slate-800 mt-1 block">
+                      Rider ₹{selectedParcel.riderEarningBreakdown.earning.toFixed(2)}
+                      {" · "}
+                      Admin ₹
+                      {Math.max(
+                        0,
+                        Number(selectedParcel.fareBreakdown?.baseFare || 0) -
+                          selectedParcel.riderEarningBreakdown.earning,
+                      ).toFixed(2)}
+                    </span>
+                    <span className="text-[11px] text-slate-500 font-medium mt-1 block">
+                      {selectedParcel.riderEarningBreakdown.earning > 0
+                        ? `Rider: ${selectedParcel.riderEarningBreakdown.distanceKm} km (accept → pickup) × ₹${selectedParcel.riderEarningBreakdown.ratePerKm}/km`
+                        : "Rider hasn't accepted yet — payout not computed"}
+                      {" · Admin margin = Delivery charge − Rider payout (courier charge is a pass-through, not platform revenue)"}
+                    </span>
+                  </div>
+                )}
 
                 <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">

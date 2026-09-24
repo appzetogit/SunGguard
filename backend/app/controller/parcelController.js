@@ -21,6 +21,7 @@ import {
   fetchParcelsForSeller,
   cancelParcelSearch,
   computeRiderParcelEarnings,
+  computeRiderParcelEarningBreakdown,
 } from "../services/parcelWorkflowService.js";
 import { resetAllParcelData } from "../services/parcelDataResetService.js";
 import { recordCodCollection } from "../services/riderCashService.js";
@@ -91,6 +92,21 @@ function buildInitialCodSettlement(paymentMethod, fare) {
     collectAmount: Math.max(0, Number(fare) || 0),
     status: "COLLECT_PENDING",
   };
+}
+
+/**
+ * Attaches the rider's earning math — distance × rate = amount — onto a
+ * plain parcel object, so the rider app can show exactly how a number was
+ * reached instead of just the total. Only meaningful once a rider has
+ * accepted (riderAcceptLocation set); before that it's zeroed by
+ * computeRiderParcelEarningBreakdown itself, same as the existing preview.
+ */
+function withRiderEarningBreakdown(parcelPlainOrDoc, settings) {
+  const plain = parcelPlainOrDoc?.toObject
+    ? parcelPlainOrDoc.toObject()
+    : { ...parcelPlainOrDoc };
+  plain.riderEarningBreakdown = computeRiderParcelEarningBreakdown(plain, settings);
+  return plain;
 }
 
 async function notifyParcelRequested(parcel, userId) {
@@ -1390,6 +1406,7 @@ export const adminGetParcels = async (req, res) => {
       .populate("courierCompanyId", "name phone")
       .sort({ createdAt: -1 });
 
+    const settings = await ParcelConfig.getSearchSettings();
     const enriched = parcels.map((doc) => {
       const plain = doc.toObject ? doc.toObject() : { ...doc };
       const lateSummary = getParcelLatePickupSummary(plain);
@@ -1404,6 +1421,7 @@ export const adminGetParcels = async (req, res) => {
           stillAwaitingPickup: lateSummary.stillAwaitingPickup,
         };
       }
+      plain.riderEarningBreakdown = computeRiderParcelEarningBreakdown(plain, settings);
       return plain;
     });
 
@@ -1445,9 +1463,12 @@ export const adminGetParcelById = async (req, res) => {
       .sort({ at: 1 })
       .lean();
 
+    const settings = await ParcelConfig.getSearchSettings();
+
     return handleResponse(res, 200, "Parcel retrieved successfully", {
       ...plain,
       timeline,
+      riderEarningBreakdown: computeRiderParcelEarningBreakdown(plain, settings),
     });
   } catch (error) {
     return handleResponse(res, 500, error.message);
@@ -1804,14 +1825,26 @@ export const adminGetReports = async (req, res) => {
     const cancelled = parcels.filter(p => p.status === "CANCELLED").length;
     
     // Revenue is what the customer actually pays — `payableFare` when a
-    // coupon discounted the booking, otherwise `fare`. Rider payout is
-    // computed from the fare breakdown regardless of any coupon, so a
-    // discount only ever reduces `adminCommission` below, never the rider's
-    // share.
+    // coupon discounted the booking, otherwise `fare`.
     const delivered = parcels.filter((p) => p.status === "DELIVERED");
     const revenue = delivered.reduce((sum, p) => sum + (p.payableFare || p.fare), 0);
     const totalDiscountGiven = Math.round(
       (delivered.reduce((sum, p) => sum + (p.discountAmount || 0), 0) + Number.EPSILON) * 100,
+    ) / 100;
+
+    // What was collected FOR the courier company, on its behalf — not the
+    // platform's own money, so it must not be counted toward adminCommission
+    // below even though it passed through the same payment.
+    const courierChargeCollected = Math.round(
+      (delivered.reduce(
+        (sum, p) =>
+          sum +
+          (Number(p.fareBreakdown?.courierCharge) || 0) *
+            Math.max(1, Number(p.fareBreakdown?.billableDays) || 1),
+        0,
+      ) +
+        Number.EPSILON) *
+        100,
     ) / 100;
 
     const settings = await ParcelConfig.getSearchSettings();
@@ -1823,8 +1856,12 @@ export const adminGetReports = async (req, res) => {
         Number.EPSILON) *
         100,
     ) / 100;
+    // The platform's own margin: what customers paid, minus the courier's
+    // pass-through cut (never the platform's to begin with), minus the
+    // rider's payout. A coupon discount only ever reduces this, never the
+    // rider's share, since riderPayout is computed off distance, not fare.
     const adminCommission = Math.round(
-      (revenue - riderPayout + Number.EPSILON) * 100,
+      (revenue - courierChargeCollected - riderPayout + Number.EPSILON) * 100,
     ) / 100;
 
     return handleResponse(res, 200, "Reports retrieved successfully", {
@@ -1833,6 +1870,7 @@ export const adminGetReports = async (req, res) => {
       cancelled,
       revenue,
       totalDiscountGiven,
+      courierChargeCollected,
       riderPerKmRate: settings.riderPerKmRate,
       riderPayout,
       adminCommission,
@@ -1929,7 +1967,10 @@ export const riderGetAssignedParcels = async (req, res) => {
       .populate("courierCompanyId", "name phone")
       .sort({ createdAt: -1 });
 
-    return handleResponse(res, 200, "Assigned parcels retrieved successfully", parcels);
+    const settings = await ParcelConfig.getSearchSettings();
+    const withEarnings = parcels.map((p) => withRiderEarningBreakdown(p, settings));
+
+    return handleResponse(res, 200, "Assigned parcels retrieved successfully", withEarnings);
   } catch (error) {
     return handleResponse(res, 500, error.message);
   }
@@ -2367,8 +2408,11 @@ export const riderGetEarnings = async (req, res) => {
     const settings = await ParcelConfig.getSearchSettings();
 
     const totalDeliveries = completedParcels.length;
-    const totalEarnings = completedParcels.reduce(
-      (sum, p) => sum + computeRiderParcelEarnings(p, settings),
+    const deliveriesWithBreakdown = completedParcels.map((p) =>
+      withRiderEarningBreakdown(p, settings),
+    );
+    const totalEarnings = deliveriesWithBreakdown.reduce(
+      (sum, p) => sum + p.riderEarningBreakdown.earning,
       0,
     );
     const roundedEarnings = Math.round((totalEarnings + Number.EPSILON) * 100) / 100;
@@ -2377,7 +2421,7 @@ export const riderGetEarnings = async (req, res) => {
       totalDeliveries,
       totalEarnings: roundedEarnings,
       riderPerKmRate: settings.riderPerKmRate,
-      deliveries: completedParcels,
+      deliveries: deliveriesWithBreakdown,
     });
   } catch (error) {
     return handleResponse(res, 500, error.message);
@@ -2423,11 +2467,13 @@ export const riderAcceptParcel = async (req, res) => {
       await syncDeliveryPartnerBusyFlag(req.user.id);
     }
 
+    const settings = await ParcelConfig.getSearchSettings();
+
     return handleResponse(
       res,
       200,
       duplicate ? "Parcel already accepted" : "Parcel accepted successfully",
-      parcel,
+      withRiderEarningBreakdown(parcel, settings),
     );
   } catch (error) {
     return handleResponse(res, error.statusCode || 500, error.message);

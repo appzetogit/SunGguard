@@ -112,7 +112,13 @@ function money(n) {
  * degrades to 0 rather than throwing — a rider preview or a report should
  * never crash because one field is missing.
  */
-export function computeRiderParcelEarnings(parcel, settingsOrRate = {}) {
+/**
+ * Same as computeRiderParcelEarnings, but returns the numbers that made up
+ * the amount — the distance covered and the rate applied — not just the
+ * total. This is what the rider app and the admin's per-parcel breakdown
+ * both read, so "why did I earn ₹20" always has a literal answer: 4 km × ₹5.
+ */
+export function computeRiderParcelEarningBreakdown(parcel, settingsOrRate = {}) {
   const riderPerKmRate =
     typeof settingsOrRate === "number"
       ? Math.max(0, settingsOrRate)
@@ -131,11 +137,21 @@ export function computeRiderParcelEarnings(parcel, settingsOrRate = {}) {
     !Number.isFinite(pickupLat) ||
     !Number.isFinite(pickupLng)
   ) {
-    return 0;
+    return { earning: 0, distanceKm: 0, ratePerKm: riderPerKmRate };
   }
 
-  const earningKm = distanceMeters(acceptLat, acceptLng, pickupLat, pickupLng) / 1000;
-  return money(earningKm * riderPerKmRate);
+  // Full precision for the money math; only the *displayed* km is rounded,
+  // so "4.37 km × ₹5" on screen still adds up to the exact ₹ figure charged.
+  const rawDistanceKm = distanceMeters(acceptLat, acceptLng, pickupLat, pickupLng) / 1000;
+  return {
+    earning: money(rawDistanceKm * riderPerKmRate),
+    distanceKm: Math.round(rawDistanceKm * 100) / 100,
+    ratePerKm: riderPerKmRate,
+  };
+}
+
+export function computeRiderParcelEarnings(parcel, settingsOrRate = {}) {
+  return computeRiderParcelEarningBreakdown(parcel, settingsOrRate).earning;
 }
 
 const timeoutTimers = new Map();
