@@ -22,13 +22,22 @@ describe("outstation parcel transitions", () => {
       "RIDER_ASSIGNED",
       "PICKUP_REACHED",
       "PICKED_UP",
-      "OUT_FOR_DELIVERY",
       "DELIVERED",
     ];
 
     for (let i = 0; i < path.length - 1; i += 1) {
       expect(canTransition(path[i], path[i + 1])).toBe(true);
     }
+  });
+
+  /**
+   * There is no live tracking after pickup — the rider drives straight to the
+   * courier company and drops with a photo proof. OUT_FOR_DELIVERY is no
+   * longer a step on the way there.
+   */
+  it("goes straight from PICKED_UP to DELIVERED, skipping OUT_FOR_DELIVERY", () => {
+    expect(canTransition("PICKED_UP", "OUT_FOR_DELIVERY")).toBe(false);
+    expect(canTransition("PICKED_UP", "DELIVERED")).toBe(true);
   });
 
   /**
@@ -45,8 +54,7 @@ describe("outstation parcel transitions", () => {
 
   it("refuses a status that moves backwards", () => {
     expect(canTransition("PICKED_UP", "PICKUP_REACHED")).toBe(false);
-    expect(canTransition("OUT_FOR_DELIVERY", "ACCEPTED")).toBe(false);
-    expect(canTransition("DELIVERED", "OUT_FOR_DELIVERY")).toBe(false);
+    expect(canTransition("DELIVERED", "PICKED_UP")).toBe(false);
   });
 
   it("treats a repeat of the current status as no transition at all", () => {
@@ -66,7 +74,6 @@ describe("outstation parcel transitions", () => {
       expect(canTransition(status, "CANCELLED")).toBe(true);
     }
     expect(canTransition("PICKED_UP", "CANCELLED")).toBe(false);
-    expect(canTransition("OUT_FOR_DELIVERY", "CANCELLED")).toBe(false);
   });
 
   it("lets an exhausted search fall back for manual assignment", () => {
@@ -89,7 +96,7 @@ describe("outstation parcel transitions", () => {
 
 describe("refusal messages", () => {
   it("says the parcel is already done rather than that the status is invalid", () => {
-    expect(transitionRefusal("DELIVERED", "OUT_FOR_DELIVERY")).toMatch(/already been dropped/i);
+    expect(transitionRefusal("DELIVERED", "PICKED_UP")).toMatch(/already been dropped/i);
     expect(transitionRefusal("CANCELLED", "PICKED_UP")).toMatch(/cancelled/i);
   });
 

@@ -25,7 +25,6 @@ import authOtpRoute from "../modules/otp/otp.routes.js";
 import parcelRoute from "./parcelRoutes.js";
 // LOCAL CITY PARCEL DISABLED — outstation (parcelRoute) is the only live parcel flow.
 // import cityParcelRoute from "./cityParcelRoutes.js";
-import warehouseRoute from "./warehouseRoutes.js";
 import porterRoute from "./porterRoutes.js";
 // CAR WASH DISABLED — re-enable by uncommenting import + mount below
 // import carWashRoute from "./carWashRoutes.js";
@@ -80,7 +79,6 @@ const setupRoutes = (app) => {
     // LOCAL CITY PARCEL DISABLED — re-enable by uncommenting the import above
     // and this mount. /parcel (outstation) is unaffected either way.
     // router.use("/city-parcel", cityParcelRoute);
-    router.use("/warehouse", warehouseRoute);
     // Porter desk: parcel-side dashboard and delivery zones. Reads from both
     // parcel modules above; owns nothing they depend on.
     router.use("/porter", porterRoute);

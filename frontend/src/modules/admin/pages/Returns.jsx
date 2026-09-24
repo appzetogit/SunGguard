@@ -239,9 +239,9 @@ const Returns = () => {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label: "Requested", icon: AlertCircle, color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800" },
-          { label: "Approved", icon: CheckCircle2, color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800" },
-          { label: "QC Requested", icon: Inbox, color: "text-purple-600", bg: "bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800" },
-          { label: "Completed", icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800" },
+          { label: "Approved", icon: CheckCircle2, color: "text-orange-600", bg: "bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-800" },
+          { label: "QC Requested", icon: Inbox, color: "text-orange-600", bg: "bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-800" },
+          { label: "Completed", icon: CheckCircle2, color: "text-orange-600", bg: "bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-800" },
         ].map((card) => {
           const count = returns.filter(
             (r) => mapReturnStatusLabel(r.returnStatus) === card.label,
@@ -310,7 +310,7 @@ const Returns = () => {
                   "px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
                   activeQcTab === tab
                     ? "bg-primary/10 text-primary"
-                    : "text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    : "text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:hover:opacity-90"
                 )}
               >
                 {tab}
@@ -370,7 +370,7 @@ const Returns = () => {
 
                     {/* Driver Tag */}
                     {(ret.returnStatus === "return_in_transit" || ret.returnStatus === "return_pickup_assigned") && ret.returnDeliveryBoy && (
-                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 text-xs font-semibold">
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-800 text-orange-700 dark:text-orange-300 text-xs font-semibold">
                         <Truck className="h-3 w-3" />
                         <span>Rider: {ret.returnDeliveryBoy.name}</span>
                       </div>
@@ -433,7 +433,7 @@ const Returns = () => {
                 </div>
                 <button
                   onClick={() => setIsDetailsOpen(false)}
-                  className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-slate-700"
+                  className="p-1.5 hover:bg-slate-100 dark:hover:opacity-90 rounded-lg text-slate-400 hover:text-slate-700"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -523,7 +523,7 @@ const Returns = () => {
                     </button>
                     <button
                       onClick={() => handleQcPass(selectedReturn.orderId)}
-                      className="ds-btn ds-btn-sm bg-emerald-600 text-white hover:bg-emerald-700"
+                      className="ds-btn ds-btn-sm bg-orange-600 text-white hover:bg-orange-700"
                     >
                       QC Passed → Process Refund
                     </button>

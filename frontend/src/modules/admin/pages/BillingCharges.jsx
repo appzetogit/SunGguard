@@ -128,7 +128,7 @@ const BillingCharges = () => {
                             onClick={handleSave}
                             disabled={isSaving}
                             className={cn(
-                                "ds-btn ds-btn-md bg-black text-primary-foreground shadow-xl shadow-brand-100",
+                                "ds-btn ds-btn-md bg-[color:var(--primary)] text-primary-foreground shadow-xl shadow-brand-100",
                                 isSaving ? "opacity-70 cursor-wait" : "hover:bg-brand-700"
                             )}
                         >

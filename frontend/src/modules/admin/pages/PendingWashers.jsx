@@ -155,13 +155,13 @@ const PendingWashers = () => {
             <Card className="p-4 border-none shadow-sm ring-1 ring-slate-100 bg-white/50 backdrop-blur-xl">
                 <div className="flex flex-col lg:flex-row gap-4">
                     <div className="flex-1 relative group">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-slate-400 group-focus-within:text-cyan-500 transition-colors" />
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-slate-400 group-focus-within:text-orange-500 transition-colors" />
                         <input
                           type="text"
                           placeholder="Search washers by name or mobile..."
                           value={searchTerm}
                           onChange={(e) => setSearchTerm(e.target.value)}
-                          className="w-full pl-12 pr-4 py-3.5 bg-slate-100/50 border-none rounded-2xl text-xs font-semibold outline-none focus:ring-2 focus:ring-cyan-500/10 transition-all"
+                          className="w-full pl-12 pr-4 py-3.5 bg-slate-100/50 border-none rounded-2xl text-xs font-semibold outline-none focus:ring-2 focus:ring-orange-500/10 transition-all"
                         />
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
@@ -190,7 +190,7 @@ const PendingWashers = () => {
                 {isLoading && (
                     <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/50 backdrop-blur-sm">
                         <div className="flex flex-col items-center gap-3">
-                            <div className="h-10 w-10 border-4 border-slate-200 border-t-cyan-500 rounded-full animate-spin" />
+                            <div className="h-10 w-10 border-4 border-slate-200 border-t-orange-500 rounded-full animate-spin" />
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Loading Applications...</p>
                         </div>
                     </div>
@@ -220,7 +220,7 @@ const PendingWashers = () => {
                                     <tr key={washer.id} className="group hover:bg-slate-50/50 transition-colors">
                                         <td className="px-8 py-6">
                                             <div className="flex items-center gap-4">
-                                                <div className="h-12 w-12 rounded-lg bg-cyan-50 text-cyan-600 flex items-center justify-center font-bold text-sm ring-2 ring-white shadow-sm">
+                                                <div className="h-12 w-12 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center font-bold text-sm ring-2 ring-white shadow-sm">
                                                     {washer.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                                                 </div>
                                                 <div>
@@ -234,7 +234,7 @@ const PendingWashers = () => {
                                         </td>
                                         <td className="px-8 py-6">
                                             <div className="flex items-center gap-2 text-slate-700">
-                                                <Briefcase className="h-4 w-4 text-cyan-500" />
+                                                <Briefcase className="h-4 w-4 text-orange-500" />
                                                 <div>
                                                     <span className="text-xs font-black block">{washer.experience}</span>
                                                     {washer.experienceDetails && (
@@ -261,7 +261,7 @@ const PendingWashers = () => {
                                                     <>
                                                         <button
                                                           onClick={() => handleApprove(washer.id)}
-                                                          className="p-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-xl transition-all"
+                                                          className="p-2 bg-orange-50 hover:bg-orange-100 text-orange-600 rounded-xl transition-all"
                                                           title="Approve Partner"
                                                         >
                                                             <Check className="h-4 w-4" />
@@ -275,7 +275,7 @@ const PendingWashers = () => {
                                                         </button>
                                                     </>
                                                 ) : (
-                                                    <span className="px-2.5 py-1 bg-emerald-100/60 text-emerald-700 text-[9px] font-black uppercase rounded-lg tracking-wider">
+                                                    <span className="px-2.5 py-1 bg-orange-100/60 text-orange-700 text-[9px] font-black uppercase rounded-lg tracking-wider">
                                                         Approved
                                                     </span>
                                                 )}
@@ -311,7 +311,7 @@ const PendingWashers = () => {
                             <div className="flex-1 overflow-y-auto p-8 lg:p-12 space-y-8">
                                 <div className="flex justify-between items-start">
                                     <div className="flex items-center gap-4">
-                                        <div className="h-16 w-16 bg-cyan-100 text-cyan-700 rounded-2xl flex items-center justify-center font-black text-xl shadow-inner">
+                                        <div className="h-16 w-16 bg-orange-100 text-orange-700 rounded-2xl flex items-center justify-center font-black text-xl shadow-inner">
                                             {viewingWasher.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                                         </div>
                                         <div>
@@ -332,11 +332,11 @@ const PendingWashers = () => {
                                         <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Contact Records</h4>
                                         <div className="space-y-3">
                                             <div className="flex items-center gap-3 text-xs font-bold text-slate-700">
-                                                <Phone className="h-4 w-4 text-cyan-500" />
+                                                <Phone className="h-4 w-4 text-orange-500" />
                                                 <span>{viewingWasher.phone}</span>
                                             </div>
                                             <div className="flex items-center gap-3 text-xs font-bold text-slate-700">
-                                                <Mail className="h-4 w-4 text-cyan-500" />
+                                                <Mail className="h-4 w-4 text-orange-500" />
                                                 <span>{viewingWasher.email}</span>
                                             </div>
                                         </div>
@@ -346,7 +346,7 @@ const PendingWashers = () => {
                                         <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Detailing Experience</h4>
                                         <div className="space-y-2">
                                             <div className="text-xs font-black text-slate-800 flex items-center gap-2">
-                                                <Clock className="h-4 w-4 text-cyan-500" />
+                                                <Clock className="h-4 w-4 text-orange-500" />
                                                 <span>{viewingWasher.experience}</span>
                                             </div>
                                             {viewingWasher.experienceDetails && (
@@ -372,7 +372,7 @@ const PendingWashers = () => {
                                                     href={docUrl} 
                                                     target="_blank" 
                                                     rel="noreferrer" 
-                                                    className="group relative aspect-[4/3] bg-slate-50 rounded-2xl border border-slate-100 overflow-hidden cursor-pointer hover:border-cyan-500 transition-all flex flex-col items-center justify-center"
+                                                    className="group relative aspect-[4/3] bg-slate-50 rounded-2xl border border-slate-100 overflow-hidden cursor-pointer hover:border-orange-500 transition-all flex flex-col items-center justify-center"
                                                 >
                                                     {docUrl ? (
                                                         <img 
@@ -381,11 +381,11 @@ const PendingWashers = () => {
                                                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                                         />
                                                     ) : (
-                                                        <FileSearch className="h-8 w-8 text-slate-400 group-hover:text-cyan-600 transition-colors" />
+                                                        <FileSearch className="h-8 w-8 text-slate-400 group-hover:text-orange-600 transition-colors" />
                                                     )}
                                                     <div className="absolute inset-x-0 bottom-0 bg-slate-900/60 backdrop-blur-sm py-1.5 px-3 flex items-center justify-between">
                                                         <span className="text-[9px] font-black text-white uppercase tracking-wider">{docName}</span>
-                                                        <span className="text-[8px] font-bold text-cyan-300 uppercase">Click to Zoom</span>
+                                                        <span className="text-[8px] font-bold text-orange-300 uppercase">Click to Zoom</span>
                                                     </div>
                                                 </a>
                                             );
@@ -400,7 +400,7 @@ const PendingWashers = () => {
                                     <button
                                       disabled={isProcessing}
                                       onClick={() => handleApprove(viewingWasher.id)}
-                                      className="flex-1 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 disabled:opacity-50"
+                                      className="flex-1 py-4 bg-[color:var(--primary)] hover:opacity-90 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 disabled:opacity-50"
                                     >
                                         {isProcessing ? 'Processing Approval...' : 'Approve & Activate Agent'}
                                     </button>

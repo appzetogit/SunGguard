@@ -24,6 +24,7 @@ const {
 const { computeRiderParcelEarnings } = await import(
   "../app/services/parcelWorkflowService.js"
 );
+const { distanceMeters } = await import("../app/utils/geoUtils.js");
 
 /** A rate card an admin could plausibly save on /admin/city-parcels/pricing. */
 const CITY_CONFIG = {
@@ -39,15 +40,23 @@ const CITY_CONFIG = {
   returnCustomerChargePercent: 0,
 };
 
-/** And one for /admin/parcels/pricing. Outstation charges no base fare. */
+/**
+ * And one for /admin/parcels/pricing. Outstation is a flat delivery charge —
+ * distance/weight no longer price the customer at all. The rider's payout is
+ * a separate, unrelated number: per-km rate × distance from where they
+ * accepted the job to the pickup point (see computeRiderParcelEarnings).
+ */
 const PARCEL_CONFIG = {
-  perKmCharge: 10,
-  weightCharge: 15,
-  expressCharge: 25,
-  riderBaseFareSharePercent: 80,
-  riderDistanceFareSharePercent: 80,
-  riderSharePercent: 80,
+  fixedDeliveryCharge: 40,
+  riderPerKmRate: 8,
 };
+
+/** Two points ~1km apart, used to exercise the rider-payout distance calc. */
+const PARCEL_PICKUP = { lat: 28.6139, lng: 77.209 };
+const PARCEL_ACCEPT = { lat: 28.622, lng: 77.209 };
+const PARCEL_ACCEPT_KM =
+  distanceMeters(PARCEL_ACCEPT.lat, PARCEL_ACCEPT.lng, PARCEL_PICKUP.lat, PARCEL_PICKUP.lng) /
+  1000;
 
 const money = (n) => Math.round(n * 100) / 100;
 
@@ -145,73 +154,44 @@ describe("local delivery pricing", () => {
    ======================================================================== */
 
 describe("outstation pricing", () => {
-  it("charges distance + weight + courier fee, with no base fare", () => {
-    const daily = computeParcelDailyFare({
-      config: PARCEL_CONFIG,
-      distanceKm: 8,
-      weightKg: 1,
-      platformCharge: 60,
-      deliverySpeed: "normal",
-    });
+  it("charges a flat delivery fee — distance and weight no longer price it", () => {
+    const daily = computeParcelDailyFare({ config: PARCEL_CONFIG });
 
-    // The admin screen states this explicitly: "No base charge."
-    expect(daily.baseFare).toBe(0);
-    expect(daily.distanceFare).toBe(80);
-    expect(daily.weightFare).toBe(15);
-    expect(daily.platformCharge).toBe(60);
-    expect(daily.fare).toBe(155);
-    expect(daily.fare).toBe(
-      money(daily.distanceFare + daily.weightFare + daily.platformCharge + daily.expressCharge),
+    expect(daily.baseFare).toBe(PARCEL_CONFIG.fixedDeliveryCharge);
+    expect(daily.distanceFare).toBe(0);
+    expect(daily.weightFare).toBe(0);
+    expect(daily.platformCharge).toBe(0);
+    expect(daily.companyCharge).toBe(0);
+    expect(daily.expressCharge).toBe(0);
+    expect(daily.fare).toBe(PARCEL_CONFIG.fixedDeliveryCharge);
+  });
+
+  it("pays the rider the distance from their accept point to pickup, at the admin's per-km rate", () => {
+    const earning = computeRiderParcelEarnings(
+      { riderAcceptLocation: PARCEL_ACCEPT, pickupAddress: PARCEL_PICKUP },
+      PARCEL_CONFIG,
     );
+
+    // The fare (a flat charge) and the payout (a distance calc) are two
+    // unrelated numbers now — the payout is not "a share of the fare".
+    expect(earning).toBe(money(PARCEL_ACCEPT_KM * PARCEL_CONFIG.riderPerKmRate));
   });
 
-  it("pays the rider off distance only, since there is no base fare to share", () => {
-    const daily = computeParcelDailyFare({
-      config: PARCEL_CONFIG,
-      distanceKm: 8,
-      weightKg: 1,
-      platformCharge: 60,
-    });
-    const earning = computeRiderParcelEarnings({ fareBreakdown: daily }, PARCEL_CONFIG);
-
-    // 80 × 80%. The courier's platform fee is not the rider's to share.
-    expect(earning).toBe(64);
-    expect(earning).toBeLessThan(daily.fare);
+  it("pays nothing when the rider never accepted — no location snapshot to measure from", () => {
+    const earning = computeRiderParcelEarnings(
+      { pickupAddress: PARCEL_PICKUP },
+      PARCEL_CONFIG,
+    );
+    expect(earning).toBe(0);
   });
 
-  it("multiplies the customer total by booked days but keeps the rider on one trip", () => {
-    const daily = computeParcelDailyFare({
-      config: PARCEL_CONFIG,
-      distanceKm: 8,
-      weightKg: 1,
-      platformCharge: 60,
-    });
+  it("multiplies the customer total by booked days, one flat charge per day", () => {
+    const daily = computeParcelDailyFare({ config: PARCEL_CONFIG });
     const days = resolveParcelBillableDays({ pickupWindow: "7_days" });
     const priced = applyBillableDaysToFare(daily, days);
 
     expect(days).toBe(7);
     expect(priced.fare).toBe(money(daily.fare * 7));
-    // Line items stay at their daily rate on purpose — one pickup is one trip
-    // no matter how long the window the customer bought.
-    expect(priced.distanceFare).toBe(daily.distanceFare);
-    expect(computeRiderParcelEarnings({ fareBreakdown: priced }, PARCEL_CONFIG)).toBe(64);
-  });
-
-  it("never pays the rider more than the customer paid", () => {
-    for (const distanceKm of [0.5, 2, 9, 25, 60]) {
-      for (const weightKg of [0.1, 1, 5]) {
-        const daily = computeParcelDailyFare({
-          config: PARCEL_CONFIG,
-          distanceKm,
-          weightKg,
-          platformCharge: 40,
-        });
-        const earning = computeRiderParcelEarnings({ fareBreakdown: daily }, PARCEL_CONFIG);
-
-        expect(earning).toBeLessThanOrEqual(daily.fare);
-        expect(money(daily.fare - earning)).toBeGreaterThanOrEqual(0);
-      }
-    }
   });
 
   it("resolves every booking window to the days it bills for", () => {
@@ -285,22 +265,21 @@ describe("payment method decides who holds the money", () => {
 
 describe("rider cash and earnings never mix", () => {
   const cityQuote = computeCityParcelFare({ config: CITY_CONFIG, distanceKm: 6, weightKg: 2 });
-  const parcelDaily = computeParcelDailyFare({
-    config: PARCEL_CONFIG,
-    distanceKm: 8,
-    weightKg: 1,
-    platformCharge: 60,
-  });
+  const parcelDaily = computeParcelDailyFare({ config: PARCEL_CONFIG });
+  const parcelEarning = computeRiderParcelEarnings(
+    { riderAcceptLocation: PARCEL_ACCEPT, pickupAddress: PARCEL_PICKUP },
+    PARCEL_CONFIG,
+  );
+  const depositTotal = money(cityQuote.fare + parcelDaily.fare);
 
   it("a deposit covers the full collected fares, across both products", () => {
     const held = [
       { kind: "city_parcel", amount: cityQuote.fare },
       { kind: "parcel", amount: parcelDaily.fare },
     ];
-    const depositTotal = money(held.reduce((sum, h) => sum + h.amount, 0));
 
-    // 127 + 155. The rider hands back what the customers paid, in full.
-    expect(depositTotal).toBe(282);
+    // The rider hands back what the customers paid, in full.
+    expect(money(held.reduce((sum, h) => sum + h.amount, 0))).toBe(depositTotal);
   });
 
   it("depositing cash does not reduce what the rider can withdraw", () => {
@@ -309,27 +288,24 @@ describe("rider cash and earnings never mix", () => {
     // one of them.
     const ledger = [
       { type: "Delivery Earning", status: "Settled", amount: computeRiderEarning(cityQuote, CITY_CONFIG) },
-      { type: "Delivery Earning", status: "Settled", amount: computeRiderParcelEarnings({ fareBreakdown: parcelDaily }, PARCEL_CONFIG) },
-      { type: "Cash Collection", status: "Settled", amount: 282 },
-      { type: "Cash Settlement", status: "Settled", amount: -282 },
+      { type: "Delivery Earning", status: "Settled", amount: parcelEarning },
+      { type: "Cash Collection", status: "Settled", amount: depositTotal },
+      { type: "Cash Settlement", status: "Settled", amount: -depositTotal },
     ];
 
     const earned = ledger
       .filter((t) => t.status === "Settled" && ["Delivery Earning", "Incentive", "Bonus"].includes(t.type))
       .reduce((a, t) => a + Math.abs(t.amount), 0);
 
-    // 74.4 + 64 — the cash rows cancel each other and touch neither side.
-    expect(money(earned)).toBe(138.4);
+    // The cash rows cancel each other and touch neither side.
+    expect(money(earned)).toBe(money(computeRiderEarning(cityQuote, CITY_CONFIG) + parcelEarning));
   });
 
   it("the platform keeps fare minus rider earning on every job", () => {
     const cityMargin = money(cityQuote.fare - computeRiderEarning(cityQuote, CITY_CONFIG));
-    const parcelMargin = money(
-      parcelDaily.fare - computeRiderParcelEarnings({ fareBreakdown: parcelDaily }, PARCEL_CONFIG),
-    );
+    const parcelMargin = money(parcelDaily.fare - parcelEarning);
 
     expect(cityMargin).toBe(52.6); // 127 − 74.4
-    expect(parcelMargin).toBe(91); // 155 − 64
     expect(cityMargin).toBeGreaterThan(0);
     expect(parcelMargin).toBeGreaterThan(0);
   });

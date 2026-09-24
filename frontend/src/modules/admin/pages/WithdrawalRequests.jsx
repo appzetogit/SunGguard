@@ -273,7 +273,7 @@ const WithdrawalRequests = () => {
                             SELLER REQUESTS
                             <span className={cn(
                                 "ml-1 px-2 py-0.5 rounded-full text-[10px]",
-                                activeTab === 'sellers' ? "bg-slate-900 text-white" : "bg-slate-200 text-slate-600"
+                                activeTab === 'sellers' ? "bg-[color:var(--primary)] text-white" : "bg-slate-200 text-slate-600"
                             )}>{sellerRequests.length}</span>
                         </button>
                         <button
@@ -287,7 +287,7 @@ const WithdrawalRequests = () => {
                             DELIVERY PARTNERS
                             <span className={cn(
                                 "ml-1 px-2 py-0.5 rounded-full text-[10px]",
-                                activeTab === 'delivery' ? "bg-slate-900 text-white" : "bg-slate-200 text-slate-600"
+                                activeTab === 'delivery' ? "bg-[color:var(--primary)] text-white" : "bg-slate-200 text-slate-600"
                             )}>{deliveryRequests.length}</span>
                         </button>
                     </div>
@@ -380,7 +380,7 @@ const WithdrawalRequests = () => {
                                                     <>
                                                         <button
                                                             onClick={() => handleAction('approve', req)}
-                                                            className="p-2 bg-brand-50 text-brand-600 rounded-xl hover:bg-black  hover:text-white transition-all active:scale-90"
+                                                            className="p-2 bg-brand-50 text-brand-600 rounded-xl hover:bg-[color:var(--primary)]  hover:text-white transition-all active:scale-90"
                                                         >
                                                             <CheckCircle className="h-4 w-4" />
                                                         </button>
@@ -394,7 +394,7 @@ const WithdrawalRequests = () => {
                                                 )}
                                                 <button
                                                     onClick={() => setSelectedRequest(req)}
-                                                    className="p-2 bg-slate-50 text-slate-400 rounded-xl hover:bg-slate-900 hover:text-white transition-all active:scale-90"
+                                                    className="p-2 bg-slate-50 text-slate-400 rounded-xl hover:bg-[color:var(--primary)] hover:text-white transition-all active:scale-90"
                                                 >
                                                     <Eye className="h-4 w-4" />
                                                 </button>
@@ -447,7 +447,7 @@ const WithdrawalRequests = () => {
                         <div className="flex items-center gap-6 p-6 bg-slate-50 rounded-xl border border-slate-100">
                             <div className={cn(
                                 "h-20 w-20 rounded-xl flex items-center justify-center shadow-xl",
-                                activeTab === 'sellers' ? "bg-black  text-primary-foreground" : "bg-black  text-primary-foreground"
+                                activeTab === 'sellers' ? "bg-[color:var(--primary)]  text-primary-foreground" : "bg-[color:var(--primary)]  text-primary-foreground"
                             )}>
                                 {activeTab === 'sellers' ? <Building2 className="h-10 w-10" /> : <Truck className="h-10 w-10" />}
                             </div>
@@ -485,7 +485,7 @@ const WithdrawalRequests = () => {
                                 <>
                                     <button
                                         onClick={() => { setSelectedRequest(null); handleAction('approve', selectedRequest); }}
-                                        className="flex-1 py-4 bg-black  hover:bg-brand-700 text-primary-foreground rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-xl shadow-brand-200 transition-all active:scale-[0.98]"
+                                        className="flex-1 py-4 bg-[color:var(--primary)]  hover:bg-brand-700 text-primary-foreground rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-xl shadow-brand-200 transition-all active:scale-[0.98]"
                                     >
                                         Authorize Transfer
                                     </button>
@@ -499,7 +499,7 @@ const WithdrawalRequests = () => {
                             ) : (
                                 <button
                                     onClick={() => setSelectedRequest(null)}
-                                    className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest"
+                                    className="w-full py-4 bg-[color:var(--primary)] text-white rounded-2xl font-black text-[11px] uppercase tracking-widest"
                                 >
                                     Close Intelligence
                                 </button>
@@ -536,7 +536,7 @@ const WithdrawalRequests = () => {
                                 disabled={loading}
                                 className={cn(
                                     "w-full py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all shadow-xl flex items-center justify-center gap-2",
-                                    actionModal.type === 'approve' ? "bg-black  hover:bg-brand-700 text-primary-foreground shadow-brand-100" : "bg-rose-600 hover:bg-rose-700 text-white shadow-rose-100"
+                                    actionModal.type === 'approve' ? "bg-[color:var(--primary)]  hover:bg-brand-700 text-primary-foreground shadow-brand-100" : "bg-rose-600 hover:bg-rose-700 text-white shadow-rose-100"
                                 )}
                             >
                                 {loading && <RotateCw className="h-4 w-4 animate-spin" />}

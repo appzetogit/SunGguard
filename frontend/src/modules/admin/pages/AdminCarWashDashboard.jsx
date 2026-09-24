@@ -300,7 +300,7 @@ const AdminCarWashDashboard = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-100 pb-5">
         <div>
           <h1 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
-            <Sparkles className="text-cyan-600 animate-pulse" size={28} /> Doorstep Car Wash Panel
+            <Sparkles className="text-orange-600 animate-pulse" size={28} /> Doorstep Car Wash Panel
           </h1>
           <p className="text-sm text-slate-400 font-medium mt-1">
             Configure packages, manage prices and vehicle multipliers, manual allocate technicians, and audit wash evidence.
@@ -378,7 +378,7 @@ const AdminCarWashDashboard = () => {
                           <td className="p-4 align-top">
                             <span className="font-bold text-slate-800 block">#{booking.bookingId}</span>
                             <span className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded mt-1 block w-fit ${
-                              booking.bookingType === "IMMEDIATE" ? "bg-cyan-50 text-cyan-600" : "bg-purple-50 text-purple-600"
+                              booking.bookingType === "IMMEDIATE" ? "bg-orange-50 text-orange-600" : "bg-orange-50 text-orange-600"
                             }`}>
                               {booking.bookingType}
                             </span>
@@ -420,7 +420,7 @@ const AdminCarWashDashboard = () => {
                             <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase block w-fit ${
                               booking.status === "COMPLETED" ? "bg-green-100 text-green-700" :
                               booking.status === "CANCELLED" ? "bg-red-100 text-red-600" :
-                              "bg-cyan-100 text-cyan-700 animate-pulse"
+                              "bg-orange-100 text-orange-700 animate-pulse"
                             }`}>
                               {booking.status}
                             </span>
@@ -436,7 +436,7 @@ const AdminCarWashDashboard = () => {
                                     e.stopPropagation();
                                     setAssigningBooking(booking._id);
                                   }}
-                                  className="mt-2 text-[10px] bg-cyan-600 hover:bg-cyan-700 text-white font-black px-2.5 py-1 rounded-lg transition-all border-none"
+                                  className="mt-2 text-[10px] bg-orange-600 hover:bg-orange-700 text-white font-black px-2.5 py-1 rounded-lg transition-all border-none"
                                 >
                                   Assign Partner
                                 </button>
@@ -459,7 +459,7 @@ const AdminCarWashDashboard = () => {
               <div className="md:col-span-2 bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden">
                 <div className="p-5 border-b border-slate-100 flex justify-between items-center">
                   <h2 className="text-base font-black text-slate-800">In-Progress Washes</h2>
-                  <span className="text-xs bg-cyan-50 text-cyan-600 px-3 py-1 rounded-full font-bold">
+                  <span className="text-xs bg-orange-50 text-orange-600 px-3 py-1 rounded-full font-bold">
                     {getActiveBookings().length} active
                   </span>
                 </div>
@@ -485,7 +485,7 @@ const AdminCarWashDashboard = () => {
                             <span className="text-xs text-slate-400">
                               {new Date(booking.createdAt).toLocaleTimeString()}
                             </span>
-                            <span className="text-[10px] font-extrabold bg-cyan-100 text-cyan-700 px-2 py-0.5 rounded-full uppercase">
+                            <span className="text-[10px] font-extrabold bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full uppercase">
                               {booking.status}
                             </span>
                           </div>
@@ -512,7 +512,7 @@ const AdminCarWashDashboard = () => {
                                   e.stopPropagation();
                                   setAssigningBooking(booking._id);
                               }}
-                              className="mt-2 text-xs bg-cyan-600 hover:bg-cyan-700 text-white font-bold px-3 py-1 rounded-lg transition-all border-none"
+                              className="mt-2 text-xs bg-orange-600 hover:bg-orange-700 text-white font-bold px-3 py-1 rounded-lg transition-all border-none"
                             >
                               Assign Partner
                             </button>
@@ -527,7 +527,7 @@ const AdminCarWashDashboard = () => {
               {/* Active eco wash partners sidebar */}
               <div className="bg-white border border-slate-100 rounded-3xl p-5 shadow-sm space-y-4">
                 <h2 className="text-base font-black text-slate-800 flex items-center gap-2">
-                  <User className="text-cyan-600" size={18} /> Car Wash Technicians
+                  <User className="text-orange-600" size={18} /> Car Wash Technicians
                 </h2>
                 <div className="divide-y divide-slate-100 max-h-[400px] overflow-y-auto pr-1">
                   {getCarWashTechnicians().map((rider) => {
@@ -569,7 +569,7 @@ const AdminCarWashDashboard = () => {
                 <h2 className="text-base font-black text-slate-800">Doorstep Wash Packages</h2>
                 <button
                   onClick={() => handleOpenPackageModal()}
-                  className="bg-cyan-600 hover:bg-cyan-700 text-white font-black text-xs px-4 py-2.5 rounded-xl flex items-center gap-1.5 transition-all shadow-md border-none"
+                  className="bg-orange-600 hover:bg-orange-700 text-white font-black text-xs px-4 py-2.5 rounded-xl flex items-center gap-1.5 transition-all shadow-md border-none"
                 >
                   <Plus size={16} /> Add Package
                 </button>
@@ -582,7 +582,7 @@ const AdminCarWashDashboard = () => {
                       {pkg.image ? (
                         <img src={pkg.image} alt={pkg.name} className="w-12 h-12 rounded-xl object-cover border border-slate-100 shrink-0" />
                       ) : (
-                        <div className="w-12 h-12 bg-cyan-50 text-cyan-600 rounded-xl flex items-center justify-center font-black shrink-0">
+                        <div className="w-12 h-12 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center font-black shrink-0">
                           CW
                         </div>
                       )}
@@ -628,7 +628,7 @@ const AdminCarWashDashboard = () => {
             <div className="max-w-md mx-auto bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden animate-fadeIn">
               <div className="p-5 border-b border-slate-100">
                 <h2 className="text-base font-black text-slate-800 flex items-center gap-2">
-                  <Settings className="text-cyan-600" size={18} /> Global Wash Rules
+                  <Settings className="text-orange-600" size={18} /> Global Wash Rules
                 </h2>
                 <p className="text-xs text-slate-400 mt-1">
                   Adjust default parameters, delivery fee multiplier per vehicle type, and commissions.
@@ -643,7 +643,7 @@ const AdminCarWashDashboard = () => {
                     required
                     value={config.baseFare}
                     onChange={(e) => setConfig(p => ({ ...p, baseFare: Number(e.target.value) }))}
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-cyan-500"
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-orange-500"
                   />
                 </div>
 
@@ -654,7 +654,7 @@ const AdminCarWashDashboard = () => {
                     required
                     value={config.perKmCharge}
                     onChange={(e) => setConfig(p => ({ ...p, perKmCharge: Number(e.target.value) }))}
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-cyan-500"
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-orange-500"
                   />
                 </div>
 
@@ -667,13 +667,13 @@ const AdminCarWashDashboard = () => {
                     required
                     value={config.commissionRate}
                     onChange={(e) => setConfig(p => ({ ...p, commissionRate: Number(e.target.value) }))}
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-cyan-500"
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-orange-500"
                   />
                 </div>
 
                 <div className="border-t border-slate-100 pt-3 space-y-3">
                   <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1">
-                    <Car size={14} className="text-cyan-600" /> Vehicle Fare Multipliers
+                    <Car size={14} className="text-orange-600" /> Vehicle Fare Multipliers
                   </h3>
                   <div className="grid grid-cols-2 gap-3 text-xs">
                     {["Bike", "Hatchback", "Sedan", "SUV"].map((vType) => (
@@ -691,7 +691,7 @@ const AdminCarWashDashboard = () => {
                               [vType]: Number(e.target.value)
                             }
                           }))}
-                          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs outline-none focus:border-cyan-500"
+                          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs outline-none focus:border-orange-500"
                         />
                       </div>
                     ))}
@@ -701,7 +701,7 @@ const AdminCarWashDashboard = () => {
                 <button
                   type="submit"
                   disabled={configSaving}
-                  className="w-full bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all mt-2 border-none"
+                  className="w-full bg-[color:var(--primary)] hover:opacity-90 disabled:opacity-50 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all mt-2 border-none"
                 >
                   <Save size={16} />
                   {configSaving ? "Saving Config..." : "Save Config Rules"}
@@ -715,7 +715,7 @@ const AdminCarWashDashboard = () => {
             <div className="space-y-6 animate-fadeIn">
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
                 <div className="bg-white border border-slate-100 rounded-3xl p-5 shadow-sm flex items-center gap-4">
-                  <div className="h-12 w-12 bg-cyan-50 rounded-2xl flex items-center justify-center text-cyan-600 shrink-0">
+                  <div className="h-12 w-12 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-600 shrink-0">
                     <ClipboardList size={24} />
                   </div>
                   <div>
@@ -745,7 +745,7 @@ const AdminCarWashDashboard = () => {
                 </div>
 
                 <div className="bg-white border border-slate-100 rounded-3xl p-5 shadow-sm flex items-center gap-4">
-                  <div className="h-12 w-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 shrink-0">
+                  <div className="h-12 w-12 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-600 shrink-0">
                     <DollarSign size={24} />
                   </div>
                   <div>
@@ -788,7 +788,7 @@ const AdminCarWashDashboard = () => {
               required
               value={selectedPartnerId}
               onChange={(e) => setSelectedPartnerId(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 px-3 py-2.5 bg-white text-sm outline-none focus:border-cyan-500"
+              className="w-full rounded-xl border border-slate-200 px-3 py-2.5 bg-white text-sm outline-none focus:border-orange-500"
             >
               <option value="">-- Select Technician --</option>
               {getCarWashTechnicians().map((r) => {
@@ -815,7 +815,7 @@ const AdminCarWashDashboard = () => {
               </button>
               <button
                 type="submit"
-                className="flex-1 py-2.5 bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs rounded-xl transition-all border-none"
+                className="flex-1 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-xl transition-all border-none"
               >
                 Assign Partner
               </button>
@@ -840,7 +840,7 @@ const AdminCarWashDashboard = () => {
                 placeholder="E.g. Premium Foam Bath & Wax"
                 value={packageForm.name}
                 onChange={(e) => setPackageForm(p => ({ ...p, name: e.target.value }))}
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-cyan-500"
+                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-orange-500"
               />
             </div>
 
@@ -852,7 +852,7 @@ const AdminCarWashDashboard = () => {
                 placeholder="Details of what is included (shampoo, interior vacuuming...)"
                 value={packageForm.description}
                 onChange={(e) => setPackageForm(p => ({ ...p, description: e.target.value }))}
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-cyan-500"
+                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-orange-500"
               />
             </div>
 
@@ -864,7 +864,7 @@ const AdminCarWashDashboard = () => {
                   required
                   value={packageForm.basePrice}
                   onChange={(e) => setPackageForm(p => ({ ...p, basePrice: Number(e.target.value) }))}
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-cyan-500"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-orange-500"
                 />
               </div>
               <div className="space-y-1">
@@ -875,7 +875,7 @@ const AdminCarWashDashboard = () => {
                     required
                     value={packageForm.durationMinutes}
                     onChange={(e) => setPackageForm(p => ({ ...p, durationMinutes: Number(e.target.value) }))}
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-cyan-500"
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-orange-500"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">Min</span>
                 </div>
@@ -894,7 +894,7 @@ const AdminCarWashDashboard = () => {
                   onChange={(e) => setPackageForm(p => ({ ...p, isActive: e.target.checked }))}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600"></div>
+                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
               </label>
             </div>
 
@@ -904,7 +904,7 @@ const AdminCarWashDashboard = () => {
                 type="file"
                 accept="image/*"
                 onChange={(e) => setPackageForm(p => ({ ...p, image: e.target.files[0] }))}
-                className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:bg-cyan-50 file:text-cyan-600 hover:file:bg-cyan-100"
+                className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100"
               />
               <p className="text-[10px] text-slate-400 mt-1">Or enter image URL below:</p>
               <input
@@ -912,7 +912,7 @@ const AdminCarWashDashboard = () => {
                 placeholder="https://example.com/image.jpg"
                 value={packageForm.imageUrl}
                 onChange={(e) => setPackageForm(p => ({ ...p, imageUrl: e.target.value }))}
-                className="w-full rounded-xl border border-slate-200 px-3 py-1.5 text-xs outline-none focus:border-cyan-500 mt-1"
+                className="w-full rounded-xl border border-slate-200 px-3 py-1.5 text-xs outline-none focus:border-orange-500 mt-1"
               />
             </div>
 
@@ -927,7 +927,7 @@ const AdminCarWashDashboard = () => {
               <button
                 type="submit"
                 disabled={packageSaving}
-                className="flex-1 py-2.5 bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs rounded-xl transition-all border-none"
+                className="flex-1 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-xl transition-all border-none"
               >
                 {packageSaving ? "Saving..." : "Save Package"}
               </button>
@@ -962,7 +962,7 @@ const AdminCarWashDashboard = () => {
             <div className="p-6 border-b border-slate-100 flex justify-between items-start shrink-0">
               <div>
                 <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
-                  <Sparkles className="text-cyan-600" size={20} />
+                  <Sparkles className="text-orange-600" size={20} />
                   Doorstep Wash Details
                 </h3>
                 <p className="text-xs text-slate-400 mt-1">
@@ -985,7 +985,7 @@ const AdminCarWashDashboard = () => {
                   <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase block w-fit mt-1.5 ${
                     selectedBooking.status === "COMPLETED" ? "bg-green-100 text-green-700" :
                     selectedBooking.status === "CANCELLED" ? "bg-red-100 text-red-600" :
-                    "bg-cyan-100 text-cyan-700"
+                    "bg-orange-100 text-orange-700"
                   }`}>
                     {selectedBooking.status}
                   </span>

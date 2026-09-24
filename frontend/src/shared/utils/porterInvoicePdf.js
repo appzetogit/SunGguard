@@ -238,7 +238,7 @@ function drawShipment(doc, layout, invoice) {
   ];
   if (route?.destinationCity) rows.push(["Destination city", route.destinationCity]);
   if (route?.courier) rows.push(["Courier", route.courier]);
-  if (route?.warehouse) rows.push(["Handed to", route.warehouse]);
+  if (route?.courierCompany) rows.push(["Handed to", route.courierCompany]);
 
   const meta = [
     ["Distance", route?.distanceKm != null ? `${route.distanceKm} km` : "—"],

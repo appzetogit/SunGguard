@@ -248,7 +248,7 @@ const ActiveSellers = () => {
           </div>
           <button
             onClick={() => setRefreshTick((value) => value + 1)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-bold shadow-xl hover:bg-slate-800 transition-all"
+            className="flex items-center gap-2 px-4 py-2.5 bg-[color:var(--primary)] text-white rounded-xl text-xs font-bold shadow-xl hover:opacity-90 transition-all"
           >
             <HiOutlineArrowPath className={cn("h-4 w-4", loading && "animate-spin")} />
             Refresh
@@ -364,7 +364,7 @@ const ActiveSellers = () => {
                       <p className="text-sm font-bold text-slate-600">{error}</p>
                       <button
                         onClick={() => setRefreshTick((value) => value + 1)}
-                        className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold"
+                        className="px-4 py-2 bg-[color:var(--primary)] text-white rounded-xl text-xs font-bold"
                       >
                         Retry
                       </button>
@@ -409,7 +409,7 @@ const ActiveSellers = () => {
                           <span className="text-sm font-bold text-slate-900 dark:text-white font-mono">
                             {(seller.totalOrders || 0).toLocaleString("en-IN")} Orders
                           </span>
-                          <span className="text-sm font-bold text-emerald-600 font-mono">
+                          <span className="text-sm font-bold text-orange-600 font-mono">
                             {currency(seller.totalRevenue)}
                           </span>
                         </div>
@@ -468,7 +468,7 @@ const ActiveSellers = () => {
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => setSelectedSeller(seller)}
-                          className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
+                          className="px-4 py-2 bg-[color:var(--primary)] hover:opacity-90 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
                         >
                           <HiOutlineEye className="h-4 w-4" />
                           View Profile

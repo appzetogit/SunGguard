@@ -151,8 +151,8 @@ const Dashboard = () => {
                         value: overview.totalUsers?.toLocaleString() || '0',
                         icon: Users,
                         trend: '+12.4%',
-                        color: 'text-blue-600',
-                        bg: 'bg-blue-500/10 text-blue-600 border-blue-200 dark:border-blue-800',
+                        color: 'text-orange-600',
+                        bg: 'bg-orange-500/10 text-orange-600 border-orange-200 dark:border-orange-800',
                         description: 'Registered platform users',
                         onClick: () => navigate('/admin/customers')
                     },
@@ -161,8 +161,8 @@ const Dashboard = () => {
                         value: overview.activeSellers?.toLocaleString() || '0',
                         icon: Store,
                         trend: '+4.8%',
-                        color: 'text-purple-600',
-                        bg: 'bg-purple-500/10 text-purple-600 border-purple-200 dark:border-purple-800',
+                        color: 'text-orange-600',
+                        bg: 'bg-orange-500/10 text-orange-600 border-orange-200 dark:border-orange-800',
                         description: 'Verified active vendors',
                         onClick: () => navigate('/admin/sellers/active')
                     },
@@ -181,8 +181,8 @@ const Dashboard = () => {
                         value: `₹${Number(overview.totalRevenue || 0).toLocaleString('en-IN')}`,
                         icon: TrendingUp,
                         trend: '+22.5%',
-                        color: 'text-emerald-600',
-                        bg: 'bg-emerald-500/10 text-emerald-600 border-emerald-200 dark:border-emerald-800',
+                        color: 'text-orange-600',
+                        bg: 'bg-orange-500/10 text-orange-600 border-orange-200 dark:border-orange-800',
                         description: 'Gross marketplace volume',
                         onClick: () => navigate('/admin/wallet')
                     }
@@ -204,7 +204,7 @@ const Dashboard = () => {
                                 {item.value}
                             </h3>
                             <div className="flex items-center gap-2 mt-2">
-                                <span className="inline-flex items-center text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-1 rounded-lg">
+                                <span className="inline-flex items-center text-xs font-bold text-orange-600 bg-orange-50 dark:bg-orange-950/60 px-2.5 py-1 rounded-lg">
                                     <ArrowUpRight className="h-3.5 w-3.5 mr-0.5" />
                                     {item.trend}
                                 </span>
@@ -293,7 +293,7 @@ const Dashboard = () => {
                 <Card className="p-6 md:p-7 flex flex-col justify-between rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-sm">
                     <div>
                         <h3 className="text-lg md:text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2.5">
-                            <Activity className="h-5 w-5 text-purple-600" />
+                            <Activity className="h-5 w-5 text-orange-600" />
                             Category Volume Share
                         </h3>
                         <p className="text-xs md:text-sm text-slate-500 mt-1">Breakdown by product categories</p>
@@ -374,7 +374,7 @@ const Dashboard = () => {
                                     </tr>
                                 ) : (
                                     recentOrders.slice(0, 6).map((order) => (
-                                        <tr key={order._id || order.orderId} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors">
+                                        <tr key={order._id || order.orderId} className="hover:bg-slate-50/60 dark:hover:opacity-90/40 transition-colors">
                                             <td className="px-6 py-4.5 text-base font-bold text-slate-900 dark:text-white font-mono">
                                                 #{order.orderId}
                                             </td>
@@ -390,7 +390,7 @@ const Dashboard = () => {
                                             <td className="px-6 py-4.5 text-right">
                                                 <button
                                                     onClick={() => navigate(`/admin/orders/${order.orderId}`)}
-                                                    className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-primary transition-colors"
+                                                    className="p-2 rounded-xl hover:bg-slate-100 dark:hover:opacity-90 text-slate-500 hover:text-primary transition-colors"
                                                 >
                                                     <Eye className="h-5 w-5" />
                                                 </button>
@@ -409,7 +409,7 @@ const Dashboard = () => {
                         <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
                             <div>
                                 <h3 className="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2.5">
-                                    <Package className="h-5 w-5 text-emerald-600" />
+                                    <Package className="h-5 w-5 text-orange-600" />
                                     Top Fast-Moving Items
                                 </h3>
                                 <p className="text-xs md:text-sm text-slate-500 mt-1">Highest order volume items</p>
@@ -446,7 +446,7 @@ const Dashboard = () => {
 
                     <button
                         onClick={() => navigate('/admin/products')}
-                        className="mt-5 w-full py-3 rounded-2xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm font-bold text-slate-800 dark:text-slate-200 transition-colors"
+                        className="mt-5 w-full py-3 rounded-2xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:opacity-90 text-sm font-bold text-slate-800 dark:text-slate-200 transition-colors"
                     >
                         View Full Inventory
                     </button>

@@ -22,7 +22,7 @@ import {
     stackIn,
     stackItem,
 } from '@shared/components/auth/consignmentKit';
-import { MONO } from '@shared/design/tokens';
+import { ADMIN_THEME_VARS, MONO } from '@shared/design/tokens';
 
 /**
  * Admin sign-in, filed as a consignment note.
@@ -121,6 +121,7 @@ const AdminAuth = () => {
     };
 
     return (
+        <div style={ADMIN_THEME_VARS}>
         <DepotGround>
             <ConsignmentNote>
                 <NoteStub carrier={carrier} logoUrl={logoUrl}>
@@ -250,6 +251,7 @@ const AdminAuth = () => {
                 </div>
             </ConsignmentNote>
         </DepotGround>
+        </div>
     );
 };
 

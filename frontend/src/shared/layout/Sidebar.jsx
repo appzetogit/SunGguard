@@ -7,7 +7,11 @@ import { HiChevronDown } from "react-icons/hi2";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { X, LogOut } from "lucide-react";
 import { ParcelGlyph } from "@shared/components/auth/consignmentKit";
-import { INK, MONO, RULE_LIGHT, dashedRule } from "@shared/design/tokens";
+import { INK, MONO, RULE, RULE_LIGHT, dashedRule } from "@shared/design/tokens";
+
+/** Admin runs a light-gray rail with black text and orange accents, instead
+ *  of the dark ink rail every other desk uses. */
+const ADMIN_RAIL = '#E7E9EC';
 
 /**
  * The depot's index — the spine of the operations desk.
@@ -18,15 +22,22 @@ import { INK, MONO, RULE_LIGHT, dashedRule } from "@shared/design/tokens";
  * by a glowing pill, so the mark survives every theme preset.
  */
 
-/** The 10px uppercase mono caption, on ink. */
-const RailCaption = ({ children, className }) => (
-    <span
-        className={cn("block text-[10px] font-medium uppercase leading-none text-white/40", className)}
-        style={{ fontFamily: MONO, letterSpacing: "0.18em" }}
-    >
-        {children}
-    </span>
-);
+/** The 10px uppercase mono caption, on ink — or on the admin's gray rail. */
+const RailCaption = ({ children, className }) => {
+    const { role } = useAuth();
+    return (
+        <span
+            className={cn(
+                "block text-[10px] font-medium uppercase leading-none",
+                role === "admin" ? "text-slate-500" : "text-white/40",
+                className,
+            )}
+            style={{ fontFamily: MONO, letterSpacing: "0.18em" }}
+        >
+            {children}
+        </span>
+    );
+};
 
 /**
  * Work waiting on someone. Amber, not red: a queue is correctable, not broken
@@ -58,6 +69,8 @@ const ActiveEdge = () => (
 
 const SidebarItem = ({ item, isOpen, onToggle }) => {
     const location = useLocation();
+    const { role } = useAuth();
+    const isAdmin = role === 'admin';
     const badgeCount = Number(item?.badgeCount || 0);
     const hasChildren = item.children && item.children.length > 0;
     const isChildActive =
@@ -73,7 +86,13 @@ const SidebarItem = ({ item, isOpen, onToggle }) => {
                     aria-expanded={expanded}
                     className={cn(
                         rowBase,
-                        expanded ? "bg-white/[0.06] text-white" : "text-white/55 hover:bg-white/[0.04] hover:text-white",
+                        expanded
+                            ? isAdmin
+                                ? "bg-[color:var(--primary)]/12 text-slate-900"
+                                : "bg-white/[0.06] text-white"
+                            : isAdmin
+                                ? "text-slate-500 hover:bg-black/[0.04] hover:text-slate-900"
+                                : "text-white/55 hover:bg-white/[0.04] hover:text-white",
                     )}
                 >
                     {isChildActive && <ActiveEdge />}
@@ -82,7 +101,11 @@ const SidebarItem = ({ item, isOpen, onToggle }) => {
                             <item.icon
                                 className={cn(
                                     "h-[18px] w-[18px] shrink-0 transition-colors",
-                                    expanded ? "text-[color:var(--primary)]" : "text-white/40 group-hover:text-white/70",
+                                    expanded
+                                        ? "text-[color:var(--primary)]"
+                                        : isAdmin
+                                            ? "text-slate-400 group-hover:text-slate-600"
+                                            : "text-white/40 group-hover:text-white/70",
                                 )}
                             />
                         )}
@@ -92,8 +115,9 @@ const SidebarItem = ({ item, isOpen, onToggle }) => {
                         <Waiting count={!isOpen ? badgeCount : 0} />
                         <HiChevronDown
                             className={cn(
-                                "h-3.5 w-3.5 text-white/35 transition-transform duration-200",
-                                isOpen && "rotate-180 text-white/60",
+                                "h-3.5 w-3.5 transition-transform duration-200",
+                                isAdmin ? "text-slate-400" : "text-white/35",
+                                isOpen && (isAdmin ? "rotate-180 text-slate-600" : "rotate-180 text-white/60"),
                             )}
                         />
                     </span>
@@ -106,7 +130,10 @@ const SidebarItem = ({ item, isOpen, onToggle }) => {
                         <span
                             aria-hidden
                             className="absolute bottom-2 left-[19px] top-2 w-px"
-                            style={{ backgroundImage: dashedRule(RULE_LIGHT, 3, 4), backgroundSize: "1px 7px" }}
+                            style={{
+                                backgroundImage: dashedRule(isAdmin ? RULE : RULE_LIGHT, 3, 4),
+                                backgroundSize: "1px 7px",
+                            }}
                         />
                         {item.children.map((child) => {
                             const showChildBadge =
@@ -120,8 +147,12 @@ const SidebarItem = ({ item, isOpen, onToggle }) => {
                                         cn(
                                             "flex items-center justify-between gap-2 rounded-lg py-2 pl-3 pr-2.5 text-[12.5px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]",
                                             isActive
-                                                ? "bg-white/[0.07] font-bold text-white"
-                                                : "font-medium text-white/45 hover:bg-white/[0.04] hover:text-white/80",
+                                                ? isAdmin
+                                                    ? "bg-[color:var(--primary)]/18 font-bold text-slate-900"
+                                                    : "bg-white/[0.07] font-bold text-white"
+                                                : isAdmin
+                                                    ? "font-medium text-slate-500 hover:bg-black/[0.04] hover:text-slate-900"
+                                                    : "font-medium text-white/45 hover:bg-white/[0.04] hover:text-white/80",
                                         )
                                     }
                                 >
@@ -132,7 +163,11 @@ const SidebarItem = ({ item, isOpen, onToggle }) => {
                                                     aria-hidden
                                                     className={cn(
                                                         "h-1 w-1 shrink-0 rounded-full transition-colors",
-                                                        isActive ? "bg-[color:var(--primary)]" : "bg-white/25",
+                                                        isActive
+                                                            ? "bg-[color:var(--primary)]"
+                                                            : isAdmin
+                                                                ? "bg-slate-400"
+                                                                : "bg-white/25",
                                                     )}
                                                 />
                                                 <span className="truncate">{child.label}</span>
@@ -158,8 +193,12 @@ const SidebarItem = ({ item, isOpen, onToggle }) => {
                     rowBase,
                     "my-0.5",
                     isActive
-                        ? "bg-white/[0.07] font-bold text-white"
-                        : "font-semibold text-white/55 hover:bg-white/[0.04] hover:text-white",
+                        ? isAdmin
+                            ? "bg-[color:var(--primary)]/18 font-bold text-slate-900"
+                            : "bg-white/[0.07] font-bold text-white"
+                        : isAdmin
+                            ? "font-semibold text-slate-500 hover:bg-black/[0.04] hover:text-slate-900"
+                            : "font-semibold text-white/55 hover:bg-white/[0.04] hover:text-white",
                 )
             }
         >
@@ -171,7 +210,11 @@ const SidebarItem = ({ item, isOpen, onToggle }) => {
                             <item.icon
                                 className={cn(
                                     "h-[18px] w-[18px] shrink-0 transition-colors",
-                                    isActive ? "text-[color:var(--primary)]" : "text-white/40 group-hover:text-white/70",
+                                    isActive
+                                        ? "text-[color:var(--primary)]"
+                                        : isAdmin
+                                            ? "text-slate-400 group-hover:text-slate-600"
+                                            : "text-white/40 group-hover:text-white/70",
                                 )}
                             />
                         )}
@@ -267,13 +310,25 @@ const SidebarContent = ({ items, onClose, openMenu, handleToggle }) => {
           )
         : items;
 
+    const isAdmin = role === "admin";
+
     return (
-        <div className="flex h-full min-h-0 flex-col text-white/80" style={{ background: INK }}>
+        <div
+            className={cn("flex h-full min-h-0 flex-col", isAdmin ? "text-slate-900" : "text-white/80")}
+            style={{ background: isAdmin ? ADMIN_RAIL : INK }}
+        >
             {/* Carrier's mark. The carton glyph is the app's icon (design.md §2) —
                 not a sparkle, and never on a gradient. */}
             <div className="flex h-[68px] shrink-0 items-center justify-between gap-3 px-5">
                 <div className="flex min-w-0 items-center gap-3">
-                    <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-xl border border-white/15 bg-white/10 text-white">
+                    <span
+                        className={cn(
+                            "grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-xl border",
+                            isAdmin
+                                ? "border-slate-300 bg-white text-slate-900"
+                                : "border-white/15 bg-white/10 text-white",
+                        )}
+                    >
                         {showLogo ? (
                             <img
                                 src={logoUrl}
@@ -286,7 +341,12 @@ const SidebarContent = ({ items, onClose, openMenu, handleToggle }) => {
                         )}
                     </span>
                     <span className="min-w-0">
-                        <span className="block truncate text-[14px] font-extrabold leading-none tracking-tight text-white">
+                        <span
+                            className={cn(
+                                "block truncate text-[14px] font-extrabold leading-none tracking-tight",
+                                isAdmin ? "text-slate-900" : "text-white",
+                            )}
+                        >
                             {appName}
                         </span>
                         <RailCaption className="mt-1.5">
@@ -298,14 +358,23 @@ const SidebarContent = ({ items, onClose, openMenu, handleToggle }) => {
                     type="button"
                     onClick={onClose}
                     aria-label="Close navigation"
-                    className="rounded-lg p-2 text-white/50 outline-none transition-colors hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-[color:var(--primary)] md:hidden"
+                    className={cn(
+                        "rounded-lg p-2 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[color:var(--primary)] md:hidden",
+                        isAdmin
+                            ? "text-slate-500 hover:bg-black/5 hover:text-slate-900"
+                            : "text-white/50 hover:bg-white/10 hover:text-white",
+                    )}
                 >
                     <X className="h-5 w-5" />
                 </button>
             </div>
 
             <div className="px-5">
-                <div className="h-px w-full" style={{ backgroundImage: dashedRule(RULE_LIGHT) }} aria-hidden />
+                <div
+                    className="h-px w-full"
+                    style={{ backgroundImage: dashedRule(isAdmin ? RULE : RULE_LIGHT) }}
+                    aria-hidden
+                />
             </div>
 
             {quickTabEnabled && (
@@ -333,17 +402,31 @@ const SidebarContent = ({ items, onClose, openMenu, handleToggle }) => {
             {/* Who is filing. The role is read, not asserted — the old footer
                 said "Super Admin" to everyone. */}
             <div className="shrink-0 px-5 pb-5 pt-1">
-                <div className="h-px w-full" style={{ backgroundImage: dashedRule(RULE_LIGHT) }} aria-hidden />
+                <div
+                    className="h-px w-full"
+                    style={{ backgroundImage: dashedRule(isAdmin ? RULE : RULE_LIGHT) }}
+                    aria-hidden
+                />
                 <div className="mt-4 flex items-center justify-between gap-3">
                     <div className="flex min-w-0 items-center gap-3">
                         <span
-                            className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-white/15 bg-white/10 text-[13px] font-bold text-white"
+                            className={cn(
+                                "grid h-9 w-9 shrink-0 place-items-center rounded-xl border text-[13px] font-bold",
+                                isAdmin
+                                    ? "border-slate-300 bg-white text-slate-900"
+                                    : "border-white/15 bg-white/10 text-white",
+                            )}
                             style={{ fontFamily: MONO }}
                         >
                             {(user?.name?.[0] || "A").toUpperCase()}
                         </span>
                         <span className="min-w-0">
-                            <span className="block truncate text-[13px] font-bold leading-none text-white">
+                            <span
+                                className={cn(
+                                    "block truncate text-[13px] font-bold leading-none",
+                                    isAdmin ? "text-slate-900" : "text-white",
+                                )}
+                            >
                                 {user?.name || "Admin"}
                             </span>
                             <RailCaption className="mt-1.5">{role || "admin"}</RailCaption>
@@ -353,7 +436,12 @@ const SidebarContent = ({ items, onClose, openMenu, handleToggle }) => {
                         type="button"
                         onClick={logout}
                         aria-label="Sign out"
-                        className="rounded-lg p-2 text-white/45 outline-none transition-colors hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]"
+                        className={cn(
+                            "rounded-lg p-2 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]",
+                            isAdmin
+                                ? "text-slate-500 hover:bg-black/5 hover:text-slate-900"
+                                : "text-white/45 hover:bg-white/10 hover:text-white",
+                        )}
                     >
                         <LogOut className="h-4 w-4" />
                     </button>

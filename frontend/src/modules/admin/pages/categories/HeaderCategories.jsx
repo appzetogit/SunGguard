@@ -492,7 +492,7 @@ const HeaderCategories = () => {
                   <div className="flex gap-4">
                     {/* SVG Icon Display */}
                     <div className="flex flex-col items-center gap-2">
-                      <div className="w-24 h-24 rounded-full bg-linear-to-br from-brand-50 to-purple-50 border-2 border-brand-200 flex items-center justify-center">
+                      <div className="w-24 h-24 rounded-full bg-linear-to-br from-brand-50 to-orange-50 border-2 border-brand-200 flex items-center justify-center">
                         {formData.iconId && iconComponents[formData.iconId] ? (
                           <div className="w-12 h-12 text-brand-600 flex items-center justify-center">
                             {(() => {
@@ -514,7 +514,7 @@ const HeaderCategories = () => {
                       <button
                         type="button"
                         onClick={() => setIsIconSelectorOpen(true)}
-                        className="px-3 py-1.5 text-sm bg-black text-primary-foreground rounded-lg hover:bg-brand-700 transition-colors">
+                        className="px-3 py-1.5 text-sm bg-[color:var(--primary)] text-primary-foreground rounded-lg hover:bg-brand-700 transition-colors">
                         {formData.iconId ? 'Change Icon' : 'Select Icon'}
                       </button>
                     </div>

@@ -59,7 +59,7 @@ function OriginBadge({ ticket, className }) {
                 "inline-flex items-center gap-1 rounded-lg px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider",
                 delivery
                     ? "bg-orange-50 text-orange-700 dark:bg-orange-950/50 dark:text-orange-400"
-                    : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400",
+                    : "bg-orange-50 text-orange-700 dark:bg-orange-950/50 dark:text-orange-400",
                 className,
             )}
         >
@@ -201,7 +201,7 @@ const PorterTickets = () => {
                                 className={cn(
                                     "rounded-xl px-4 py-2 text-xs font-bold transition",
                                     origin === o.key
-                                        ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
+                                        ? "bg-[color:var(--primary)] text-white dark:bg-white dark:text-slate-900"
                                         : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300",
                                 )}
                             >

@@ -16,7 +16,7 @@ import { getOrderSocket, onSellerOrderNew, onReturnDropOtp, onParcelNew } from '
 import { createSocketTokenReader } from '@core/utils/authStorage';
 import { STORAGE_KEYS } from '@core/utils/storage';
 import orderAlertSound from '@/assets/sounds/order_alert.mp3';
-import { COUNTER } from '@shared/design/tokens';
+import { ADMIN_THEME_VARS, COUNTER } from '@shared/design/tokens';
 
 /** Counter ink for the dot grid — 5.5%, per the DepotGround recipe. */
 const DOT = 'rgba(15,23,42,0.055)';
@@ -96,7 +96,7 @@ const DashboardLayout = ({ children, navItems, title }) => {
     return (
         <div
             className="relative min-h-screen antialiased text-slate-900 selection:bg-[color:var(--primary)]/20"
-            style={{ background: COUNTER }}
+            style={role === 'admin' ? { background: COUNTER, ...ADMIN_THEME_VARS } : { background: COUNTER }}
         >
             {/* The counter the paperwork lies on: a dot grid at 5.5% ink, the
                 same ground the customer's note is filed against (design.md §6).

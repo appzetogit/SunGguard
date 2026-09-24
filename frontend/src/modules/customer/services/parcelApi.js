@@ -40,17 +40,23 @@ export const parcelApi = {
   adminUpdateReviewStatus: (id, data) =>
     axiosInstance.put(`/parcel/admin/reviews/${id}`, data),
 
-  // Warehouse APIs
-  getNearestWarehouse: (lat, lng) =>
-    axiosInstance.get("/warehouse/nearest", { params: { lat, lng } }),
-  /** Warehouses a rider may drop THIS accepted parcel at, nearest first. */
-  getWarehousesForParcel: (parcelId) =>
-    axiosInstance.get(`/warehouse/for-parcel/${parcelId}`),
-  getActiveWarehouses: () => axiosInstance.get("/warehouse/active"),
-  adminGetWarehouses: () => axiosInstance.get("/warehouse"),
-  adminCreateWarehouse: (data) => axiosInstance.post("/warehouse", data),
-  adminUpdateWarehouse: (id, data) => axiosInstance.put(`/warehouse/${id}`, data),
-  adminDeleteWarehouse: (id) => axiosInstance.delete(`/warehouse/${id}`),
+  // Courier city-to-city rate card (Excel-uploaded)
+  adminGetCityRates: () => axiosInstance.get("/parcel/admin/city-rates"),
+  adminUploadCityRates: (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return axiosInstance.post("/parcel/admin/city-rates/upload", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+  adminUpsertCityRate: (data) => axiosInstance.post("/parcel/admin/city-rates", data),
+  adminDeleteCityRate: (id) => axiosInstance.delete(`/parcel/admin/city-rates/${id}`),
+  adminDownloadCityRateTemplate: () =>
+    axiosInstance.get("/parcel/admin/city-rates/template", { responseType: "blob" }),
+
+  // Courier company lookup (zone-filtered) — replaces the old nearest-warehouse lookup
+  getCouriersForLocation: (lat, lng) =>
+    axiosInstance.get("/parcel/couriers/for-location", { params: { lat, lng } }),
 
   // Rider/Delivery Partner APIs
   riderGetAssigned: (options = {}) =>
@@ -73,7 +79,6 @@ export const parcelApi = {
     ),
   riderRejectParcel: (parcelId) => axiosInstance.post(`/parcel/rider/reject/${parcelId}`),
   riderUpdateStatus: (data) => axiosInstance.put("/parcel/rider/status", data),
-  riderUpdateWarehouse: (data) => axiosInstance.put("/parcel/rider/warehouse", data),
   riderCompleteDelivery: (data) => axiosInstance.put("/parcel/rider/complete", data),
   riderGetEarnings: () => axiosInstance.get("/parcel/rider/earnings"),
 };

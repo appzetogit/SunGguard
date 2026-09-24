@@ -122,7 +122,7 @@ const EnvSettings = () => {
                     </>
                 }
                 badge={
-                    <div className="p-2 bg-slate-900 rounded-xl">
+                    <div className="p-2 bg-[color:var(--primary)] rounded-xl">
                         <Terminal className="h-5 w-5 text-white" />
                     </div>
                 }
@@ -131,8 +131,8 @@ const EnvSettings = () => {
                         onClick={handleSave}
                         disabled={isSaving}
                         className={cn(
-                            "ds-btn ds-btn-md bg-slate-900 text-white shadow-xl shadow-slate-200",
-                            isSaving ? "opacity-70 cursor-wait" : "hover:bg-slate-800"
+                            "ds-btn ds-btn-md bg-[color:var(--primary)] text-white shadow-xl shadow-slate-200",
+                            isSaving ? "opacity-70 cursor-wait" : "hover:opacity-90"
                         )}
                     >
                         {isSaving ? (
@@ -232,7 +232,7 @@ const EnvSettings = () => {
                         <Card className="border-none shadow-xl ring-1 ring-slate-100 bg-white rounded-xl overflow-hidden">
                             <div className="p-6 border-b border-slate-50 bg-slate-50/30">
                                 <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-3">
-                                    <CreditCard className="h-4 w-4 text-purple-500" />
+                                    <CreditCard className="h-4 w-4 text-orange-500" />
                                     Integrations
                                 </h3>
                             </div>

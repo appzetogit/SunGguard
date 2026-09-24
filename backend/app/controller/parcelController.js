@@ -1,12 +1,12 @@
 import Parcel from "../models/parcel.js";
 import ParcelConfig from "../models/parcelConfig.js";
 import CourierCompany from "../models/courierCompany.js";
+import ParcelCityRate from "../models/parcelCityRate.js";
 import Coupon from "../models/coupon.js";
 import { computeBookingDiscount, incrementCouponUsage } from "../services/finance/couponService.js";
 import Delivery from "../models/delivery.js";
 import User from "../models/customer.js";
 import Admin from "../models/admin.js";
-import Warehouse from "../models/warehouse.js";
 import { distanceMeters } from "../utils/geoUtils.js";
 import handleResponse from "../utils/helper.js";
 import Notification from "../models/notification.js";
@@ -167,24 +167,21 @@ async function sendParcelNotification(userId, role, title, body, eventType = "al
    CUSTOMER CONTROLLERS
    ========================================================================== */
 
-/** Distance fallback when a pickup has neither a warehouse nor a hub nearby. */
+/** Distance fallback when a local pickup has no hub nearby. */
 const DEFAULT_FIRST_MILE_KM = 5;
 
 /**
- * How far the rider carries the parcel on its first mile, and to what.
+ * How far the rider carries the parcel on its first mile.
  *
- * Outstation and local answer this differently. An outstation parcel is
- * handed to a warehouse — or, until one is set up, to a parcel-hub seller —
- * and if neither is in range it still books against a nominal first mile,
- * because the courier company is what actually carries it onward. A local
- * parcel has no courier leg, so a hub in range is the whole service and its
- * absence is a real refusal.
+ * Local parcels are handed to a nearby parcel-hub seller, so that hub has to
+ * be in range or the booking is a real refusal. An outstation parcel's price
+ * is a flat delivery charge (see utils/parcelFare.js) and its drop point is
+ * the customer-selected courier company, not a distance-resolved warehouse —
+ * there is nothing to look up, so this just returns a nominal distance.
  *
- * Quoting and booking both call this. They used to carry their own copies of
- * the rule, which is how the quote came to refuse outstation pickups that
- * `createParcel` would happily have taken.
+ * Quoting and booking both call this, so the two never disagree.
  */
-async function resolveFirstMile({ lat, lng, isOutstation, zoneId = null }) {
+async function resolveFirstMile({ lat, lng, isOutstation }) {
   if (!isOutstation) {
     const nearest = await findNearestParcelSellerWithDistance(lat, lng);
     if (!nearest) {
@@ -192,31 +189,41 @@ async function resolveFirstMile({ lat, lng, isOutstation, zoneId = null }) {
         error: "No parcel hub seller is available near your pickup location",
       };
     }
-    return { distanceKm: nearest.distanceKm, warehouse: null, nearest };
+    return { distanceKm: nearest.distanceKm, nearest };
   }
 
-  // Zone-scoped when the pickup resolved into one, so a booking never binds
-  // to a warehouse a rider from that zone could never be routed to.
-  const warehouse = await Warehouse.findNearestActive(lat, lng, null, zoneId);
-  if (warehouse) {
-    const metres = distanceMeters(lat, lng, Number(warehouse.lat), Number(warehouse.lng));
+  return { distanceKm: 0, nearest: null };
+}
+
+/**
+ * The courier's own charge to ship a parcel from the pickup city to the
+ * destination city — looked up from the admin's Excel-uploaded rate card
+ * (models/parcelCityRate.js), not computed. There is no fallback price: a
+ * route/courier combination the admin hasn't priced is not bookable, so the
+ * customer sees "service not available" instead of a made-up number.
+ *
+ * Shared by calculateFare/validateBookingCoupon/createParcel so a quote and
+ * the booking it leads to can never disagree.
+ */
+async function resolveCourierCityCharge({ originCity, destinationCity, courierCompanyId }) {
+  const origin = String(originCity || "").trim();
+  const destination = String(destinationCity || "").trim();
+  if (!origin) {
+    return { error: "Pickup city is required" };
+  }
+  if (!destination) {
+    return { error: "Destination city is required" };
+  }
+  if (!courierCompanyId) {
+    return { error: "Please select a courier company" };
+  }
+  const rate = await ParcelCityRate.findRate(origin, destination, courierCompanyId);
+  if (!rate) {
     return {
-      distanceKm: Math.max(1, Math.round((metres / 1000) * 10) / 10),
-      warehouse,
-      nearest: null,
+      error: `Service not available from ${origin} to ${destination} with the selected courier`,
     };
   }
-
-  const nearest = await findNearestParcelSellerWithDistance(lat, lng);
-  return {
-    // Checked for a number rather than truthiness: a pickup standing at the
-    // hub is 0 km away, and `|| 5` billed that as a five-kilometre first mile.
-    distanceKm: Number.isFinite(nearest?.distanceKm)
-      ? nearest.distanceKm
-      : DEFAULT_FIRST_MILE_KM,
-    warehouse: null,
-    nearest,
-  };
+  return { charge: rate.charge };
 }
 
 export const calculateFare = async (req, res) => {
@@ -224,6 +231,8 @@ export const calculateFare = async (req, res) => {
     const {
       pickupLat,
       pickupLng,
+      pickupCity,
+      destinationCity,
       weight,
       courierCompany,
       courierCompanyId,
@@ -244,7 +253,9 @@ export const calculateFare = async (req, res) => {
     }
 
     const config = await ParcelConfig.getOrCreate();
-    const maxWeightKg = Math.min(50, Math.max(0.1, Number(config.maxWeightKg) || 1));
+    // Weight no longer prices anything (flat delivery charge), just a sanity
+    // bound matching packageDetails.weight's schema cap.
+    const maxWeightKg = 50;
     const pkgWeight = Number(weight || 0.1);
     if (pkgWeight <= 0 || pkgWeight > maxWeightKg) {
       return handleResponse(
@@ -254,35 +265,42 @@ export const calculateFare = async (req, res) => {
       );
     }
 
+    const isOutstation =
+      String(req.body.parcelType || "outstation").toLowerCase() !== "local";
+
     // Same first-mile rule the booking itself uses, so a quote can never
     // refuse a pickup that `createParcel` would have accepted.
     const firstMile = await resolveFirstMile({
       lat: pickupLatN,
       lng: pickupLngN,
-      isOutstation:
-        String(req.body.parcelType || "outstation").toLowerCase() !== "local",
+      isOutstation,
     });
     if (firstMile.error) {
       return handleResponse(res, 400, firstMile.error);
     }
-    const { distanceKm, warehouse, nearest } = firstMile;
+    const { distanceKm, nearest } = firstMile;
 
-    let platformCharge = 0;
-    const courierKey = courierCompanyId || courierCompany;
-    if (courierKey) {
-      const courier = await CourierCompany.findActiveByNameOrId(courierKey);
-      if (courier) {
-        platformCharge = Math.round((Number(courier.platformCharge) || 0) * 100) / 100;
+    // Outstation only: the courier's own city-to-city charge, looked up from
+    // the admin's rate card. No rate for this route+courier = not bookable.
+    let courierCityCharge = 0;
+    if (isOutstation) {
+      const courierKey = courierCompanyId || courierCompany;
+      const courierDoc = courierKey ? await CourierCompany.findActiveByNameOrId(courierKey) : null;
+      if (!courierDoc) {
+        return handleResponse(res, 400, "Please select a valid courier company");
       }
+      const cityCharge = await resolveCourierCityCharge({
+        originCity: pickupCity,
+        destinationCity,
+        courierCompanyId: courierDoc._id,
+      });
+      if (cityCharge.error) {
+        return handleResponse(res, 400, cityCharge.error);
+      }
+      courierCityCharge = cityCharge.charge;
     }
 
-    const daily = computeParcelDailyFare({
-      config,
-      distanceKm,
-      weightKg: pkgWeight,
-      platformCharge,
-      deliverySpeed,
-    });
+    const daily = computeParcelDailyFare({ config, courierCharge: courierCityCharge });
 
     const billableDays = resolveParcelBillableDays({
       pickupWindow,
@@ -291,22 +309,13 @@ export const calculateFare = async (req, res) => {
     });
     const priced = applyBillableDaysToFare(daily, billableDays, config.gst);
 
-    // Whatever the rider actually hands the parcel to. An outstation pickup
-    // with no warehouse and no hub in range still quotes, so this has to
-    // survive both being absent.
     const sellerName =
-      warehouse?.name ||
-      nearest?.seller?.shopName ||
-      nearest?.seller?.name ||
-      "Parcel hub";
-    const configuredExpressCharge =
-      Math.round((Math.max(0, Number(config.expressCharge) || 0) + Number.EPSILON) * 100) / 100;
+      nearest?.seller?.shopName || nearest?.seller?.name || "Parcel hub";
 
     return handleResponse(res, 200, "Fare calculated successfully", {
       distance: distanceKm,
-      perKmCharge: daily.perKmCharge,
       sellerName,
-      configuredExpressCharge,
+      fixedDeliveryCharge: config.fixedDeliveryCharge,
       baseFare: priced.baseFare,
       distanceFare: priced.distanceFare,
       weightFare: priced.weightFare,
@@ -366,6 +375,8 @@ export const validateBookingCoupon = async (req, res) => {
     const {
       pickupLat,
       pickupLng,
+      pickupCity,
+      destinationCity,
       weight,
       courierCompany,
       courierCompanyId,
@@ -391,7 +402,7 @@ export const validateBookingCoupon = async (req, res) => {
     }
 
     const config = await ParcelConfig.getOrCreate();
-    const maxWeightKg = Math.min(50, Math.max(0.1, Number(config.maxWeightKg) || 1));
+    const maxWeightKg = 50;
     const pkgWeight = Number(weight || 0.1);
     if (pkgWeight <= 0 || pkgWeight > maxWeightKg) {
       return handleResponse(
@@ -410,24 +421,26 @@ export const validateBookingCoupon = async (req, res) => {
     if (firstMile.error) {
       return handleResponse(res, 400, firstMile.error);
     }
-    const { distanceKm } = firstMile;
 
-    let platformCharge = 0;
-    const courierKey = courierCompanyId || courierCompany;
-    if (courierKey) {
-      const courier = await CourierCompany.findActiveByNameOrId(courierKey);
-      if (courier) {
-        platformCharge = Math.round((Number(courier.platformCharge) || 0) * 100) / 100;
+    let courierCityCharge = 0;
+    if (!isLocal) {
+      const courierKey = courierCompanyId || courierCompany;
+      const courierDoc = courierKey ? await CourierCompany.findActiveByNameOrId(courierKey) : null;
+      if (!courierDoc) {
+        return handleResponse(res, 400, "Please select a valid courier company");
       }
+      const cityCharge = await resolveCourierCityCharge({
+        originCity: pickupCity,
+        destinationCity,
+        courierCompanyId: courierDoc._id,
+      });
+      if (cityCharge.error) {
+        return handleResponse(res, 400, cityCharge.error);
+      }
+      courierCityCharge = cityCharge.charge;
     }
 
-    const daily = computeParcelDailyFare({
-      config,
-      distanceKm,
-      weightKg: pkgWeight,
-      platformCharge,
-      deliverySpeed,
-    });
+    const daily = computeParcelDailyFare({ config, courierCharge: courierCityCharge });
     const billableDays = resolveParcelBillableDays({
       pickupWindow,
       pickupWindowDays,
@@ -533,9 +546,9 @@ function checkBookingAddress(address, label) {
 
 /**
  * Validates the end customer an outstation parcel is actually going to — the
- * label the warehouse hands the courier company, not a place the rider ever
- * navigates to. No lat/lng gate, unlike `checkBookingAddress`: nobody in
- * this flow dispatches against this point.
+ * label printed for the courier company to ship onward, not a place the
+ * rider ever navigates to. No lat/lng gate, unlike `checkBookingAddress`:
+ * nobody in this flow dispatches against this point.
  */
 function checkReceiverAddress(address) {
   if (!address || typeof address !== "object") return "Receiver details are required";
@@ -604,7 +617,7 @@ export const createParcel = async (req, res) => {
 
     // The pickup person is who the rider calls and meets; the drop person
     // matters only for a local parcel, since an outstation one is
-    // overwritten with the warehouse below.
+    // overwritten with the courier company below.
     const pickupProblem = checkBookingAddress(pickupAddress, "Pickup");
     if (pickupProblem) return handleResponse(res, 400, pickupProblem);
 
@@ -631,6 +644,10 @@ export const createParcel = async (req, res) => {
     const city = String(destinationCity || "").trim();
     if (!city) {
       return handleResponse(res, 400, "Please select destination city");
+    }
+    const originCityName = String(pickupAddress?.city || "").trim();
+    if (!originCityName) {
+      return handleResponse(res, 400, "Please select the pickup city");
     }
 
     const allowedWindows = ["today", "7_days", "15_days", "30_days", "custom_days", "specific"];
@@ -699,7 +716,7 @@ export const createParcel = async (req, res) => {
     }
 
     const config = await ParcelConfig.getOrCreate();
-    const maxWeightKg = Math.min(50, Math.max(0.1, Number(config.maxWeightKg) || 1));
+    const maxWeightKg = 50;
     const weight = Number(packageDetails.weight || 0);
     if (weight <= 0 || weight > maxWeightKg) {
       return handleResponse(
@@ -728,15 +745,17 @@ export const createParcel = async (req, res) => {
         : "outstation";
     const isOutstation = parcelType !== "local";
 
-    // An outstation drop is replaced with the warehouse below, so validating
-    // what the client sent would reject a value nobody ends up using. A local
-    // parcel really is delivered to this address, so it has to hold up.
+    // An outstation drop is replaced with the customer-selected courier
+    // company below, so validating what the client sent would reject a value
+    // nobody ends up using. A local parcel really is delivered to this
+    // address, so it has to hold up.
     if (!isOutstation) {
       const dropProblem = checkBookingAddress(dropAddress, "Drop");
       if (dropProblem) return handleResponse(res, 400, dropProblem);
     } else {
       // The local flow's `dropAddress` IS the end customer; outstation needs
-      // this separately, since its `dropAddress` is always the warehouse.
+      // this separately, since its `dropAddress` is always the courier company
+      // the rider physically hands the parcel to.
       const receiverProblem = checkReceiverAddress(receiverAddress);
       if (receiverProblem) return handleResponse(res, 400, receiverProblem);
     }
@@ -745,15 +764,9 @@ export const createParcel = async (req, res) => {
      * Outstation dispatch used to be unzoned by design (see
      * services/deliveryZoneService.js). It now runs the same zone gate the
      * local City Parcel flow already used: the pickup has to resolve into a
-     * zone, and that zone confines both which warehouse the booking can route
-     * through and which riders are ever offered the job. The drop can still
-     * be anywhere — only the pickup end is zone-gated, since that's the end a
-     * rider is actually dispatched to.
-     *
-     * Resolved BEFORE resolveFirstMile so the warehouse lookup below can be
-     * scoped to it — finding the nearest warehouse first and checking its
-     * zone after would let a customer's booking bind to a warehouse outside
-     * their own pickup zone.
+     * zone, and that zone confines which riders are ever offered the job. The
+     * drop can still be anywhere — only the pickup end is zone-gated, since
+     * that's the end a rider is actually dispatched to.
      *
      * Skipped while no zone exists yet (a fresh install), same fallback every
      * other zone-gated flow uses.
@@ -780,35 +793,44 @@ export const createParcel = async (req, res) => {
       lat: Number(pickupAddress.lat),
       lng: Number(pickupAddress.lng),
       isOutstation,
-      zoneId: outstationZoneId,
     });
     if (firstMile.error) {
       return handleResponse(res, 400, firstMile.error);
     }
 
-    const { distanceKm, warehouse, nearest } = firstMile;
+    const { distanceKm, nearest } = firstMile;
 
-    const resolvedDropAddress =
-      isOutstation && warehouse
-        ? {
-            name: warehouse.name,
-            phone: warehouse.phone || dropAddress?.phone || "0000000000",
-            fullAddress:
-              warehouse.address + (warehouse.city ? `, ${warehouse.city}` : ""),
-            lat: Number(warehouse.lat),
-            lng: Number(warehouse.lng),
-          }
-        : dropAddress;
+    // The rider physically drives the parcel to the courier company's
+    // counter themselves — no address/coordinates to dispatch against, so
+    // this is just the courier's name/phone for the rider to ask for at the
+    // counter. lat/lng default to the pickup point as a placeholder since
+    // nothing ever navigates against it.
+    const resolvedDropAddress = isOutstation
+      ? {
+          name: courier,
+          phone: courierDoc.phone || pickupAddress?.phone || "0000000000",
+          fullAddress: courier,
+          lat: Number(pickupAddress.lat),
+          lng: Number(pickupAddress.lng),
+        }
+      : dropAddress;
 
-    const platformCharge =
-      Math.round((Number(courierDoc.platformCharge) || 0) * 100) / 100;
-    const daily = computeParcelDailyFare({
-      config,
-      distanceKm,
-      weightKg: weight,
-      platformCharge,
-      deliverySpeed: speedValue,
-    });
+    // The courier's own city-to-city charge — looked up here, not trusted
+    // from the client, exactly as calculateFare/validateBookingCoupon do.
+    let courierCityCharge = 0;
+    if (isOutstation) {
+      const cityCharge = await resolveCourierCityCharge({
+        originCity: originCityName,
+        destinationCity: city,
+        courierCompanyId: courierDoc._id,
+      });
+      if (cityCharge.error) {
+        return handleResponse(res, 400, cityCharge.error);
+      }
+      courierCityCharge = cityCharge.charge;
+    }
+
+    const daily = computeParcelDailyFare({ config, courierCharge: courierCityCharge });
 
     const billableDays = resolveParcelBillableDays({
       pickupWindow: windowValue,
@@ -850,10 +872,8 @@ export const createParcel = async (req, res) => {
       courierCompany: courier,
       courierCompanyId: courierDoc._id,
       sellerId: isOutstation ? null : nearest?.seller?._id,
-      warehouseId: isOutstation && warehouse ? warehouse._id : null,
       zoneId: outstationZoneId,
       parcelType,
-      deliveryInstruction: isOutstation ? "deliver_to_warehouse" : "deliver_to_receiver",
       deliverySpeed: speedValue,
       destinationCity: city,
       preferredPickupDate: pickupDate,
@@ -1152,7 +1172,7 @@ export const trackParcel = async (req, res) => {
       .populate("customerId", "name phone email")
       .populate("deliveryPartnerId", "name phone vehicleType vehicleNumber profileImage location")
       .populate("sellerId", "shopName location")
-      .populate("warehouseId", "name address city phone lat lng");
+      .populate("courierCompanyId", "name phone");
 
     if (!parcel) {
       return handleResponse(res, 404, "Parcel not found");
@@ -1352,14 +1372,22 @@ export const adminGetParcels = async (req, res) => {
     // a live job, and an admin trying to assign a rider to one would be
     // dispatching against money that never moved. `?awaitingPayment=true`
     // surfaces them for support.
+    await Parcel.cleanupLegacyFields();
+
     const filter =
       String(req.query.awaitingPayment) === "true"
         ? PARCEL_AWAITING_PAYMENT
         : visibleParcels();
 
+    // List view only — the admin table doesn't render the OTP, the COD-QR
+    // conversion sub-doc, or the internal broadcast bookkeeping, so there's
+    // no reason to ship them on every row. The single-parcel detail view
+    // (adminGetParcelById/trackParcel) still returns the full document.
     const parcels = await Parcel.find(filter)
+      .select("-otp -codOnlineQr -searchMeta")
       .populate("customerId", "name phone email")
       .populate("deliveryPartnerId", "name phone vehicleType")
+      .populate("courierCompanyId", "name phone")
       .sort({ createdAt: -1 });
 
     const enriched = parcels.map((doc) => {
@@ -1393,7 +1421,7 @@ export const adminGetParcelById = async (req, res) => {
       .populate("customerId", "name phone email")
       .populate("deliveryPartnerId", "name phone vehicleType vehicleNumber profileImage")
       .populate("sellerId", "name shopName phone address location")
-      .populate("warehouseId", "name address city phone lat lng");
+      .populate("courierCompanyId", "name phone");
 
     if (!parcel) {
       return handleResponse(res, 404, "Parcel not found");
@@ -1714,9 +1742,7 @@ export const getBookingConfig = async (req, res) => {
       courierCompanies: (courierCompanies || []).map((c) => ({
         id: String(c._id),
         name: c.name,
-        platformCharge: Math.round((Number(c.platformCharge) || 0) * 100) / 100,
-        companyCharge: Math.round((Number(c.companyCharge) || 0) * 100) / 100,
-        location: c.location || null,
+        phone: c.phone || "",
         isOther: c.isOther === true,
       })),
     });
@@ -1728,60 +1754,22 @@ export const getBookingConfig = async (req, res) => {
 export const adminUpdatePricingConfig = async (req, res) => {
   try {
     const {
-      baseFare,
-      perKmCharge,
-      weightCharge,
-      baseSearchRadiusKm,
-      radiusMultiplier,
-      riderSharePercent,
-      riderBaseFareSharePercent,
-      riderDistanceFareSharePercent,
+      fixedDeliveryCharge,
+      riderPerKmRate,
+      deliveryRadiusKm,
       packageTypes,
       packageCategories,
-      maxWeightKg,
-      packageDescriptionPlaceholder,
-      expressCharge,
     } = req.body;
 
     const config = await ParcelConfig.getOrCreate();
-    if (baseFare !== undefined) config.baseFare = Number(baseFare);
-    if (perKmCharge !== undefined) config.perKmCharge = Number(perKmCharge);
-    if (weightCharge !== undefined) config.weightCharge = Number(weightCharge);
-    if (baseSearchRadiusKm !== undefined) {
-      config.baseSearchRadiusKm = Math.min(100, Math.max(1, Number(baseSearchRadiusKm)));
+    if (fixedDeliveryCharge !== undefined) {
+      config.fixedDeliveryCharge = Math.max(0, Number(fixedDeliveryCharge) || 0);
     }
-    if (radiusMultiplier !== undefined) {
-      config.radiusMultiplier = Math.min(5, Math.max(1, Number(radiusMultiplier)));
+    if (riderPerKmRate !== undefined) {
+      config.riderPerKmRate = Math.max(0, Number(riderPerKmRate) || 0);
     }
-    if (riderBaseFareSharePercent !== undefined) {
-      config.riderBaseFareSharePercent = Math.min(
-        100,
-        Math.max(0, Number(riderBaseFareSharePercent)),
-      );
-    }
-    if (riderDistanceFareSharePercent !== undefined) {
-      config.riderDistanceFareSharePercent = Math.min(
-        100,
-        Math.max(0, Number(riderDistanceFareSharePercent)),
-      );
-    }
-    // Keep legacy field in sync as average for older readers.
-    if (
-      riderBaseFareSharePercent !== undefined ||
-      riderDistanceFareSharePercent !== undefined
-    ) {
-      const basePct = Number(
-        config.riderBaseFareSharePercent ?? config.riderSharePercent ?? 80,
-      );
-      const distPct = Number(
-        config.riderDistanceFareSharePercent ?? config.riderSharePercent ?? 80,
-      );
-      config.riderSharePercent = Math.round((basePct + distPct) / 2);
-    } else if (riderSharePercent !== undefined) {
-      const pct = Math.min(100, Math.max(0, Number(riderSharePercent)));
-      config.riderSharePercent = pct;
-      config.riderBaseFareSharePercent = pct;
-      config.riderDistanceFareSharePercent = pct;
+    if (deliveryRadiusKm !== undefined) {
+      config.deliveryRadiusKm = Math.min(100, Math.max(1, Number(deliveryRadiusKm)));
     }
     if (packageTypes !== undefined) {
       config.packageTypes = ParcelConfig.normalizePackageTypes(packageTypes);
@@ -1789,21 +1777,11 @@ export const adminUpdatePricingConfig = async (req, res) => {
     if (packageCategories !== undefined) {
       config.packageCategories = ParcelConfig.normalizePackageCategories(packageCategories);
     }
-    if (maxWeightKg !== undefined) {
-      config.maxWeightKg = Math.min(50, Math.max(0.1, Number(maxWeightKg) || 1));
-    }
-    if (expressCharge !== undefined) {
-      config.expressCharge = Math.max(0, Number(expressCharge) || 0);
-      config.markModified("expressCharge");
-    }
-    if (packageDescriptionPlaceholder !== undefined) {
-      config.packageDescriptionPlaceholder = String(
-        packageDescriptionPlaceholder || "",
-      ).trim() || "E.g. keys, critical document papers...";
-    }
 
     await config.save();
-    const fresh = await ParcelConfig.findById(config._id).lean();
+    const fresh = await ParcelConfig.findById(config._id).select(
+      "fixedDeliveryCharge riderPerKmRate deliveryRadiusKm packageTypes packageCategories gst createdAt updatedAt",
+    );
     return handleResponse(
       res,
       200,
@@ -1855,9 +1833,7 @@ export const adminGetReports = async (req, res) => {
       cancelled,
       revenue,
       totalDiscountGiven,
-      riderSharePercent: settings.riderSharePercent,
-      riderBaseFareSharePercent: settings.riderBaseFareSharePercent,
-      riderDistanceFareSharePercent: settings.riderDistanceFareSharePercent,
+      riderPerKmRate: settings.riderPerKmRate,
       riderPayout,
       adminCommission,
     });
@@ -1868,6 +1844,8 @@ export const adminGetReports = async (req, res) => {
 
 export const adminGetActiveDeliveries = async (req, res) => {
   try {
+    await Parcel.cleanupLegacyFields();
+
     // REQUESTED is in this list, which is exactly where an unpaid booking
     // sits — so the live board used to show jobs that had never been paid
     // for and that no rider would ever be dispatched to.
@@ -1948,7 +1926,7 @@ export const riderGetAssignedParcels = async (req, res) => {
       .select("-otp")
       .populate("customerId", "name phone")
       .populate("sellerId", "name shopName phone address location")
-      .populate("warehouseId", "name address city phone lat lng")
+      .populate("courierCompanyId", "name phone")
       .sort({ createdAt: -1 });
 
     return handleResponse(res, 200, "Assigned parcels retrieved successfully", parcels);
@@ -1960,9 +1938,9 @@ export const riderGetAssignedParcels = async (req, res) => {
 /**
  * Road route for assigned parcel task map.
  * Query: phase=pickup|seller|agency|drop|full, originLat, originLng.
- * Rider job is pickup (user) → parcel hub seller; courier city is not the map destination.
- * Query: phase=pickup|seller|agency|drop|warehouse|full, originLat, originLng.
- * For outstation parcels, the destination is the warehouse (dropAddress), not the seller.
+ * Rider job is pickup (user) → parcel hub seller (local) or → courier company
+ * counter (outstation, no live routing needed once picked up — see
+ * ParcelTaskPage.jsx, which stops requesting a route after PICKED_UP).
  */
 export const getParcelRoute = async (req, res) => {
   try {
@@ -1977,7 +1955,7 @@ export const getParcelRoute = async (req, res) => {
 
     const parcel = await Parcel.findById(parcelId)
       .populate("sellerId", "location shopName")
-      .populate("warehouseId", "name address city phone lat lng")
+      .populate("courierCompanyId", "name phone")
       .lean();
     if (!parcel) {
       return handleResponse(res, 404, "Parcel not found");
@@ -2008,12 +1986,12 @@ export const getParcelRoute = async (req, res) => {
 
     const origin = { lat: originLat, lng: originLng };
     let dest = pickup;
-    const isOutstation = parcel.parcelType === "outstation" || !!parcel.warehouseId || !seller;
+    const isOutstation = parcel.parcelType === "outstation" || !seller;
 
-    if (phase === "seller" || phase === "agency" || phase === "warehouse") {
+    if (phase === "seller" || phase === "agency") {
       if (isOutstation) {
         if (!Number.isFinite(drop.lat) || !Number.isFinite(drop.lng)) {
-          return handleResponse(res, 400, "Warehouse drop location missing");
+          return handleResponse(res, 400, "Drop location missing");
         }
         dest = drop;
       } else {
@@ -2179,7 +2157,7 @@ export const riderUpdateStatus = async (req, res) => {
     const populated = await Parcel.findById(parcel._id)
       .populate("deliveryPartnerId", "name phone vehicleType vehicleNumber profileImage location")
       .populate("sellerId", "name shopName phone address location")
-      .populate("warehouseId", "name address city phone lat lng");
+      .populate("courierCompanyId", "name phone");
 
     emitToAdmins("parcel:status:update", populated || parcel);
     emitToCustomer(parcel.customerId, {
@@ -2235,96 +2213,6 @@ export const riderUpdateStatus = async (req, res) => {
   }
 };
 
-/**
- * Lets the rider pick which zone warehouse they actually drop at, instead of
- * being locked to whichever one auto-assignment picked at booking time (see
- * tryAutoAssignParcelToWarehouse in parcelWorkflowService.js). Available in
- * the same window as the final hub-drop confirmation (riderCompleteDelivery
- * below) — after customer pickup, before the parcel is marked delivered.
- */
-export const riderUpdateWarehouse = async (req, res) => {
-  try {
-    const { parcelId, warehouseId } = req.body || {};
-    if (!parcelId || !warehouseId) {
-      return handleResponse(res, 400, "parcelId and warehouseId are required");
-    }
-
-    const parcel = await Parcel.findById(parcelId);
-    if (!parcel) {
-      return handleResponse(res, 404, "Parcel not found");
-    }
-
-    if (String(parcel.deliveryPartnerId) !== String(req.user.id)) {
-      return handleResponse(res, 403, "You are not authorized for this parcel");
-    }
-
-    if (parcel.deliveryInstruction !== "deliver_to_warehouse") {
-      return handleResponse(res, 400, "This parcel is not routed to a warehouse");
-    }
-
-    if (!["PICKED_UP", "OUT_FOR_DELIVERY"].includes(parcel.status)) {
-      return handleResponse(
-        res,
-        409,
-        "The drop warehouse can only be changed after customer pickup and before it is marked delivered",
-      );
-    }
-
-    const warehouse = await Warehouse.findById(warehouseId).lean();
-    if (!warehouse || warehouse.isActive === false) {
-      return handleResponse(res, 400, "Selected warehouse is not available");
-    }
-
-    // Zone-scoped: a rider may only drop at a warehouse inside this parcel's
-    // own zone — the same boundary their dispatch was confined to. Unzoned
-    // parcels (booked before zones existed) keep the old, unrestricted pick.
-    if (parcel.zoneId && String(warehouse.zoneId || "") !== String(parcel.zoneId)) {
-      return handleResponse(res, 400, "That warehouse is outside this parcel's delivery zone");
-    }
-
-    parcel.warehouseId = warehouse._id;
-    parcel.dropAddress = {
-      name: warehouse.name,
-      phone: warehouse.phone || parcel.dropAddress?.phone || "0000000000",
-      fullAddress: warehouse.address + (warehouse.city ? `, ${warehouse.city}` : ""),
-      lat: Number(warehouse.lat),
-      lng: Number(warehouse.lng),
-    };
-    await parcel.save();
-
-    await recordParcelEvent({
-      parcelId: parcel._id,
-      status: parcel.status,
-      previousStatus: parcel.status,
-      actor: PARCEL_EVENT_ACTOR.DELIVERY,
-      actorId: parcel.deliveryPartnerId,
-      note: `Drop warehouse changed to ${warehouse.name}`,
-    });
-
-    const populated = await Parcel.findById(parcel._id)
-      .populate("deliveryPartnerId", "name phone vehicleType vehicleNumber profileImage location")
-      .populate("warehouseId", "name address city phone lat lng");
-
-    emitToAdmins("parcel:status:update", populated || parcel);
-    emitToCustomer(parcel.customerId, {
-      event: "parcel:status:update",
-      payload: {
-        parcelId: String(parcel._id),
-        status: parcel.status,
-        parcel: populated || parcel,
-      },
-    });
-
-    const resultDoc = populated || parcel;
-    const resultPayload = resultDoc.toObject ? resultDoc.toObject() : { ...resultDoc };
-    delete resultPayload.otp;
-
-    return handleResponse(res, 200, "Drop warehouse updated", resultPayload);
-  } catch (error) {
-    return handleResponse(res, 500, error.message);
-  }
-};
-
 export const riderCompleteDelivery = async (req, res) => {
   try {
     const { parcelId, deliveryProofImage } = req.body;
@@ -2342,41 +2230,42 @@ export const riderCompleteDelivery = async (req, res) => {
       return handleResponse(res, 403, "You are not authorized for this parcel");
     }
 
-    // Hub drop: no OTP. Customer OTP already verified at pickup.
+    // Courier drop: no OTP. Customer OTP already verified at pickup.
     if (!["PICKED_UP", "OUT_FOR_DELIVERY"].includes(parcel.status)) {
       return handleResponse(
         res,
         409,
-        "Parcel can only be dropped at hub after customer pickup is confirmed",
+        "Parcel can only be dropped at the courier company after customer pickup is confirmed",
       );
     }
 
-    const hubProofUrl = String(deliveryProofImage || "").trim();
+    const dropProofUrl = String(deliveryProofImage || "").trim();
     if (
-      !hubProofUrl ||
+      !dropProofUrl ||
       !(
-        /^https?:\/\//i.test(hubProofUrl) ||
-        /^data:image\//i.test(hubProofUrl)
+        /^https?:\/\//i.test(dropProofUrl) ||
+        /^data:image\//i.test(dropProofUrl)
       )
     ) {
       return handleResponse(
         res,
         400,
-        "Upload a photo proof when dropping the parcel at the hub",
+        "Upload a photo proof when dropping the parcel at the courier company",
       );
     }
 
     const previousStatus = parcel.status;
     parcel.status = "DELIVERED";
-    parcel.deliveryProofImage = hubProofUrl;
+    parcel.deliveryProofImage = dropProofUrl;
 
     /**
      * COD: the cash stays with the rider until they deposit it and an admin
      * approves that deposit.
      *
      * This used to stamp WITH_SELLER on every COD parcel. Outstation parcels
-     * carry `sellerId: null` (they drop at a warehouse, and nobody logs in as
-     * a warehouse), so the only endpoint that could clear WITH_SELLER — the
+     * carry `sellerId: null` (the rider drops at a courier company counter,
+     * and nobody logs in as one), so the only endpoint that could clear
+     * WITH_SELLER — the
      * seller's Razorpay remit — was unreachable, and the cash was stranded
      * permanently. Only a parcel genuinely routed to a seller hub keeps that
      * hop; everything else goes through the rider deposit flow.
@@ -2413,7 +2302,7 @@ export const riderCompleteDelivery = async (req, res) => {
       previousStatus,
       actor: PARCEL_EVENT_ACTOR.DELIVERY,
       actorId: parcel.deliveryPartnerId,
-      note: parcel.warehouseId ? "Dropped at warehouse" : "Dropped at seller hub",
+      note: parcel.sellerId ? "Dropped at seller hub" : "Dropped at courier company",
     });
 
     try {
@@ -2425,7 +2314,7 @@ export const riderCompleteDelivery = async (req, res) => {
     const populated = await Parcel.findById(parcel._id)
       .populate("deliveryPartnerId", "name phone vehicleType vehicleNumber profileImage location")
       .populate("sellerId", "name shopName phone address location")
-      .populate("warehouseId", "name address city phone lat lng");
+      .populate("courierCompanyId", "name phone");
 
     emitToAdmins("parcel:status:update", populated || parcel);
     emitToCustomer(parcel.customerId, {
@@ -2455,15 +2344,15 @@ export const riderCompleteDelivery = async (req, res) => {
     await sendParcelNotification(
       parcel.customerId,
       "customer",
-      "Parcel dropped at hub",
+      "Parcel dropped at courier",
       isParcelCod(parcel)
-        ? `Your parcel reached our hub. COD ₹${getParcelCollectAmount(parcel)} was collected at pickup.`
-        : `Your parcel reached our hub successfully.`,
+        ? `Your parcel was dropped at ${parcel.courierCompany || "the courier"}. COD ₹${getParcelCollectAmount(parcel)} was collected at pickup.`
+        : `Your parcel was dropped at ${parcel.courierCompany || "the courier"} successfully.`,
       NOTIFICATION_EVENTS.PARCEL_DELIVERED,
       parcel._id
     );
 
-    return handleResponse(res, 200, "Parcel dropped at hub successfully", populated || parcel);
+    return handleResponse(res, 200, "Parcel dropped at courier company successfully", populated || parcel);
   } catch (error) {
     return handleResponse(res, 500, error.message);
   }
@@ -2487,8 +2376,7 @@ export const riderGetEarnings = async (req, res) => {
     return handleResponse(res, 200, "Rider earnings retrieved successfully", {
       totalDeliveries,
       totalEarnings: roundedEarnings,
-      riderBaseFareSharePercent: settings.riderBaseFareSharePercent,
-      riderDistanceFareSharePercent: settings.riderDistanceFareSharePercent,
+      riderPerKmRate: settings.riderPerKmRate,
       deliveries: completedParcels,
     });
   } catch (error) {
@@ -2502,8 +2390,7 @@ export const riderGetAvailableParcels = async (req, res) => {
     const settings = await ParcelConfig.getSearchSettings();
     const withEarnings = parcels.map((parcel) => ({
       ...parcel,
-      riderBaseFareSharePercent: settings.riderBaseFareSharePercent,
-      riderDistanceFareSharePercent: settings.riderDistanceFareSharePercent,
+      riderPerKmRate: settings.riderPerKmRate,
       earnings: computeRiderParcelEarnings(parcel, settings),
     }));
     return handleResponse(

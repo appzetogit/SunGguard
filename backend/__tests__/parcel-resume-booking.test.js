@@ -13,6 +13,7 @@ const PICKUP = {
   phone: "9876543210",
   fullAddress: "12 Test Street, Connaught Place, Delhi",
   pincode: "110001",
+  city: "Delhi",
   lat: 28.6139,
   lng: 77.209,
 };
@@ -24,7 +25,7 @@ const parcelCreate = jest.fn();
 const parcelFindByIdAndDelete = jest.fn();
 const courierFindActiveByNameOrId = jest.fn();
 const parcelConfigGetOrCreate = jest.fn();
-const warehouseFindNearestActive = jest.fn();
+const parcelCityRateFindRate = jest.fn();
 const findNearestParcelSellerWithDistance = jest.fn();
 const startParcelBroadcast = jest.fn();
 const openBookingPayment = jest.fn();
@@ -43,12 +44,12 @@ jest.unstable_mockModule("../app/models/parcelConfig.js", () => ({
 jest.unstable_mockModule("../app/models/courierCompany.js", () => ({
   default: { findActiveByNameOrId: courierFindActiveByNameOrId },
 }));
+jest.unstable_mockModule("../app/models/parcelCityRate.js", () => ({
+  default: { findRate: parcelCityRateFindRate },
+}));
 jest.unstable_mockModule("../app/models/delivery.js", () => ({ default: {} }));
 jest.unstable_mockModule("../app/models/customer.js", () => ({ default: {} }));
 jest.unstable_mockModule("../app/models/admin.js", () => ({ default: {} }));
-jest.unstable_mockModule("../app/models/warehouse.js", () => ({
-  default: { findNearestActive: warehouseFindNearestActive },
-}));
 jest.unstable_mockModule("../app/models/notification.js", () => ({ default: { create: jest.fn() } }));
 jest.unstable_mockModule("../app/modules/notifications/notification.emitter.js", () => ({
   emitNotificationEvent: jest.fn(),
@@ -185,27 +186,16 @@ function existingDoc(overrides = {}) {
 beforeEach(() => {
   jest.clearAllMocks();
   parcelConfigGetOrCreate.mockResolvedValue({
-    maxWeightKg: 5,
     packageTypes: [{ value: "document", isActive: true }],
-    perKmCharge: 10,
-    weightCharge: 15,
-    expressCharge: 25,
+    fixedDeliveryCharge: 40,
   });
   courierFindActiveByNameOrId.mockResolvedValue({
     _id: COURIER_ID,
     name: "Test Courier",
-    platformCharge: 60,
+    phone: "9000000001",
     isOther: false,
   });
-  warehouseFindNearestActive.mockResolvedValue({
-    _id: "wh-1",
-    name: "Test Hub",
-    address: "Hub Road",
-    city: "Delhi",
-    phone: "9000000001",
-    lat: 28.65,
-    lng: 77.22,
-  });
+  parcelCityRateFindRate.mockResolvedValue({ charge: 120 });
   openBookingPayment.mockResolvedValue({
     payment: { _id: "pp-1" },
     checkout: {

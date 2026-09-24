@@ -180,7 +180,7 @@ const SellerTransactions = () => {
                         {isExporting ? <RotateCw className="h-4 w-4 animate-spin text-orange-500" /> : <Download className="h-4 w-4" />}
                         {isExporting ? 'Generating Report...' : 'Download Master Ledger'}
                     </button>
-                    <button className="flex items-center gap-2 px-5 py-3 bg-slate-900 text-white rounded-2xl text-xs font-bold hover:bg-slate-800 transition-all shadow-lg active:scale-95 group">
+                    <button className="flex items-center gap-2 px-5 py-3 bg-[color:var(--primary)] text-white rounded-2xl text-xs font-bold hover:opacity-90 transition-all shadow-lg active:scale-95 group">
                         <TrendingUp className="h-4 w-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                         Revenue Insights
                     </button>
@@ -432,7 +432,7 @@ const SellerTransactions = () => {
                             {selectedTxn.type === 'sale' && (
                                 <div className="space-y-4">
                                     <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest px-4">Financial Drill-Down</h4>
-                                    <div className="bg-slate-900 rounded-xl p-6 text-white space-y-4">
+                                    <div className="bg-[color:var(--primary)] rounded-xl p-6 text-white space-y-4">
                                         <div className="flex justify-between items-center text-sm font-medium">
                                             <span className="opacity-60">Base Subtotal</span>
                                             <span>₹{selectedTxn.amount}</span>
@@ -552,7 +552,7 @@ const SellerTransactions = () => {
                                             toast.error('Failed to download voucher');
                                         }
                                     }}
-                                    className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-xl active:scale-[0.98] transition-all hover:bg-slate-800"
+                                    className="flex-1 py-4 bg-[color:var(--primary)] text-white rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-xl active:scale-[0.98] transition-all hover:opacity-90"
                                 >
                                     Download Voucher
                                 </button>

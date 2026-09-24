@@ -197,7 +197,7 @@ return (
             actions={
                 <button
                     onClick={() => setIsOnboardModalOpen(true)}
-                    className="ds-btn ds-btn-md bg-slate-900 text-white hover:bg-slate-800 shadow-xl hover:shadow-slate-200 group"
+                    className="ds-btn ds-btn-md bg-[color:var(--primary)] text-white hover:opacity-90 shadow-xl hover:shadow-slate-200 group"
                 >
                     <Plus className="h-4 w-4 group-hover:rotate-90 transition-transform" />
                     <span>ADD NEW RIDER</span>
@@ -345,7 +345,7 @@ return (
                                             <Truck className="h-3.5 w-3.5 shrink-0" />
                                             <span className="text-[10px] font-semibold truncate">{rider.vehicle} • <span className="text-slate-900 font-bold">{rider.vehicleNum}</span></span>
                                         </div>
-                                        <div className="flex items-center gap-2 text-indigo-500">
+                                        <div className="flex items-center gap-2 text-orange-500">
                                             <MapPinned className="h-3.5 w-3.5 shrink-0" />
                                             {rider.zoneName ? (
                                                 <span className="text-[10px] font-bold truncate">
@@ -361,7 +361,7 @@ return (
                                     <div className="pt-2 flex items-center gap-2">
                                         <button
                                             onClick={() => handleAction('view', rider)}
-                                            className="flex-1 py-2.5 bg-slate-900 text-white rounded-xl text-[10px] font-bold shadow-lg shadow-slate-200 hover:bg-slate-800 transition-all active:scale-95 flex items-center justify-center gap-2"
+                                            className="flex-1 py-2.5 bg-[color:var(--primary)] text-white rounded-xl text-[10px] font-bold shadow-lg shadow-slate-200 hover:opacity-90 transition-all active:scale-95 flex items-center justify-center gap-2"
                                         >
                                             <Eye className="h-3.5 w-3.5" />
                                             VIEW PROFILE
@@ -502,7 +502,7 @@ return (
                                     "mt-6 w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2",
                                     viewingRider.isActive
                                         ? "bg-rose-50 text-rose-600 hover:bg-rose-100"
-                                        : "bg-slate-900 text-white hover:bg-slate-800"
+                                        : "bg-[color:var(--primary)] text-white hover:opacity-90"
                                 )}
                             >
                                 {viewingRider.isActive ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
@@ -606,7 +606,7 @@ return (
                                 </div>
                             </div>
 
-                            <button type="submit" className="w-full py-4.5 bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-2xl hover:bg-slate-800 transition-all transform active:scale-[0.98] mt-4">
+                            <button type="submit" className="w-full py-4.5 bg-[color:var(--primary)] text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-2xl hover:opacity-90 transition-all transform active:scale-[0.98] mt-4">
                                 {isEditModalOpen ? 'SAVE CHANGES' : 'ADD RIDER'}
                             </button>
                         </form>

@@ -150,8 +150,8 @@ const ReviewModeration = () => {
                     label="Approved"
                     value={stats.approved}
                     icon={HiOutlineShieldCheck}
-                    color="text-emerald-600"
-                    bg="bg-emerald-50"
+                    color="text-orange-600"
+                    bg="bg-orange-50"
                 />
                 <StatCard
                     label="Avg. Rating"
@@ -240,7 +240,7 @@ const ReviewModeration = () => {
                                 {r.status !== 'approved' && (
                                     <button
                                         onClick={() => handleApprove(r.id)}
-                                        className="ds-btn ds-btn-sm flex-1 w-full bg-brand-500 text-primary-foreground shadow-lg shadow-brand-200 hover:bg-black"
+                                        className="ds-btn ds-btn-sm flex-1 w-full bg-brand-500 text-primary-foreground shadow-lg shadow-brand-200 hover:opacity-90"
                                     >
                                         <HiOutlineShieldCheck className="ds-icon-sm" />
                                         APPROVE
@@ -255,7 +255,7 @@ const ReviewModeration = () => {
                                 </button>
                                 <button
                                     onClick={() => handleReplyClick(r)}
-                                    className="ds-btn ds-btn-sm flex-1 w-full bg-slate-900 text-white shadow-xl hover:bg-slate-800"
+                                    className="ds-btn ds-btn-sm flex-1 w-full bg-[color:var(--primary)] text-white shadow-xl hover:opacity-90"
                                 >
                                     REPLY
                                 </button>

@@ -401,7 +401,7 @@ const Level2Categories = () => {
                     <td className="ds-table-cell">
                       <input
                         type="checkbox"
-                        className="rounded border-gray-300 text-purple-600 focus:ring-purple-500 h-4 w-4"
+                        className="rounded border-gray-300 text-orange-600 focus:ring-orange-500 h-4 w-4"
                         checked={selectedItems.includes(cat._id || cat.id)}
                         onChange={() => handleSelect(cat._id || cat.id)}
                       />

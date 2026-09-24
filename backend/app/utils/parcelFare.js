@@ -1,48 +1,37 @@
 import { multiplyMoney, roundCurrency } from "./money.js";
 import { applyGst, gstBreakdownFields } from "./gst.js";
 
-export function resolveParcelExpressCharge(config, deliverySpeed) {
-  const speed = String(deliverySpeed || "normal").trim().toLowerCase();
-  if (speed !== "express") return 0;
-  return roundCurrency(Math.max(0, Number(config?.expressCharge) || 0));
-}
-
 /**
  * Customer parcel fare (single day, before multi-day multiplier).
- * Formula: (distanceKm × perKm) + weightFare + platformCharge + expressCharge
- * Base fare is intentionally excluded.
+ *
+ * Two independent charges, added together:
+ *   - `baseFare` — the flat delivery charge (ParcelConfig.fixedDeliveryCharge),
+ *     paying for the rider's pickup + drop-to-courier-counter service.
+ *   - `courierCharge` — what the SELECTED courier company charges to actually
+ *     ship the parcel from the pickup city to the destination city, looked up
+ *     from the admin's Excel-uploaded rate card (see models/parcelCityRate.js
+ *     and controller/parcelController.js). Passed in already resolved; this
+ *     function does not do the lookup itself.
+ *
+ * Distance, weight and delivery speed no longer affect price.
+ * `distanceFare`/`weightFare`/`platformCharge`/`companyCharge`/`expressCharge`
+ * are kept at zero rather than removed from the shape, since fareBreakdown on
+ * the Parcel model and the invoice/report code that reads it still expect
+ * those keys.
  */
-export function computeParcelDailyFare({
-  config,
-  distanceKm = 0,
-  weightKg = 0,
-  platformCharge = 0,
-  deliverySpeed = "normal",
-} = {}) {
-  const distance = Math.max(0, Number(distanceKm) || 0);
-  const weight = Math.max(0, Number(weightKg) || 0);
-  const perKmCharge = Math.max(0, Number(config?.perKmCharge) || 0);
-  const weightCharge = Math.max(0, Number(config?.weightCharge) || 0);
-
-  const baseFare = 0;
-  const distanceFare = roundCurrency(distance * perKmCharge);
-  const weightFare = roundCurrency(weight * weightCharge);
-  const platform = roundCurrency(Math.max(0, Number(platformCharge) || 0));
-  const expressCharge = resolveParcelExpressCharge(config, deliverySpeed);
-  const companyCharge = 0;
-  const courierCharge = platform;
-  const fare = roundCurrency(distanceFare + weightFare + platform + expressCharge);
+export function computeParcelDailyFare({ config, courierCharge = 0 } = {}) {
+  const baseFare = roundCurrency(Math.max(0, Number(config?.fixedDeliveryCharge) || 0));
+  const courierFee = roundCurrency(Math.max(0, Number(courierCharge) || 0));
 
   return {
     baseFare,
-    distanceFare,
-    weightFare,
-    platformCharge: platform,
-    companyCharge,
-    courierCharge,
-    expressCharge,
-    perKmCharge: roundCurrency(perKmCharge),
-    fare,
+    distanceFare: 0,
+    weightFare: 0,
+    platformCharge: 0,
+    companyCharge: 0,
+    courierCharge: courierFee,
+    expressCharge: 0,
+    fare: roundCurrency(baseFare + courierFee),
   };
 }
 

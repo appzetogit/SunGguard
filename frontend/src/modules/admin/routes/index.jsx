@@ -257,7 +257,7 @@ const navItems = [
       { label: "Active Deliveries", path: "/admin/parcels/active" },
       { label: "Parcel Settings", path: "/admin/parcels/pricing" },
       { label: "Couriers", path: "/admin/parcels/couriers" },
-      { label: "Warehouses", path: "/admin/parcels/warehouses" },
+      { label: "City Rates", path: "/admin/parcels/cityRates" },
       { label: "Reviews", path: "/admin/parcels/reviews" },
       { label: "Revenue Reports", path: "/admin/parcels/reports" },
     ],

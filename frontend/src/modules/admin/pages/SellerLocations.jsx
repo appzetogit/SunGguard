@@ -383,7 +383,7 @@ const SellerLocations = () => {
     cn(
       "w-full text-left rounded-xl px-3 py-3 transition-all border",
       selectedSellerId === seller.id
-        ? "bg-slate-900 text-white border-slate-900 shadow-lg"
+        ? "bg-[color:var(--primary)] text-white border-[color:var(--primary)] shadow-lg"
         : "bg-white border-slate-100 hover:border-slate-200 hover:bg-slate-50",
     );
 
@@ -674,7 +674,7 @@ const SellerLocations = () => {
           {!mapUnlocked ? (
             <div className="h-full min-h-[680px] bg-gradient-to-br from-slate-100 via-slate-50 to-white p-6 flex items-center justify-center">
               <div className="max-w-xl text-center space-y-4">
-                <div className="mx-auto h-12 w-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center">
+                <div className="mx-auto h-12 w-12 rounded-2xl bg-[color:var(--primary)] text-white flex items-center justify-center">
                   <HiOutlineMap className="h-6 w-6" />
                 </div>
                 <h3 className="text-2xl font-black text-slate-900">
@@ -686,7 +686,7 @@ const SellerLocations = () => {
                 </p>
                 <button
                   onClick={() => setMapUnlocked(true)}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-black hover:bg-slate-800 transition-colors">
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[color:var(--primary)] text-white text-sm font-black hover:opacity-90 transition-colors">
                   <HiOutlineMap className="h-4 w-4" />
                   Open Live Map
                 </button>

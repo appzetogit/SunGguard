@@ -1,5 +1,6 @@
 import express from "express";
 import mongoose from "mongoose";
+import multer from "multer";
 import { verifyToken, allowRoles, requireActiveCustomer } from "../middleware/authMiddleware.js";
 import { validate } from "../middleware/validate.js";
 import {
@@ -7,6 +8,11 @@ import {
   adminUpdateCourierSchema,
   adminUpdateParcelPricingSchema,
 } from "../validation/porterAdminValidation.js";
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+});
 import {
   calculateFare,
   getAvailableCoupons,
@@ -35,7 +41,6 @@ import {
   riderAcceptParcel,
   riderRejectParcel,
   riderUpdateStatus,
-  riderUpdateWarehouse,
   riderCompleteDelivery,
   riderGetEarnings,
   sellerGetParcels,
@@ -49,7 +54,15 @@ import {
   adminCreateCourierCompany,
   adminUpdateCourierCompany,
   adminDeleteCourierCompany,
+  listCouriersForLocation,
 } from "../controller/courierCompanyController.js";
+import {
+  adminUploadCityRates,
+  adminListCityRates,
+  adminUpsertCityRate,
+  adminDeleteCityRate,
+  adminDownloadCityRateTemplate,
+} from "../controller/parcelCityRateController.js";
 import {
   submitParcelReview,
   getMyParcelReview,
@@ -98,6 +111,7 @@ router.post("/:parcelId/late-refund-request", verifyToken, requestParcelLateRefu
 router.get("/reviews", verifyToken, listPublicParcelReviews);
 router.get("/review/:parcelId", verifyToken, getMyParcelReview);
 router.post("/review", verifyToken, submitParcelReview);
+router.get("/couriers/for-location", verifyToken, listCouriersForLocation);
 
 /* ==========================================================================
    ADMIN API ROUTES
@@ -154,6 +168,37 @@ router.delete(
   adminDeleteCourierCompany,
 );
 router.get(
+  "/admin/city-rates",
+  verifyToken,
+  allowRoles("admin", "parcel_admin"),
+  adminListCityRates,
+);
+router.get(
+  "/admin/city-rates/template",
+  verifyToken,
+  allowRoles("admin", "parcel_admin"),
+  adminDownloadCityRateTemplate,
+);
+router.post(
+  "/admin/city-rates/upload",
+  verifyToken,
+  allowRoles("admin", "parcel_admin"),
+  upload.single("file"),
+  adminUploadCityRates,
+);
+router.post(
+  "/admin/city-rates",
+  verifyToken,
+  allowRoles("admin", "parcel_admin"),
+  adminUpsertCityRate,
+);
+router.delete(
+  "/admin/city-rates/:id",
+  verifyToken,
+  allowRoles("admin", "parcel_admin"),
+  adminDeleteCityRate,
+);
+router.get(
   "/admin/reviews",
   verifyToken,
   allowRoles("admin", "parcel_admin"),
@@ -177,7 +222,6 @@ router.get("/rider/available", verifyToken, allowRoles("delivery"), riderGetAvai
 router.post("/rider/accept/:parcelId", verifyToken, allowRoles("delivery"), riderAcceptParcel);
 router.post("/rider/reject/:parcelId", verifyToken, allowRoles("delivery"), riderRejectParcel);
 router.put("/rider/status", verifyToken, allowRoles("delivery"), riderUpdateStatus);
-router.put("/rider/warehouse", verifyToken, allowRoles("delivery"), riderUpdateWarehouse);
 router.put("/rider/complete", verifyToken, allowRoles("delivery"), riderCompleteDelivery);
 router.get("/rider/earnings", verifyToken, allowRoles("delivery"), riderGetEarnings);
 

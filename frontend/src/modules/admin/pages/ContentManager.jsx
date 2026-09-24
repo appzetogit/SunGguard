@@ -633,7 +633,7 @@ const ContentManager = () => {
                                                             onClick={() =>
                                                                 bannerFileInputsRef.current[idx]?.click()
                                                             }
-                                                            className="inline-flex items-center px-3 py-1.5 rounded-lg text-[11px] font-bold bg-slate-900 text-white hover:bg-slate-800 transition-colors"
+                                                            className="inline-flex items-center px-3 py-1.5 rounded-lg text-[11px] font-bold bg-[color:var(--primary)] text-white hover:opacity-90 transition-colors"
                                                         >
                                                             {item.imageUrl ? 'Change image' : 'Choose image file'}
                                                         </button>

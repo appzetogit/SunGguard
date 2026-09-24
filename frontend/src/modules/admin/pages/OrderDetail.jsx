@@ -266,7 +266,7 @@ const OrderDetail = () => {
                                 <button
                                     type="button"
                                     onClick={handleApproveCancelRefund}
-                                    className="ds-btn ds-btn-sm bg-emerald-600 text-white hover:bg-emerald-700"
+                                    className="ds-btn ds-btn-sm bg-orange-600 text-white hover:bg-orange-700"
                                 >
                                     Approve Refund
                                 </button>
@@ -338,7 +338,7 @@ const OrderDetail = () => {
                             </div>
                             <div className="flex items-center justify-between w-full max-w-[260px] text-xs">
                                 <span className="text-slate-500 font-medium">Delivery Fee</span>
-                                <span className="font-mono font-semibold text-emerald-600">₹{Number(order.pricing?.deliveryFee || 0).toLocaleString('en-IN')}</span>
+                                <span className="font-mono font-semibold text-orange-600">₹{Number(order.pricing?.deliveryFee || 0).toLocaleString('en-IN')}</span>
                             </div>
                             {Number(order.pricing?.discount || 0) > 0 && (
                                 <div className="flex items-center justify-between w-full max-w-[260px] text-xs">
@@ -365,7 +365,7 @@ const OrderDetail = () => {
                             </div>
                             <div>
                                 <h3 className="text-sm md:text-base font-bold text-slate-900 dark:text-white">{order.seller?.shopName || 'Store Partner'}</h3>
-                                <p className="text-xs text-emerald-600 font-semibold mt-0.5">Verified Anchor Partner</p>
+                                <p className="text-xs text-orange-600 font-semibold mt-0.5">Verified Anchor Partner</p>
                                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Owner: {order.seller?.name || 'Partner'}</p>
                             </div>
                         </div>
@@ -427,7 +427,7 @@ const OrderDetail = () => {
                     <Card title="Delivery Rider">
                         <div className="flex items-center justify-between gap-3">
                             <div className="flex items-center gap-3">
-                                <div className="h-10 w-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 flex items-center justify-center text-blue-600">
+                                <div className="h-10 w-10 rounded-xl bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-800 flex items-center justify-center text-orange-600">
                                     <Truck className="h-5 w-5" />
                                 </div>
                                 <div>

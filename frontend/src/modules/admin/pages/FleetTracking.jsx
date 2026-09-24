@@ -239,7 +239,7 @@ const FleetTrackingTable = () => {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               className="relative w-full max-w-md bg-white rounded-xl shadow-2xl overflow-hidden">
-              <div className="relative h-32 bg-slate-900">
+              <div className="relative h-32 bg-[color:var(--primary)]">
                 <div className="absolute top-4 right-4 z-10">
                   <button
                     onClick={() => setSelectedBoy(null)}

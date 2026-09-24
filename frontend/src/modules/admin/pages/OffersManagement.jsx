@@ -20,7 +20,7 @@ import { cn } from '@/lib/utils';
 import { adminApi } from '../services/adminApi';
 
 const STYLE_OPTIONS = [
-    { id: 'blue', label: 'Blue', className: 'bg-black ' },
+    { id: 'blue', label: 'Blue', className: 'bg-blue-500' },
     { id: 'green', label: 'Green', className: 'bg-primary' },
     { id: 'orange', label: 'Orange', className: 'bg-orange-500' },
 ];
@@ -260,8 +260,8 @@ const OffersManagement = () => {
                     label="Active"
                     value={stats.active}
                     icon={HiOutlineSparkles}
-                    color="text-emerald-600"
-                    bg="bg-emerald-50"
+                    color="text-orange-600"
+                    bg="bg-orange-50"
                 />
                 <StatCard
                     label="Inactive"
@@ -508,7 +508,7 @@ const OffersManagement = () => {
                                         className={cn(
                                             "flex-1 px-3 py-2 rounded-2xl text-[11px] font-bold border flex items-center justify-center gap-1",
                                             formData.style === opt.id
-                                                ? "border-slate-900 bg-slate-900 text-white"
+                                                ? "border-[color:var(--primary)] bg-[color:var(--primary)] text-white"
                                                 : "border-slate-200 bg-slate-50 text-slate-600"
                                         )}
                                     >
@@ -533,7 +533,7 @@ const OffersManagement = () => {
                                             className={cn(
                                                 "flex-1 px-3 py-2 rounded-2xl text-[11px] font-bold border flex items-center justify-center gap-1",
                                                 formData.icon === opt.id
-                                                    ? "border-slate-900 bg-slate-900 text-white"
+                                                    ? "border-[color:var(--primary)] bg-[color:var(--primary)] text-white"
                                                     : "border-slate-200 bg-slate-50 text-slate-600"
                                             )}
                                         >

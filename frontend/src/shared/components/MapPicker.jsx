@@ -110,7 +110,7 @@ const MapPicker = ({
    * rather than silently saved and rejected later by the server.
    *
    * Use `boundary` when there is exactly one zone to pin inside (e.g. an
-   * admin who has already picked which zone a warehouse belongs to). Use
+   * admin who has already picked which zone a location belongs to). Use
    * `boundaries` — a list of `{ points, name?, color? }` zones — when the
    * picker itself has to decide, from all of them, which one (if any) the
    * dropped pin falls inside (e.g. a customer choosing an outstation pickup

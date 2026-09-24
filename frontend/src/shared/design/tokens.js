@@ -31,6 +31,15 @@ export const RULE = 'rgba(15,23,42,0.18)'; // dashed rules, tear lines
 export const RULE_LIGHT = 'rgba(255,255,255,0.22)'; // the same rule on ink
 export const ALERT = '#B45309'; // amber — over-limit and rejected states
 
+/* ── Admin theme override ───────────────────────────────────────────────────
+   The admin console runs its own accent — orange — layered on top of the
+   app-wide --primary preset in index.css. Spread this onto a wrapper's
+   inline `style` so every var(--primary)-keyed surface underneath (buttons,
+   active rows, stamps, focus rings) resolves to orange within that subtree,
+   without touching the customer/seller/porter surfaces that share the same
+   components.                                                              */
+export const ADMIN_THEME_VARS = { '--primary': '#F97316' }; // orange-500
+
 /* ── Motion ──────────────────────────────────────────────────────────────────
    Two engines, split by job. anime.js drives imperative, event-fired moments
    (a digit landing, a code box taking ink, a stamp hitting paper). motion.dev

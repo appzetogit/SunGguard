@@ -396,7 +396,7 @@ const CategoryManagement = () => {
                         onClick={() => setActiveView('tree')}
                         className={cn(
                             "px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-                            activeView === 'tree' ? "bg-slate-900 text-white shadow-lg" : "text-slate-400 hover:text-slate-600"
+                            activeView === 'tree' ? "bg-[color:var(--primary)] text-white shadow-lg" : "text-slate-400 hover:text-slate-600"
                         )}
                     >
                         Category Tree
@@ -405,7 +405,7 @@ const CategoryManagement = () => {
                         onClick={() => setActiveView('subcategories')}
                         className={cn(
                             "px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-                            activeView === 'subcategories' ? "bg-slate-900 text-white shadow-lg" : "text-slate-400 hover:text-slate-600"
+                            activeView === 'subcategories' ? "bg-[color:var(--primary)] text-white shadow-lg" : "text-slate-400 hover:text-slate-600"
                         )}
                     >
                         Detailed Subcategories
@@ -599,7 +599,7 @@ const CategoryManagement = () => {
                 </div>
 
                 <div className="xl:col-span-4 space-y-6">
-                    <Card className="bg-slate-900 border-none shadow-xl p-6 rounded-xl text-white relative overflow-hidden">
+                    <Card className="bg-[color:var(--primary)] border-none shadow-xl p-6 rounded-xl text-white relative overflow-hidden">
                         <div className="relative z-10">
                             <h3 className="text-lg font-bold mb-0.5 uppercase tracking-tight">Organization Guide</h3>
                             <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-6">Organize Categories</p>
@@ -666,7 +666,7 @@ const CategoryManagement = () => {
                                             onChange={handleImageChange}
                                         />
                                     </div>
-                                    <div className="p-4 bg-slate-900 rounded-2xl text-white">
+                                    <div className="p-4 bg-[color:var(--primary)] rounded-2xl text-white">
                                         <div className="flex flex-col items-center text-center">
                                             <Badge variant="primary" className="text-[7px] font-bold mb-1 uppercase tracking-widest">{formData.type}</Badge>
                                             <span className="text-xs font-bold truncate w-full">{formData.name || 'Untitled'}</span>
@@ -779,7 +779,7 @@ const CategoryManagement = () => {
                                         <button
                                             onClick={handleSave}
                                             disabled={isSaving}
-                                            className="flex-[2] py-3.5 rounded-xl text-xs font-black tracking-widest bg-slate-900 text-white shadow-xl hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:translate-y-0 uppercase"
+                                            className="flex-[2] py-3.5 rounded-xl text-xs font-black tracking-widest bg-[color:var(--primary)] text-white shadow-xl hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:translate-y-0 uppercase"
                                         >
                                             {isSaving ? 'Synchronizing...' : (editingItem ? 'Apply Changes' : 'Confirm Registration')}
                                         </button>

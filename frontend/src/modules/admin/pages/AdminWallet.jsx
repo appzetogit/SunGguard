@@ -158,8 +158,8 @@ const AdminWallet = () => {
             description: 'Net profit for platform',
             icon: DollarSign,
             color: 'purple',
-            bg: 'bg-purple-50',
-            iconColor: 'text-purple-500'
+            bg: 'bg-orange-50',
+            iconColor: 'text-orange-500'
         },
         {
             label: 'Available Balance',
@@ -194,8 +194,8 @@ const AdminWallet = () => {
             description: 'Owed to delivery partners',
             icon: CreditCard,
             color: 'purple',
-            bg: 'bg-purple-50',
-            iconColor: 'text-purple-500'
+            bg: 'bg-orange-50',
+            iconColor: 'text-orange-500'
         }
     ];
 
@@ -314,7 +314,7 @@ const AdminWallet = () => {
                     <button
                         onClick={handleProcessPayouts}
                         disabled={isProcessing}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-all shadow-lg active:scale-95 disabled:opacity-50"
+                        className="flex items-center gap-2 px-4 py-2.5 bg-[color:var(--primary)] text-white rounded-xl text-xs font-bold hover:opacity-90 transition-all shadow-lg active:scale-95 disabled:opacity-50"
                     >
                         {isProcessing ? <RotateCw className="h-4 w-4 animate-spin" /> : <ArrowUpRight className="h-4 w-4" />}
                         {isProcessing ? 'PROCESSING...' : 'PROCESS PAYOUTS'}
@@ -453,7 +453,7 @@ const AdminWallet = () => {
                                                                 <button
                                                                     disabled={isProcessing || loadingId === req._id}
                                                                     onClick={() => handleUpdateStatus(req._id, 'COMPLETED')}
-                                                                    className="px-4 py-2 bg-black  text-primary-foreground rounded-xl text-[10px] font-black uppercase hover:bg-brand-700 transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed min-w-[100px] flex items-center justify-center"
+                                                                    className="px-4 py-2 bg-[color:var(--primary)]  text-primary-foreground rounded-xl text-[10px] font-black uppercase hover:bg-brand-700 transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed min-w-[100px] flex items-center justify-center"
                                                                 >
                                                                     {loadingId === req._id ? (
                                                                         <RotateCw className="h-3 w-3 animate-spin" />
@@ -596,7 +596,7 @@ const AdminWallet = () => {
                                     </div>
                                     <div className="flex justify-between items-center bg-slate-800/50 p-3 rounded-2xl border border-white/5">
                                         <div className="flex items-center gap-2">
-                                            <div className="h-2 w-2 rounded-full bg-purple-400" />
+                                            <div className="h-2 w-2 rounded-full bg-orange-400" />
                                             <span className="text-xs font-bold text-slate-300">Riders</span>
                                         </div>
                                         <span className="text-xs font-black">₹{(walletData.stats?.deliveryPendingPayouts || 0).toLocaleString()}</span>
@@ -704,7 +704,7 @@ const AdminWallet = () => {
                         <div className="pt-4 flex gap-3">
                             <button
                                 onClick={() => setSelectedTransaction(null)}
-                                className="flex-1 py-3 bg-slate-900 text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-xl active:scale-95 transition-all"
+                                className="flex-1 py-3 bg-[color:var(--primary)] text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-xl active:scale-95 transition-all"
                             >
                                 CLOSE
                             </button>

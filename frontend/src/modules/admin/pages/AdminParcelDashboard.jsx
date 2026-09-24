@@ -20,40 +20,28 @@ import {
   Save,
   ArrowRight,
   Building2,
-  Zap,
   Plus,
   Pencil,
   Trash2,
   Star,
   EyeOff,
   Eye,
-  Warehouse as WarehouseIcon,
   Clock,
+  FileSpreadsheet,
+  Upload,
+  Route,
 } from "lucide-react";
 import { toast } from "sonner";
 import { parcelApi } from "../../customer/services/parcelApi";
-import MapPicker from "../../../shared/components/MapPicker";
 import { zonesApi } from "@shared/services/zonesApi";
-import { isPointInPolygon, formatZoneLabel } from "@shared/utils/zoneGeometry";
-import {
-  composeCourierFullAddress,
-  emptyCourierLocation,
-  courierLocationFromCompany,
-  buildCourierLocationPayload,
-  validateCourierLocationForm,
-} from "../utils/courierLocation";
+import { formatZoneLabel } from "@shared/utils/zoneGeometry";
 import {
   maskName,
   maskPhone,
-  maskPincode,
   maskAmount,
   checkName,
-  checkText,
   checkPhone,
-  checkPincode,
-  checkEmail,
   checkAmount,
-  checkCoords,
   firstError,
 } from "../utils/formRules";
 import {
@@ -64,162 +52,13 @@ import {
 import { createSocketTokenReader } from "@core/utils/authStorage";
 import { STORAGE_KEYS } from "@core/utils/storage";
 
-const updateCourierFormLocation = (formSetter, field, value) => {
-  formSetter((prev) => {
-    const location = { ...prev.location, [field]: value };
-    location.fullAddress = composeCourierFullAddress(location);
-    return { ...prev, location };
-  });
-};
-
-const CourierLocationFields = ({ location, onFieldChange, onOpenMap }) => (
-  <div className="space-y-4 rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
-    <div className="flex items-center justify-between gap-2">
-      <div>
-        <p className="text-xs font-black uppercase tracking-wider text-slate-500">
-          Office Location
-        </p>
-        <p className="text-[10px] text-slate-400 font-medium mt-0.5">
-          Riders will drop parcels at this branch address.
-        </p>
-      </div>
-      <button
-        type="button"
-        onClick={onOpenMap}
-        className="inline-flex items-center gap-1.5 rounded-xl border border-primary/20 bg-white px-3 py-2 text-[11px] font-bold text-primary hover:bg-primary/5">
-        <MapPin size={14} />
-        {location.lat && location.lng ? "Update Map" : "Pick on Map"}
-      </button>
-    </div>
-
-    <div className="grid grid-cols-2 gap-3">
-      <div className="space-y-1">
-        <label className="text-xs font-bold text-slate-500 uppercase">
-          Flat / Shop No.
-        </label>
-        <input
-          type="text"
-          value={location.flatNo}
-          onChange={(e) => onFieldChange("flatNo", e.target.value)}
-          placeholder="e.g. 12B"
-          className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary bg-white"
-        />
-      </div>
-      <div className="space-y-1">
-        <label className="text-xs font-bold text-slate-500 uppercase">
-          Contact Phone
-        </label>
-        <input
-          type="tel"
-          inputMode="numeric"
-          value={location.phone}
-          onChange={(e) => onFieldChange("phone", maskPhone(e.target.value))}
-          placeholder="10-digit number"
-          className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary bg-white"
-        />
-      </div>
-    </div>
-
-    <div className="space-y-1">
-      <label className="text-xs font-bold text-slate-500 uppercase">
-        Street / Building
-      </label>
-      <input
-        type="text"
-        required
-        value={location.address}
-        onChange={(e) => onFieldChange("address", e.target.value)}
-        placeholder="Building name, street, area"
-        className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary bg-white"
-      />
-    </div>
-
-    <div className="space-y-1">
-      <label className="text-xs font-bold text-slate-500 uppercase">
-        Landmark
-      </label>
-      <input
-        type="text"
-        value={location.landmark}
-        onChange={(e) => onFieldChange("landmark", e.target.value)}
-        placeholder="Near metro, mall, etc."
-        className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary bg-white"
-      />
-    </div>
-
-    <div className="grid grid-cols-2 gap-3">
-      <div className="space-y-1">
-        <label className="text-xs font-bold text-slate-500 uppercase">
-          City
-        </label>
-        <input
-          type="text"
-          required
-          value={location.city}
-          onChange={(e) => onFieldChange("city", maskName(e.target.value, 60))}
-          placeholder="City"
-          className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary bg-white"
-        />
-      </div>
-      <div className="space-y-1">
-        <label className="text-xs font-bold text-slate-500 uppercase">
-          State
-        </label>
-        <input
-          type="text"
-          required
-          value={location.state}
-          onChange={(e) => onFieldChange("state", maskName(e.target.value, 60))}
-          placeholder="State"
-          className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary bg-white"
-        />
-      </div>
-    </div>
-
-    <div className="space-y-1">
-      <label className="text-xs font-bold text-slate-500 uppercase">
-        Pincode
-      </label>
-      <input
-        type="text"
-        required
-        value={location.pincode}
-        onChange={(e) => onFieldChange("pincode", maskPincode(e.target.value))}
-        inputMode="numeric"
-        placeholder="6-digit pincode"
-        className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary bg-white"
-      />
-    </div>
-
-    {location.fullAddress ? (
-      <div className="rounded-xl border border-slate-200 bg-white px-3 py-2.5">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-          Full Address
-        </p>
-        <p className="text-xs font-medium text-slate-700 mt-1">
-          {location.fullAddress}
-        </p>
-        {location.lat && location.lng ? (
-          <p className="text-[10px] text-slate-400 mt-1 font-mono">
-            {Number(location.lat).toFixed(5)}, {Number(location.lng).toFixed(5)}
-          </p>
-        ) : (
-          <p className="text-[10px] text-amber-600 mt-1 font-semibold">
-            Map location not selected yet
-          </p>
-        )}
-      </div>
-    ) : null}
-  </div>
-);
-
 const AdminParcelDashboard = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { tab: urlTab } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const validTabs = ["all", "active", "pricing", "couriers", "warehouses", "reviews", "reports"];
+  const validTabs = ["all", "active", "pricing", "couriers", "cityRates", "reviews", "reports"];
   const [activeTab, setActiveTab] = useState(() => (urlTab && validTabs.includes(urlTab) ? urlTab : "all"));
 
   useEffect(() => {
@@ -250,58 +89,45 @@ const AdminParcelDashboard = () => {
   const [couriers, setCouriers] = useState([]);
   const [addCourierForm, setAddCourierForm] = useState({
     name: "",
-    platformCharge: "0",
-    companyCharge: "0",
+    phone: "",
+    zoneIds: [],
+    allZones: false,
     sortOrder: "0",
     isActive: true,
-    location: emptyCourierLocation(),
   });
   const [editCourierForm, setEditCourierForm] = useState({
     name: "",
-    platformCharge: "0",
-    companyCharge: "0",
+    phone: "",
+    zoneIds: [],
+    allZones: false,
     sortOrder: "0",
     isActive: true,
-    location: emptyCourierLocation(),
   });
-  const [courierMapPickerTarget, setCourierMapPickerTarget] = useState(null);
   const [courierSaving, setCourierSaving] = useState(false);
   const [courierEditModalOpen, setCourierEditModalOpen] = useState(false);
   const [editingCourierId, setEditingCourierId] = useState(null);
   const [editingCourierIsOther, setEditingCourierIsOther] = useState(false);
   const [courierToDelete, setCourierToDelete] = useState(null);
   const [courierDeleting, setCourierDeleting] = useState(false);
-  const [warehouses, setWarehouses] = useState([]);
-  const [warehouseLoading, setWarehouseLoading] = useState(false);
-  const [warehouseSaving, setWarehouseSaving] = useState(false);
-  const [warehouseDeleting, setWarehouseDeleting] = useState(false);
-  const [warehouseToDelete, setWarehouseToDelete] = useState(null);
-  const [warehouseEditModalOpen, setWarehouseEditModalOpen] = useState(false);
-  const [editingWarehouseId, setEditingWarehouseId] = useState(null);
-  const [warehouseMapPickerTarget, setWarehouseMapPickerTarget] =
-    useState(null);
-  const emptyWarehouseForm = {
-    name: "",
-    address: "",
-    city: "",
-    pincode: "",
-    phone: "",
-    email: "",
-    contactPerson: "",
-    lat: 22.7196,
-    lng: 75.8577,
-    zoneId: "",
-    isActive: true,
-    notes: "",
-  };
-  const [addWarehouseForm, setAddWarehouseForm] = useState(emptyWarehouseForm);
-  const [editWarehouseForm, setEditWarehouseForm] =
-    useState(emptyWarehouseForm);
   const [zones, setZones] = useState([]);
 
-  // Fetched once — reused for the add/edit zone dropdowns and to draw the
-  // boundary the map picker enforces, so opening either form costs no extra
-  // network round trip beyond this single load.
+  // Courier city-to-city rate card (Excel-uploaded)
+  const [cityRates, setCityRates] = useState([]);
+  const [cityRatesLoading, setCityRatesLoading] = useState(false);
+  const [cityRateUploading, setCityRateUploading] = useState(false);
+  const [cityRateUploadResult, setCityRateUploadResult] = useState(null);
+  const [manualRateForm, setManualRateForm] = useState({
+    originCity: "",
+    destinationCity: "",
+    // { [courierCompanyId]: "chargeString" } — one input per courier, same
+    // shape as one row of the Excel sheet.
+    charges: {},
+  });
+  const [manualRateSaving, setManualRateSaving] = useState(false);
+  const [rateRowToDelete, setRateRowToDelete] = useState(null);
+  const [templateDownloading, setTemplateDownloading] = useState(false);
+
+  // Fetched once — reused for the add/edit courier zone checkboxes.
   useEffect(() => {
     zonesApi
       .getActiveZones()
@@ -314,13 +140,6 @@ const AdminParcelDashboard = () => {
     [zones],
   );
 
-  /** The zone bound to whichever warehouse form the map picker is currently open for. */
-  const activeWarehouseZone =
-    warehouseMapPickerTarget === "edit"
-      ? zoneById(editWarehouseForm.zoneId)
-      : warehouseMapPickerTarget === "add"
-        ? zoneById(addWarehouseForm.zoneId)
-        : null;
   const courierEditScrollRef = useRef(null);
   const courierEditModalRef = useRef(null);
   const parcelDetailScrollRef = useRef(null);
@@ -329,9 +148,7 @@ const AdminParcelDashboard = () => {
   const modalOpen = Boolean(
     selectedParcel ||
     courierEditModalOpen ||
-    courierToDelete ||
-    warehouseEditModalOpen ||
-    warehouseToDelete,
+    courierToDelete,
   );
 
   useEffect(() => {
@@ -418,16 +235,10 @@ const AdminParcelDashboard = () => {
 
   // Pricing Config state
   const [pricing, setPricing] = useState({
-    baseFare: 0,
-    perKmCharge: 0,
-    weightCharge: 0,
-    baseSearchRadiusKm: 5,
-    radiusMultiplier: 1.6,
-    riderBaseFareSharePercent: 80,
-    riderDistanceFareSharePercent: 80,
+    fixedDeliveryCharge: 0,
+    deliveryRadiusKm: 5,
+    riderPerKmRate: 0,
     packageCategories: [],
-    maxWeightKg: 1,
-    expressCharge: 0,
   });
   const [newPackageCategoryLabel, setNewPackageCategoryLabel] = useState("");
   const [newPackageCategorySegment, setNewPackageCategorySegment] =
@@ -440,7 +251,7 @@ const AdminParcelDashboard = () => {
     completed: 0,
     cancelled: 0,
     revenue: 0,
-    riderSharePercent: 80,
+    riderPerKmRate: 0,
     riderPayout: 0,
     adminCommission: 0,
   });
@@ -466,26 +277,6 @@ const AdminParcelDashboard = () => {
     }
   }, [activeTab, fetchParcelReviews]);
 
-  const fetchWarehouses = useCallback(async () => {
-    try {
-      setWarehouseLoading(true);
-      const res = await parcelApi.adminGetWarehouses();
-      if (res.data?.success) {
-        setWarehouses(res.data.results || res.data.result || []);
-      }
-    } catch (err) {
-      toast.error(err?.response?.data?.message || "Failed to load warehouses");
-    } finally {
-      setWarehouseLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (activeTab === "warehouses") {
-      fetchWarehouses();
-    }
-  }, [activeTab, fetchWarehouses]);
-
   const handleReviewStatus = async (id, status) => {
     try {
       const res = await parcelApi.adminUpdateReviewStatus(id, { status });
@@ -500,101 +291,125 @@ const AdminParcelDashboard = () => {
     }
   };
 
-  const fetchData = useCallback(
-    async (isSilent = false, { refreshPricing = !isSilent } = {}) => {
-      if (!isSilent) setLoading(true);
-      try {
-        // Fetch Parcels
-        const parcelsRes = await parcelApi.adminGetParcels();
-        if (parcelsRes.data && parcelsRes.data.success) {
-          setParcels(parcelsRes.data.results || parcelsRes.data.result || []);
-        }
+  const fetchRiders = useCallback(async () => {
+    const res = await parcelApi.adminGetRiders();
+    if (res.data?.success) {
+      setRiders(res.data.results || res.data.result || []);
+    }
+  }, []);
 
-        // Fetch Riders
-        const ridersRes = await parcelApi.adminGetRiders();
-        if (ridersRes.data && ridersRes.data.success) {
-          setRiders(ridersRes.data.results || ridersRes.data.result || []);
-        }
+  const fetchCouriers = useCallback(async () => {
+    const res = await parcelApi.adminGetCouriers();
+    if (res.data?.success) {
+      setCouriers(res.data.results || res.data.result || []);
+    }
+  }, []);
 
-        // Fetch Courier Companies
-        const couriersRes = await parcelApi.adminGetCouriers();
-        if (couriersRes.data && couriersRes.data.success) {
-          setCouriers(
-            couriersRes.data.results || couriersRes.data.result || [],
-          );
-        }
-
-        // Fetch Warehouses
-        const warehousesRes = await parcelApi.adminGetWarehouses();
-        if (warehousesRes.data && warehousesRes.data.success) {
-          setWarehouses(
-            warehousesRes.data.results || warehousesRes.data.result || [],
-          );
-        }
-
-        // Pricing form must NOT refresh on silent polls — that wipes in-progress edits
-        // (e.g. Express Extra Charge) every 15s before Save.
-        if (refreshPricing) {
-          const pricingRes = await parcelApi.adminGetPricingConfig();
-          if (pricingRes.data && pricingRes.data.success) {
-            const cfg = pricingRes.data.result || {};
-            setPricing({
-              baseFare: cfg.baseFare || 0,
-              perKmCharge: cfg.perKmCharge || 0,
-              weightCharge: cfg.weightCharge || 0,
-              baseSearchRadiusKm: cfg.baseSearchRadiusKm ?? 5,
-              radiusMultiplier: cfg.radiusMultiplier ?? 1.6,
-              riderBaseFareSharePercent:
-                cfg.riderBaseFareSharePercent ?? cfg.riderSharePercent ?? 80,
-              riderDistanceFareSharePercent:
-                cfg.riderDistanceFareSharePercent ??
-                cfg.riderSharePercent ??
-                80,
-              packageCategories: Array.isArray(cfg.packageCategories)
-                ? cfg.packageCategories
-                : [],
-              maxWeightKg: cfg.maxWeightKg ?? 1,
-              expressCharge: cfg.expressCharge ?? 0,
-            });
-          }
-        }
-
-        // Fetch Reports
-        const reportsRes = await parcelApi.adminGetReports();
-        if (reportsRes.data && reportsRes.data.success) {
-          setReports({
-            totalDeliveries: 0,
-            completed: 0,
-            cancelled: 0,
-            revenue: 0,
-            riderSharePercent: 80,
-            riderPayout: 0,
-            adminCommission: 0,
-            ...(reportsRes.data.result || {}),
-          });
-        }
-      } catch (error) {
-        console.error("Failed to load dashboard data:", error);
-        if (!isSilent) toast.error("Failed to load dashboard data");
-      } finally {
-        if (!isSilent) setLoading(false);
+  const fetchCityRates = useCallback(async () => {
+    setCityRatesLoading(true);
+    try {
+      const [ratesRes, couriersRes] = await Promise.all([
+        parcelApi.adminGetCityRates(),
+        parcelApi.adminGetCouriers(),
+      ]);
+      if (ratesRes.data?.success) {
+        setCityRates(ratesRes.data.results || ratesRes.data.result || []);
       }
-    },
-    [],
-  );
+      if (couriersRes.data?.success) {
+        setCouriers(couriersRes.data.results || couriersRes.data.result || []);
+      }
+    } finally {
+      setCityRatesLoading(false);
+    }
+  }, []);
+
+  const fetchPricing = useCallback(async () => {
+    const res = await parcelApi.adminGetPricingConfig();
+    if (res.data?.success) {
+      const cfg = res.data.result || {};
+      setPricing({
+        fixedDeliveryCharge: cfg.fixedDeliveryCharge ?? 0,
+        deliveryRadiusKm: cfg.deliveryRadiusKm ?? 5,
+        riderPerKmRate: cfg.riderPerKmRate ?? 0,
+        packageCategories: Array.isArray(cfg.packageCategories)
+          ? cfg.packageCategories
+          : [],
+      });
+    }
+  }, []);
+
+  const fetchReports = useCallback(async () => {
+    const res = await parcelApi.adminGetReports();
+    if (res.data?.success) {
+      setReports({
+        totalDeliveries: 0,
+        completed: 0,
+        cancelled: 0,
+        revenue: 0,
+        riderPerKmRate: 0,
+        riderPayout: 0,
+        adminCommission: 0,
+        ...(res.data.result || {}),
+      });
+    }
+  }, []);
+
+  /**
+   * Only fetches parcels every poll — that's the one thing every tab's deep
+   * link (?parcelId=) and the "all"/"active" tabs need live. Riders, couriers,
+   * pricing and reports are each fetched once when their own tab becomes
+   * active (see the effect below), not on every 15s tick — nobody sitting on
+   * the pricing tab needs the rider/courier/reports endpoints re-hit in the
+   * background, and the pricing form must never be silently overwritten
+   * mid-edit anyway.
+   */
+  const fetchData = useCallback(async (isSilent = false) => {
+    if (!isSilent) setLoading(true);
+    try {
+      const parcelsRes = await parcelApi.adminGetParcels();
+      if (parcelsRes.data?.success) {
+        setParcels(parcelsRes.data.results || parcelsRes.data.result || []);
+      }
+    } catch (error) {
+      console.error("Failed to load dashboard data:", error);
+      if (!isSilent) toast.error("Failed to load dashboard data");
+    } finally {
+      if (!isSilent) setLoading(false);
+    }
+  }, []);
+
+  // Read inside the interval below without resetting it on every tab switch.
+  const activeTabRef = useRef(activeTab);
+  useEffect(() => {
+    activeTabRef.current = activeTab;
+  }, [activeTab]);
 
   useEffect(() => {
     fetchData(false);
 
-    // 15-second background polling to ensure dashboard data remains consistent
+    // 15-second background polling — only while looking at a tab that shows
+    // the parcel list (socket events already keep it in sync in real time;
+    // this is just a consistency backstop). Sitting on Pricing/Couriers/
+    // Reviews/Reports has no reason to keep hitting /parcel/admin/all.
     const pollInterval = setInterval(() => {
-      fetchData(true);
+      if (activeTabRef.current === "all" || activeTabRef.current === "active") {
+        fetchData(true);
+      }
     }, 15000);
 
     return () => {
       clearInterval(pollInterval);
     };
   }, [fetchData]);
+
+  // Fetch each tab's own data once when it becomes active — not on every poll.
+  useEffect(() => {
+    if (activeTab === "active") fetchRiders();
+    else if (activeTab === "couriers") fetchCouriers();
+    else if (activeTab === "cityRates") fetchCityRates();
+    else if (activeTab === "pricing") fetchPricing();
+    else if (activeTab === "reports") fetchReports();
+  }, [activeTab, fetchRiders, fetchCouriers, fetchCityRates, fetchPricing, fetchReports]);
 
   // Listen to real-time parcel bookings via socket
   useEffect(() => {
@@ -699,59 +514,37 @@ const AdminParcelDashboard = () => {
           ? { ...prev, ...updated }
           : prev,
       );
-
-      // keep summary reasonably fresh
-      fetchData(true);
+      // No re-fetch here — the socket payload already carries the updated
+      // parcel, and this event fires on every status change of every active
+      // job platform-wide, so re-hitting /parcel/admin/all on each one was
+      // the main source of the repeated network calls.
     });
-  }, [fetchData]);
+  }, []);
 
   // Handle pricing update
   const handleUpdatePricing = async (e) => {
     e.preventDefault();
     setPricingSaving(true);
     try {
-      const expressChargeValue = Math.max(
-        0,
-        Number(pricing.expressCharge) || 0,
-      );
       const payload = {
-        baseFare: 0,
-        perKmCharge: Number(pricing.perKmCharge) || 0,
-        weightCharge: Number(pricing.weightCharge) || 0,
-        baseSearchRadiusKm: Number(pricing.baseSearchRadiusKm) || 5,
-        radiusMultiplier: Number(pricing.radiusMultiplier) || 1.6,
-        riderBaseFareSharePercent:
-          Number(pricing.riderBaseFareSharePercent) || 0,
-        riderDistanceFareSharePercent:
-          Number(pricing.riderDistanceFareSharePercent) || 0,
+        fixedDeliveryCharge: Number(pricing.fixedDeliveryCharge) || 0,
+        deliveryRadiusKm: Number(pricing.deliveryRadiusKm) || 5,
+        riderPerKmRate: Number(pricing.riderPerKmRate) || 0,
         packageCategories: pricing.packageCategories,
-        maxWeightKg: Number(pricing.maxWeightKg) || 1,
-        expressCharge: expressChargeValue,
       };
       const res = await parcelApi.adminUpdatePricingConfig(payload);
       if (res.data && res.data.success) {
         const cfg = res.data.result || {};
         setPricing((prev) => ({
           ...prev,
-          baseFare: cfg.baseFare ?? 0,
-          perKmCharge: cfg.perKmCharge ?? prev.perKmCharge,
-          weightCharge: cfg.weightCharge ?? prev.weightCharge,
-          baseSearchRadiusKm: cfg.baseSearchRadiusKm ?? prev.baseSearchRadiusKm,
-          radiusMultiplier: cfg.radiusMultiplier ?? prev.radiusMultiplier,
-          riderBaseFareSharePercent:
-            cfg.riderBaseFareSharePercent ?? prev.riderBaseFareSharePercent,
-          riderDistanceFareSharePercent:
-            cfg.riderDistanceFareSharePercent ??
-            prev.riderDistanceFareSharePercent,
+          fixedDeliveryCharge: cfg.fixedDeliveryCharge ?? prev.fixedDeliveryCharge,
+          deliveryRadiusKm: cfg.deliveryRadiusKm ?? prev.deliveryRadiusKm,
+          riderPerKmRate: cfg.riderPerKmRate ?? prev.riderPerKmRate,
           packageCategories: Array.isArray(cfg.packageCategories)
             ? cfg.packageCategories
             : prev.packageCategories,
-          maxWeightKg: cfg.maxWeightKg ?? prev.maxWeightKg,
-          expressCharge: cfg.expressCharge ?? expressChargeValue,
         }));
-        toast.success(
-          `Parcel settings saved. Express extra charge: ₹${Number(cfg.expressCharge ?? expressChargeValue).toFixed(0)}`,
-        );
+        toast.success("Parcel settings saved");
       } else {
         toast.error(res.data?.message || "Failed to update settings");
       }
@@ -764,68 +557,12 @@ const AdminParcelDashboard = () => {
 
   const emptyCourierForm = {
     name: "",
-    platformCharge: "0",
-    companyCharge: "0",
+    phone: "",
+    zoneIds: [],
+    allZones: false,
     sortOrder: "0",
     isActive: true,
-    location: emptyCourierLocation(),
   };
-
-  /**
-   * Folds a freshly picked pin into an address form.
-   *
-   * The pin wins. These fields used to be written as
-   * `mapLocation.city || prev.city`, which kept whatever had been typed
-   * earlier whenever the geocoder returned nothing for that field — so moving
-   * the map to Bhopal left the city reading "Gwalior" beside Bhopal
-   * coordinates. Riders navigate by the coordinates, so an address that
-   * disagrees with them is simply wrong.
-   *
-   * A previous value is kept only when the lookup itself failed, since then a
-   * blank is an absent answer rather than a real one.
-   */
-  const adoptPickedLocation = (prev, mapLocation) => {
-    const keepOnFailure = (picked, previous) =>
-      mapLocation.geocoded ? String(picked || "") : String(picked || previous || "");
-
-    return {
-      address: keepOnFailure(
-        mapLocation.locality || mapLocation.address,
-        prev.address,
-      ),
-      city: keepOnFailure(mapLocation.city, prev.city),
-      state: keepOnFailure(mapLocation.state, prev.state),
-      pincode: keepOnFailure(mapLocation.pincode, prev.pincode),
-    };
-  };
-
-  const handleCourierMapConfirm = (mapLocation) => {
-    const applyMapLocation = (prev) => {
-      const location = {
-        ...prev.location,
-        ...adoptPickedLocation(prev.location, mapLocation),
-        lat: mapLocation.lat,
-        lng: mapLocation.lng,
-      };
-      location.fullAddress = composeCourierFullAddress(location);
-      return { ...prev, location };
-    };
-
-    if (courierMapPickerTarget === "add") {
-      setAddCourierForm(applyMapLocation);
-    } else if (courierMapPickerTarget === "edit") {
-      setEditCourierForm(applyMapLocation);
-    }
-    setCourierMapPickerTarget(null);
-    toast.success("Courier office location updated");
-  };
-
-  const activeCourierMapLocation =
-    courierMapPickerTarget === "edit"
-      ? editCourierForm.location
-      : courierMapPickerTarget === "add"
-        ? addCourierForm.location
-        : null;
 
   const closeCourierEditModal = () => {
     setCourierEditModalOpen(false);
@@ -839,39 +576,37 @@ const AdminParcelDashboard = () => {
     setEditingCourierIsOther(company.isOther === true);
     setEditCourierForm({
       name: company.name || "",
-      platformCharge: String(company.platformCharge ?? 0),
-      companyCharge: String(company.companyCharge ?? 0),
+      phone: company.phone || "",
+      zoneIds: Array.isArray(company.zoneIds)
+        ? company.zoneIds.map((z) => String(z?._id || z))
+        : [],
+      allZones: company.allZones === true,
       sortOrder: String(company.sortOrder ?? 0),
       isActive: company.isActive !== false,
-      location: courierLocationFromCompany(company),
     });
     setCourierEditModalOpen(true);
   };
 
   const buildCourierApiPayload = (form) => ({
     name: String(form.name || "").trim(),
-    platformCharge: Number(form.platformCharge) || 0,
-    companyCharge: Number(form.companyCharge) || 0,
+    phone: String(form.phone || "").replace(/\D/g, "").slice(-10),
+    zoneIds: form.allZones ? [] : form.zoneIds || [],
+    allZones: form.allZones === true,
     sortOrder: Number(form.sortOrder) || 0,
     isActive: form.isActive !== false,
-    ...buildCourierLocationPayload(form.location),
   });
 
-  /** Name and charges. The address block is judged separately. */
+  /** Name, phone and sort order. */
   const validateCourierFields = (form) =>
     firstError(
       checkName(form.name, "Courier company name"),
-      checkAmount(form.platformCharge, "Platform charge", { max: 100000 }),
-      checkAmount(form.companyCharge, "Company charge", { max: 100000 }),
+      checkPhone(form.phone, "Contact phone", { required: true }),
       checkAmount(form.sortOrder, "Sort order", { max: 9999 }),
     );
 
   const handleAddCourier = async (e) => {
     e.preventDefault();
-    const invalid = firstError(
-      validateCourierFields(addCourierForm),
-      validateCourierLocationForm(addCourierForm.location),
-    );
+    const invalid = validateCourierFields(addCourierForm);
     if (invalid) return toast.error(invalid);
 
     setCourierSaving(true);
@@ -881,7 +616,7 @@ const AdminParcelDashboard = () => {
       if (res.data?.success) {
         toast.success("Courier company added");
         setAddCourierForm(emptyCourierForm);
-        fetchData(true);
+        fetchCouriers();
       } else {
         toast.error(res.data?.message || "Failed to save courier company");
       }
@@ -898,13 +633,9 @@ const AdminParcelDashboard = () => {
     e.preventDefault();
     if (!editingCourierId) return;
 
-    // The catch-all "Other" courier carries no branch address of its own.
-    const invalid = firstError(
-      validateCourierFields(editCourierForm),
-      editingCourierIsOther
-        ? null
-        : validateCourierLocationForm(editCourierForm.location),
-    );
+    const invalid = editingCourierIsOther
+      ? null
+      : validateCourierFields(editCourierForm);
     if (invalid) return toast.error(invalid);
 
     setCourierSaving(true);
@@ -914,7 +645,7 @@ const AdminParcelDashboard = () => {
       if (res.data?.success) {
         toast.success("Courier company updated");
         closeCourierEditModal();
-        fetchData(true);
+        fetchCouriers();
       } else {
         toast.error(res.data?.message || "Failed to update courier company");
       }
@@ -946,7 +677,6 @@ const AdminParcelDashboard = () => {
         );
         if (String(editingCourierId) === courierId) closeCourierEditModal();
         setCourierToDelete(null);
-        fetchData(true);
       } else {
         toast.error(res.data?.message || "Failed to delete");
       }
@@ -968,7 +698,7 @@ const AdminParcelDashboard = () => {
         toast.success(
           company.isActive ? "Courier deactivated" : "Courier activated",
         );
-        fetchData(true);
+        fetchCouriers();
       } else {
         toast.error(res.data?.message || "Failed to update status");
       }
@@ -977,167 +707,130 @@ const AdminParcelDashboard = () => {
     }
   };
 
-  const handleWarehouseMapConfirm = (mapLocation) => {
-    const applyMapLocation = (prev) => ({
-      ...prev,
-      ...adoptPickedLocation(prev, mapLocation),
-      lat: Number(mapLocation.lat),
-      lng: Number(mapLocation.lng),
-    });
+  const handleUploadCityRates = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow re-selecting the same file next time
+    if (!file) return;
 
-    if (warehouseMapPickerTarget === "add") {
-      setAddWarehouseForm(applyMapLocation);
-    } else if (warehouseMapPickerTarget === "edit") {
-      setEditWarehouseForm(applyMapLocation);
-    }
-    setWarehouseMapPickerTarget(null);
-    toast.success("Warehouse map location updated");
-  };
-
-  const closeWarehouseEditModal = () => {
-    setWarehouseEditModalOpen(false);
-    setEditingWarehouseId(null);
-    setEditWarehouseForm(emptyWarehouseForm);
-  };
-
-  const startEditWarehouse = (w) => {
-    setEditingWarehouseId(w._id);
-    setEditWarehouseForm({
-      name: w.name || "",
-      address: w.address || "",
-      city: w.city || "",
-      pincode: w.pincode || "",
-      phone: w.phone || "",
-      email: w.email || "",
-      contactPerson: w.contactPerson || "",
-      lat: Number(w.lat ?? w.location?.coordinates?.[1] ?? 22.7196),
-      lng: Number(w.lng ?? w.location?.coordinates?.[0] ?? 75.8577),
-      zoneId: String(w.zoneId?._id || w.zoneId || ""),
-      isActive: w.isActive !== false,
-      notes: w.notes || "",
-    });
-    setWarehouseEditModalOpen(true);
-  };
-
-  /**
-   * Same rules the warehouse Joi schema applies, so the admin is corrected
-   * here rather than by a 400 after a round trip. Zone checks mirror the
-   * server's too (adminCreateWarehouse/adminUpdateWarehouse): once any zone
-   * exists, a warehouse must belong to one and its pin must sit inside it —
-   * caught here so the round trip to the server isn't what breaks the news.
-   */
-  const validateWarehouseForm = (form) => {
-    const basic = firstError(
-      checkName(form.name, "Warehouse name"),
-      checkText(form.address, "Warehouse address", { min: 3 }),
-      form.city ? checkName(form.city, "City") : null,
-      checkPincode(form.pincode, "Pincode"),
-      checkPhone(form.phone, "Phone"),
-      checkEmail(form.email, "Email"),
-      form.contactPerson ? checkName(form.contactPerson, "Contact person") : null,
-      checkCoords(form.lat, form.lng, "Warehouse location"),
-    );
-    if (basic) return basic;
-
-    if (zones.length > 0) {
-      if (!form.zoneId) return "Please select which zone this warehouse belongs to";
-      const zone = zoneById(form.zoneId);
-      if (!zone) return "The selected zone is no longer available";
-      if (!isPointInPolygon(Number(form.lat), Number(form.lng), zone.points || [])) {
-        return `The pinned location is outside the "${zone.name}" zone boundary`;
+    setCityRateUploading(true);
+    setCityRateUploadResult(null);
+    try {
+      const res = await parcelApi.adminUploadCityRates(file);
+      if (res.data?.success) {
+        const result = res.data.result || {};
+        setCityRateUploadResult(result);
+        toast.success(`Uploaded — ${result.ratesUpserted || 0} rates saved`);
+        fetchCityRates();
+      } else {
+        toast.error(res.data?.message || "Failed to upload rate card");
       }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to upload rate card");
+    } finally {
+      setCityRateUploading(false);
     }
-    return null;
   };
 
-  const handleAddWarehouse = async (e) => {
+  const handleManualRateSubmit = async (e) => {
     e.preventDefault();
-    const invalid = validateWarehouseForm(addWarehouseForm);
-    if (invalid) return toast.error(invalid);
+    const originCity = manualRateForm.originCity.trim();
+    const destinationCity = manualRateForm.destinationCity.trim();
+    if (!originCity || !destinationCity) {
+      return toast.error("Enter both origin and destination city");
+    }
 
-    setWarehouseSaving(true);
+    // One entry per courier that has a value filled in — same shape as one
+    // row of the Excel sheet, so a partial fill only touches those couriers.
+    const rates = Object.entries(manualRateForm.charges)
+      .filter(([, value]) => String(value ?? "").trim() !== "")
+      .map(([courierCompanyId, value]) => ({
+        courierCompanyId,
+        charge: Number(value),
+      }));
+
+    if (!rates.length) {
+      return toast.error("Enter a charge for at least one courier");
+    }
+    if (rates.some((r) => !Number.isFinite(r.charge) || r.charge < 0)) {
+      return toast.error("Enter valid charge amounts");
+    }
+
+    setManualRateSaving(true);
     try {
-      const res = await parcelApi.adminCreateWarehouse({
-        ...addWarehouseForm,
-        lat: Number(addWarehouseForm.lat),
-        lng: Number(addWarehouseForm.lng),
+      const res = await parcelApi.adminUpsertCityRate({
+        originCity,
+        destinationCity,
+        rates,
       });
       if (res.data?.success) {
-        toast.success("Warehouse added successfully");
-        setAddWarehouseForm(emptyWarehouseForm);
-        fetchWarehouses();
+        toast.success(`Saved ${rates.length} courier rate(s) for this route`);
+        setManualRateForm({ originCity: "", destinationCity: "", charges: {} });
+        fetchCityRates();
       } else {
-        toast.error(res.data?.message || "Failed to add warehouse");
+        toast.error(res.data?.message || "Failed to save rates");
       }
-    } catch (err) {
-      toast.error(err?.response?.data?.message || "Failed to add warehouse");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to save rates");
     } finally {
-      setWarehouseSaving(false);
+      setManualRateSaving(false);
     }
   };
 
-  const handleUpdateWarehouse = async (e) => {
-    e.preventDefault();
-    const invalid = validateWarehouseForm(editWarehouseForm);
-    if (invalid) return toast.error(invalid);
-
-    setWarehouseSaving(true);
+  const handleDownloadCityRateTemplate = async () => {
+    setTemplateDownloading(true);
     try {
-      const res = await parcelApi.adminUpdateWarehouse(editingWarehouseId, {
-        ...editWarehouseForm,
-        lat: Number(editWarehouseForm.lat),
-        lng: Number(editWarehouseForm.lng),
-      });
-      if (res.data?.success) {
-        toast.success("Warehouse updated successfully");
-        setWarehouseEditModalOpen(false);
-        fetchWarehouses();
-      } else {
-        toast.error(res.data?.message || "Failed to update warehouse");
-      }
-    } catch (err) {
-      toast.error(err?.response?.data?.message || "Failed to update warehouse");
+      const res = await parcelApi.adminDownloadCityRateTemplate();
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "courier-city-rate-template.xlsx";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Failed to download template",
+      );
     } finally {
-      setWarehouseSaving(false);
+      setTemplateDownloading(false);
     }
   };
 
-  const handleDeleteWarehouse = async () => {
-    if (!warehouseToDelete) return;
-    setWarehouseDeleting(true);
+  const confirmDeleteCityRate = async () => {
+    if (!rateRowToDelete?._id) return;
     try {
-      const res = await parcelApi.adminDeleteWarehouse(warehouseToDelete._id);
+      const res = await parcelApi.adminDeleteCityRate(rateRowToDelete._id);
       if (res.data?.success) {
-        toast.success("Warehouse deleted successfully");
-        setWarehouseToDelete(null);
-        fetchWarehouses();
+        toast.success("Rate removed");
+        setCityRates((prev) => prev.filter((r) => r._id !== rateRowToDelete._id));
       } else {
-        toast.error(res.data?.message || "Failed to delete warehouse");
+        toast.error(res.data?.message || "Failed to remove rate");
       }
-    } catch (err) {
-      toast.error(err?.response?.data?.message || "Failed to delete warehouse");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to remove rate");
     } finally {
-      setWarehouseDeleting(false);
+      setRateRowToDelete(null);
     }
   };
 
-  const handleToggleWarehouseActive = async (w) => {
-    try {
-      const res = await parcelApi.adminUpdateWarehouse(w._id, {
-        isActive: !w.isActive,
-      });
-      if (res.data?.success) {
-        toast.success(
-          w.isActive ? "Warehouse deactivated" : "Warehouse activated",
-        );
-        fetchWarehouses();
-      } else {
-        toast.error(res.data?.message || "Failed to update status");
+  // Groups the flat rate list into one row per (origin, destination) with
+  // each courier's charge as a column — matches how the Excel sheet reads.
+  const groupedCityRates = (() => {
+    const byRoute = new Map();
+    for (const rate of cityRates) {
+      const key = `${rate.originCity}__${rate.destinationCity}`;
+      if (!byRoute.has(key)) {
+        byRoute.set(key, {
+          originCity: rate.originCity,
+          destinationCity: rate.destinationCity,
+          rates: [],
+        });
       }
-    } catch (err) {
-      toast.error(err?.response?.data?.message || "Failed to update status");
+      byRoute.get(key).rates.push(rate);
     }
-  };
+    return Array.from(byRoute.values());
+  })();
 
   const getActiveParcels = () => {
     const activeStatuses = [
@@ -1178,7 +871,7 @@ const AdminParcelDashboard = () => {
             { id: "active", label: "Active Deliveries", icon: Activity },
             { id: "pricing", label: "Parcel Settings", icon: Settings },
             { id: "couriers", label: "Couriers", icon: Building2 },
-            { id: "warehouses", label: "Warehouses", icon: WarehouseIcon },
+            { id: "cityRates", label: "City Rates", icon: Route },
             { id: "reviews", label: "Reviews", icon: Star },
             { id: "reports", label: "Revenue Reports", icon: TrendingUp },
           ].map((tab) => (
@@ -1331,7 +1024,7 @@ const AdminParcelDashboard = () => {
                                     ? "bg-red-100 text-red-600"
                                     : parcel.status === "SEARCHING"
                                       ? "bg-amber-100 text-amber-700 animate-pulse"
-                                      : "bg-blue-100 text-blue-700 animate-pulse"
+                                      : "bg-orange-100 text-orange-700 animate-pulse"
                               }`}>
                               {formatParcelStatus(parcel.status)}
                             </span>
@@ -1373,7 +1066,7 @@ const AdminParcelDashboard = () => {
                         {getSearchingParcels().length} searching
                       </span>
                     )}
-                    <span className="text-xs bg-blue-50 text-blue-600 px-3 py-1 rounded-full font-bold">
+                    <span className="text-xs bg-orange-50 text-orange-600 px-3 py-1 rounded-full font-bold">
                       {getActiveParcels().length} active
                     </span>
                   </div>
@@ -1398,7 +1091,7 @@ const AdminParcelDashboard = () => {
                             <span className="text-xs text-slate-400">
                               {new Date(parcel.createdAt).toLocaleTimeString()}
                             </span>
-                            <span className="text-[10px] font-extrabold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full uppercase">
+                            <span className="text-[10px] font-extrabold bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full uppercase">
                               {formatParcelStatus(parcel.status)}
                             </span>
                           </div>
@@ -1500,142 +1193,37 @@ const AdminParcelDashboard = () => {
                 <div className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden">
                   <div className="p-5 border-b border-slate-100">
                     <h2 className="text-base font-black text-slate-800 flex items-center gap-2">
-                      <DollarSign className="text-primary" size={18} /> Customer
-                      Pricing
+                      <DollarSign className="text-primary" size={18} /> Delivery
+                      Charge
                     </h2>
                     <p className="text-xs text-slate-400 mt-1">
-                      Fare = (pickup → nearest hub distance × per KM) + weight +
-                      courier platform fee + express (if selected). No base
-                      charge.
+                      The customer pays this flat amount regardless of distance
+                      or package weight.
                     </p>
                   </div>
 
                   <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-slate-500 uppercase">
-                        Per KM Charge (₹)
+                        Delivery Charge (₹, fixed)
                       </label>
                       <input
                         type="number"
                         min="0"
                         step="1"
                         required
-                        value={pricing.perKmCharge}
+                        value={pricing.fixedDeliveryCharge}
                         onChange={(e) =>
                           setPricing((p) => ({
                             ...p,
-                            perKmCharge: e.target.value,
+                            fixedDeliveryCharge: e.target.value,
                           }))
                         }
                         className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary"
                       />
                       <p className="text-[10px] text-slate-400 font-medium">
-                        Charged for distance from customer pickup to nearest
-                        parcel hub seller.
-                      </p>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-500 uppercase">
-                        Weight / KG (₹)
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="1"
-                        required
-                        value={pricing.weightCharge}
-                        onChange={(e) =>
-                          setPricing((p) => ({
-                            ...p,
-                            weightCharge: e.target.value,
-                          }))
-                        }
-                        className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary"
-                      />
-                      <p className="text-[10px] text-slate-400 font-medium">
-                        Multiplied by package weight.
-                      </p>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-500 uppercase">
-                        Max Weight (KG)
-                      </label>
-                      <input
-                        type="number"
-                        min="0.1"
-                        max="50"
-                        step="0.1"
-                        required
-                        value={pricing.maxWeightKg}
-                        onChange={(e) =>
-                          setPricing((p) => ({
-                            ...p,
-                            maxWeightKg: e.target.value,
-                          }))
-                        }
-                        className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary"
-                      />
-                      <p className="text-[10px] text-slate-400 font-medium">
-                        Maximum parcel weight customers can book.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden">
-                  <div className="p-5 border-b border-slate-100">
-                    <h2 className="text-base font-black text-slate-800 flex items-center gap-2">
-                      <Zap className="text-primary" size={18} /> Delivery Speed
-                      Options
-                    </h2>
-                    <p className="text-xs text-slate-400 mt-1">
-                      Customers choose Normal or Express when booking. Set the
-                      extra charge for Express.
-                    </p>
-                  </div>
-
-                  <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
-                      <p className="text-xs font-black text-slate-800">
-                        Normal
-                      </p>
-                      <p className="text-[11px] text-slate-500 mt-1">
-                        30 min · no extra charge
-                      </p>
-                    </div>
-
-                    <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
-                      <p className="text-xs font-black text-slate-800">
-                        Express
-                      </p>
-                      <p className="text-[11px] text-slate-500 mt-1">
-                        10 min · priority delivery
-                      </p>
-                    </div>
-
-                    <div className="space-y-1 sm:col-span-2">
-                      <label className="text-xs font-bold text-slate-500 uppercase">
-                        Express Extra Charge (₹)
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="1"
-                        required
-                        value={pricing.expressCharge}
-                        onChange={(e) =>
-                          setPricing((p) => ({
-                            ...p,
-                            expressCharge: e.target.value,
-                          }))
-                        }
-                        className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary"
-                      />
-                      <p className="text-[10px] text-slate-400 font-medium">
-                        Added to customer fare when Express is selected. If this
-                        is ₹0, Express and Normal will cost the same.
+                        Charged to every customer booking, no matter the
+                        distance or weight involved.
                       </p>
                     </div>
                   </div>
@@ -1656,7 +1244,7 @@ const AdminParcelDashboard = () => {
                   <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-slate-500 uppercase">
-                        Base Radius (KM)
+                        Delivery Radius (KM)
                       </label>
                       <input
                         type="number"
@@ -1664,42 +1252,19 @@ const AdminParcelDashboard = () => {
                         max="100"
                         step="0.5"
                         required
-                        value={pricing.baseSearchRadiusKm}
+                        value={pricing.deliveryRadiusKm}
                         onChange={(e) =>
                           setPricing((p) => ({
                             ...p,
-                            baseSearchRadiusKm: e.target.value,
+                            deliveryRadiusKm: e.target.value,
                           }))
                         }
                         className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary"
                       />
                       <p className="text-[10px] text-slate-400 font-medium">
-                        First broadcast radius from pickup location.
-                      </p>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-500 uppercase">
-                        Radius Expand Multiplier
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        max="5"
-                        step="0.1"
-                        required
-                        value={pricing.radiusMultiplier}
-                        onChange={(e) =>
-                          setPricing((p) => ({
-                            ...p,
-                            radiusMultiplier: e.target.value,
-                          }))
-                        }
-                        className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary"
-                      />
-                      <p className="text-[10px] text-slate-400 font-medium">
-                        If no rider accepts, radius grows by this factor (e.g.
-                        5km × 1.6 = 8km).
+                        Hard radius — only delivery boys within this many km of
+                        the customer's pickup location will see the booking
+                        request. The radius does not auto-expand.
                       </p>
                     </div>
                   </div>
@@ -1845,7 +1410,7 @@ const AdminParcelDashboard = () => {
                           }));
                           setNewPackageCategoryLabel("");
                         }}
-                        className="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold">
+                        className="px-4 py-2 rounded-xl bg-[color:var(--primary)] text-white text-xs font-bold">
                         Add category
                       </button>
                     </div>
@@ -1855,61 +1420,38 @@ const AdminParcelDashboard = () => {
                 <div className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden">
                   <div className="p-5 border-b border-slate-100">
                     <h2 className="text-base font-black text-slate-800 flex items-center gap-2">
-                      <Truck className="text-primary" size={18} /> Delivery
-                      Partner Payout
+                      <Truck className="text-primary" size={18} /> Rider Per
+                      KM Rate
                     </h2>
                     <p className="text-xs text-slate-400 mt-1">
-                      Rider earns admin-set % of distance fare only. Weight,
-                      platform, and express charges stay with the platform.
+                      The rider is paid this rate multiplied by the distance
+                      from where they accepted the job to the customer's
+                      pickup point.
                     </p>
                   </div>
 
-                  <div className="p-5 space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-500 uppercase">
-                          Distance Fare Share (%)
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          max="100"
-                          step="1"
-                          required
-                          value={pricing.riderDistanceFareSharePercent}
-                          onChange={(e) =>
-                            setPricing((p) => ({
-                              ...p,
-                              riderDistanceFareSharePercent: e.target.value,
-                            }))
-                          }
-                          className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary"
-                        />
-                        <p className="text-[10px] text-slate-400 font-medium">
-                          % of distance fare paid to rider.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="rounded-2xl bg-slate-50 border border-slate-100 p-4 text-xs text-slate-600 font-medium space-y-1">
-                      <p className="font-bold text-slate-800">Example payout</p>
-                      <p>
-                        Distance (e.g. 5 km × ₹
-                        {Number(pricing.perKmCharge) || 0} = ₹
-                        {(5 * (Number(pricing.perKmCharge) || 0)).toFixed(2)}) ×{" "}
-                        {Number(pricing.riderDistanceFareSharePercent) || 0}%
-                        {" = "}₹
-                        {(
-                          (5 *
-                            (Number(pricing.perKmCharge) || 0) *
-                            (Number(pricing.riderDistanceFareSharePercent) ||
-                              0)) /
-                          100
-                        ).toFixed(2)}
-                      </p>
-                      <p className="text-slate-400">
-                        Weight, platform, and express charges are not shared
-                        with the rider.
+                  <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-500 uppercase">
+                        Per KM Rate (₹)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        required
+                        value={pricing.riderPerKmRate}
+                        onChange={(e) =>
+                          setPricing((p) => ({
+                            ...p,
+                            riderPerKmRate: e.target.value,
+                          }))
+                        }
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary"
+                      />
+                      <p className="text-[10px] text-slate-400 font-medium">
+                        Rider payout = this rate × distance from accept point
+                        to pickup point.
                       </p>
                     </div>
                   </div>
@@ -1918,7 +1460,7 @@ const AdminParcelDashboard = () => {
                 <button
                   type="submit"
                   disabled={pricingSaving}
-                  className="w-full bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all">
+                  className="w-full bg-[color:var(--primary)] hover:opacity-90 disabled:opacity-50 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all">
                   <Save size={16} />
                   {pricingSaving ? "Saving..." : "Save parcel settings"}
                 </button>
@@ -1939,8 +1481,9 @@ const AdminParcelDashboard = () => {
                       Add Courier Company
                     </h2>
                     <p className="text-xs text-slate-400 mt-1">
-                      Set platform charge customers pay when they choose this
-                      courier.
+                      Riders drop parcels with this courier after pickup. No
+                      office address needed — just name, contact and the zones
+                      it serves.
                     </p>
                   </div>
 
@@ -1966,48 +1509,83 @@ const AdminParcelDashboard = () => {
 
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-slate-500 uppercase">
-                        Platform Charge (₹)
+                        Contact Phone
                       </label>
                       <input
-                        type="number"
-                        min="0"
-                        step="1"
+                        type="tel"
+                        inputMode="numeric"
                         required
-                        value={addCourierForm.platformCharge}
+                        value={addCourierForm.phone}
                         onChange={(e) =>
                           setAddCourierForm((f) => ({
                             ...f,
-                            platformCharge: maskAmount(e.target.value),
+                            phone: maskPhone(e.target.value),
                           }))
                         }
+                        placeholder="10-digit number"
                         className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary"
                       />
-                      <p className="text-[10px] text-slate-400 font-medium">
-                        Extra platform fee added to customer fare when this
-                        courier is selected.
-                      </p>
                     </div>
 
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-slate-500 uppercase">
-                        Courier Company Charge (₹)
+                        Zones
                       </label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="1"
-                        required
-                        value={addCourierForm.companyCharge}
-                        onChange={(e) =>
-                          setAddCourierForm((f) => ({
-                            ...f,
-                            companyCharge: maskAmount(e.target.value),
-                          }))
-                        }
-                        className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary"
-                      />
+                      <div className="rounded-xl border border-slate-200 p-3 space-y-2 max-h-56 overflow-y-auto">
+                        <label className="flex items-center gap-2 text-xs font-bold text-primary cursor-pointer pb-2 border-b border-slate-100">
+                          <input
+                            type="checkbox"
+                            checked={addCourierForm.allZones}
+                            onChange={(e) =>
+                              setAddCourierForm((f) => ({
+                                ...f,
+                                allZones: e.target.checked,
+                                zoneIds: e.target.checked ? [] : f.zoneIds,
+                              }))
+                            }
+                            className="accent-primary h-4 w-4"
+                          />
+                          All Zones (Global — every zone)
+                        </label>
+                        {zones.length === 0 ? (
+                          <p className="text-xs text-slate-400">
+                            No active zones configured yet.
+                          </p>
+                        ) : (
+                          zones.map((zone) => (
+                            <label
+                              key={zone._id}
+                              className={`flex items-center gap-2 text-xs font-bold text-slate-600 cursor-pointer ${
+                                addCourierForm.allZones
+                                  ? "opacity-40 pointer-events-none"
+                                  : ""
+                              }`}>
+                              <input
+                                type="checkbox"
+                                disabled={addCourierForm.allZones}
+                                checked={addCourierForm.zoneIds.includes(
+                                  String(zone._id),
+                                )}
+                                onChange={(e) =>
+                                  setAddCourierForm((f) => ({
+                                    ...f,
+                                    zoneIds: e.target.checked
+                                      ? [...f.zoneIds, String(zone._id)]
+                                      : f.zoneIds.filter(
+                                          (id) => id !== String(zone._id),
+                                        ),
+                                  }))
+                                }
+                                className="accent-primary h-4 w-4"
+                              />
+                              {formatZoneLabel(zone.name, zone.city)}
+                            </label>
+                          ))
+                        )}
+                      </div>
                       <p className="text-[10px] text-slate-400 font-medium">
-                        How much this courier company itself charges.
+                        Zones this courier serves. Customers picking up from
+                        inside a zone will see this courier as an option.
                       </p>
                     </div>
 
@@ -2044,32 +1622,10 @@ const AdminParcelDashboard = () => {
                       Active (shown on customer booking form)
                     </label>
 
-                    {/*
-                      The courier's office address.
-
-                      `handleAddCourier` has always validated this block, and
-                      the create endpoint requires address, city, state and
-                      pincode — but the fields were only ever rendered in the
-                      EDIT modal. Adding a courier therefore failed on every
-                      attempt with "Street / building address is required",
-                      naming a field that was nowhere on the screen, so no
-                      courier company could be created through the admin at
-                      all. The state, the change handler and the "add" branch
-                      of the map picker already existed; only the inputs were
-                      missing.
-                    */}
-                    <CourierLocationFields
-                      location={addCourierForm.location}
-                      onFieldChange={(field, value) =>
-                        updateCourierFormLocation(setAddCourierForm, field, value)
-                      }
-                      onOpenMap={() => setCourierMapPickerTarget("add")}
-                    />
-
                     <button
                       type="submit"
                       disabled={courierSaving}
-                      className="w-full bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all">
+                      className="w-full bg-[color:var(--primary)] hover:opacity-90 disabled:opacity-50 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all">
                       <Save size={16} />
                       {courierSaving ? "Saving..." : "Add Courier"}
                     </button>
@@ -2122,36 +1678,52 @@ const AdminParcelDashboard = () => {
                             )}
                           </div>
                           <p className="text-xs text-slate-500 font-medium mt-1">
-                            Platform:{" "}
-                            <span className="font-black text-slate-800">
-                              ₹{Number(company.platformCharge || 0).toFixed(2)}
-                            </span>
-                            {" · "}Courier fee:{" "}
-                            <span className="font-black text-slate-800">
-                              ₹{Number(company.companyCharge || 0).toFixed(2)}
-                            </span>
-                            {" · "}Sort: {company.sortOrder ?? 0}
+                            {company.phone ? (
+                              <>
+                                <span className="font-black text-slate-800">
+                                  {company.phone}
+                                </span>
+                                {" · "}
+                              </>
+                            ) : null}
+                            Sort: {company.sortOrder ?? 0}
                           </p>
                           {company.isOther ? (
                             <p className="text-[11px] text-slate-500 mt-1">
                               Shown to customers as “Other”. They type their own
-                              courier company name; you only set the platform
-                              charge above.
+                              courier company name.
                             </p>
-                          ) : company.location?.fullAddress ? (
-                            <p className="text-[11px] text-slate-500 mt-1 flex items-start gap-1">
-                              <MapPin
-                                size={12}
-                                className="shrink-0 mt-0.5 text-primary"
-                              />
-                              <span className="line-clamp-2">
-                                {company.location.fullAddress}
+                          ) : company.allZones ? (
+                            <div className="flex flex-wrap gap-1.5 mt-1.5">
+                              <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                                All Zones (Global)
                               </span>
-                            </p>
+                            </div>
                           ) : (
-                            <p className="text-[11px] text-amber-600 font-semibold mt-1">
-                              Office location not set — edit to add address
-                            </p>
+                            <div className="flex flex-wrap gap-1.5 mt-1.5">
+                              {(Array.isArray(company.zoneIds)
+                                ? company.zoneIds
+                                : []
+                              ).length === 0 ? (
+                                <span className="text-[11px] text-amber-600 font-semibold">
+                                  No zones assigned — edit to add zones
+                                </span>
+                              ) : (
+                                company.zoneIds.map((z) => {
+                                  const id = String(z?._id || z);
+                                  const zone = z?.name ? z : zoneById(id);
+                                  return (
+                                    <span
+                                      key={id}
+                                      className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                                      {zone
+                                        ? formatZoneLabel(zone.name, zone.city)
+                                        : "Unknown zone"}
+                                    </span>
+                                  );
+                                })
+                              )}
+                            </div>
                           )}
                         </div>
 
@@ -2187,326 +1759,202 @@ const AdminParcelDashboard = () => {
             </div>
           )}
 
-          {/* TAB: WAREHOUSES */}
-          {activeTab === "warehouses" && (
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-              <div className="lg:col-span-2">
+          {/* TAB: COURIER CITY-TO-CITY RATE CARD */}
+          {activeTab === "cityRates" && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden">
+                  <div className="p-5 border-b border-slate-100">
+                    <h2 className="text-base font-black text-slate-800 flex items-center gap-2">
+                      <FileSpreadsheet className="text-primary" size={18} />
+                      Upload Rate Card (Excel)
+                    </h2>
+                    <p className="text-xs text-slate-400 mt-1">
+                      One row per city-to-city route. Columns:{" "}
+                      <span className="font-bold text-slate-600">
+                        Origin City, Destination City
+                      </span>
+                      , then one column per courier — the column header must
+                      exactly match a courier company's name below (
+                      {couriers.length
+                        ? couriers.map((c) => c.name).join(", ")
+                        : "add couriers first"}
+                      ). Leave a cell blank if that courier doesn't serve that
+                      route.
+                    </p>
+                  </div>
+                  <div className="p-5 space-y-3">
+                    <button
+                      type="button"
+                      onClick={handleDownloadCityRateTemplate}
+                      disabled={templateDownloading}
+                      className="w-full flex items-center justify-center gap-2 rounded-xl border border-primary/30 text-primary text-sm font-bold py-2.5 hover:bg-primary/5 disabled:opacity-50">
+                      <FileSpreadsheet size={16} />
+                      {templateDownloading
+                        ? "Preparing..."
+                        : "Download Excel Template"}
+                    </button>
+                    <p className="text-[10px] text-slate-400 font-medium">
+                      Ready-made file with a column for each of your courier
+                      companies already set up — fill in the rows and upload
+                      it back below.
+                    </p>
+                    <label className="flex items-center justify-center gap-2 border-2 border-dashed border-slate-200 rounded-2xl py-8 cursor-pointer hover:border-primary/40 text-slate-500 hover:text-primary transition-colors">
+                      <Upload size={18} />
+                      <span className="text-sm font-bold">
+                        {cityRateUploading
+                          ? "Uploading..."
+                          : "Choose .xlsx / .xls / .csv file"}
+                      </span>
+                      <input
+                        type="file"
+                        accept=".xlsx,.xls,.csv"
+                        className="hidden"
+                        disabled={cityRateUploading}
+                        onChange={handleUploadCityRates}
+                      />
+                    </label>
+                    {cityRateUploadResult && (
+                      <div className="text-xs bg-green-50 text-green-700 rounded-xl p-3 font-medium">
+                        {cityRateUploadResult.rowsInFile} rows read ·{" "}
+                        {cityRateUploadResult.ratesUpserted} rates saved ·
+                        matched couriers:{" "}
+                        {(cityRateUploadResult.matchedCouriers || []).join(", ") || "none"}
+                        {cityRateUploadResult.skippedRows > 0 && (
+                          <> · {cityRateUploadResult.skippedRows} rows skipped (missing city)</>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 <form
-                  onSubmit={handleAddWarehouse}
+                  onSubmit={handleManualRateSubmit}
                   className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden">
                   <div className="p-5 border-b border-slate-100">
                     <h2 className="text-base font-black text-slate-800 flex items-center gap-2">
-                      <Plus className="text-primary" size={18} />
-                      Add Warehouse
+                      <Plus className="text-primary" size={18} /> Add / Update
+                      One Route
                     </h2>
                     <p className="text-xs text-slate-400 mt-1">
-                      Outstation parcels picked up by riders will be delivered
-                      to the nearest active warehouse.
+                      Set every courier's charge for this route in one go —
+                      same as filling one row of the Excel sheet. Leave a
+                      courier blank to skip it (its existing rate, if any,
+                      stays untouched).
                     </p>
                   </div>
-
-                  <div className="p-5 space-y-4">
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-500 uppercase">
-                        Warehouse Name *
-                      </label>
+                  <div className="p-5 space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
                       <input
                         type="text"
-                        required
-                        value={addWarehouseForm.name}
+                        placeholder="Origin City"
+                        value={manualRateForm.originCity}
                         onChange={(e) =>
-                          setAddWarehouseForm((f) => ({
-                            ...f,
-                            name: maskName(e.target.value, 80),
-                          }))
+                          setManualRateForm((f) => ({ ...f, originCity: e.target.value }))
                         }
-                        placeholder="e.g. Indore Central Hub"
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Destination City"
+                        value={manualRateForm.destinationCity}
+                        onChange={(e) =>
+                          setManualRateForm((f) => ({ ...f, destinationCity: e.target.value }))
+                        }
                         className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary"
                       />
                     </div>
 
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-500 uppercase">
-                        Address *
-                      </label>
-                      <textarea
-                        rows={2}
-                        required
-                        value={addWarehouseForm.address}
-                        onChange={(e) =>
-                          setAddWarehouseForm((f) => ({
-                            ...f,
-                            address: e.target.value,
-                          }))
-                        }
-                        placeholder="Street address, building name, locality"
-                        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary resize-none"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-500 uppercase">
-                          City
-                        </label>
-                        <input
-                          type="text"
-                          value={addWarehouseForm.city}
-                          onChange={(e) =>
-                            setAddWarehouseForm((f) => ({
-                              ...f,
-                              city: maskName(e.target.value, 60),
-                            }))
-                          }
-                          placeholder="e.g. Indore"
-                          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-500 uppercase">
-                          Pincode
-                        </label>
-                        <input
-                          type="text"
-                          value={addWarehouseForm.pincode}
-                          onChange={(e) =>
-                            setAddWarehouseForm((f) => ({
-                              ...f,
-                              pincode: maskPincode(e.target.value),
-                            }))
-                          }
-                          placeholder="e.g. 452010"
-                          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-500 uppercase">
-                          Phone
-                        </label>
-                        <input
-                          type="text"
-                          value={addWarehouseForm.phone}
-                          onChange={(e) =>
-                            setAddWarehouseForm((f) => ({
-                              ...f,
-                              phone: maskPhone(e.target.value),
-                            }))
-                          }
-                          placeholder="Contact phone"
-                          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-500 uppercase">
-                          Contact Person
-                        </label>
-                        <input
-                          type="text"
-                          value={addWarehouseForm.contactPerson}
-                          onChange={(e) =>
-                            setAddWarehouseForm((f) => ({
-                              ...f,
-                              contactPerson: maskName(e.target.value, 60),
-                            }))
-                          }
-                          placeholder="Manager name"
-                          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary"
-                        />
-                      </div>
-                    </div>
-
-                    {zones.length > 0 && (
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-500 uppercase">
-                          Zone *
-                        </label>
-                        <select
-                          value={addWarehouseForm.zoneId}
-                          onChange={(e) =>
-                            setAddWarehouseForm((f) => ({ ...f, zoneId: e.target.value }))
-                          }
-                          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary bg-white"
-                        >
-                          <option value="">Select a zone</option>
-                          {zones.map((zone) => (
-                            <option key={zone._id} value={zone._id}>
-                              {formatZoneLabel(zone.name, zone.city)}
-                            </option>
-                          ))}
-                        </select>
-                        <p className="text-[11px] text-slate-400">
-                          The map pin below must land inside this zone's boundary.
-                        </p>
+                    {couriers.length === 0 ? (
+                      <p className="text-xs text-slate-400">
+                        Add couriers on the Couriers tab first.
+                      </p>
+                    ) : (
+                      <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                        {couriers.map((c) => (
+                          <div key={c._id} className="flex items-center gap-2">
+                            <span className="flex-1 text-xs font-bold text-slate-600 truncate">
+                              {c.name}
+                            </span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="1"
+                              placeholder="₹"
+                              value={manualRateForm.charges[c._id] ?? ""}
+                              onChange={(e) =>
+                                setManualRateForm((f) => ({
+                                  ...f,
+                                  charges: { ...f.charges, [c._id]: e.target.value },
+                                }))
+                              }
+                              className="w-28 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary"
+                            />
+                          </div>
+                        ))}
                       </div>
                     )}
 
-                    {/* Map Location Picker */}
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3.5 space-y-2.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-                          <MapPin size={14} className="text-primary" /> Map
-                          Coordinates *
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (zones.length > 0 && !addWarehouseForm.zoneId) {
-                              toast.error("Select a zone first");
-                              return;
-                            }
-                            setWarehouseMapPickerTarget("add");
-                          }}
-                          className="px-2.5 py-1 rounded-lg bg-primary text-white text-[11px] font-bold hover:bg-primary/90 transition-all flex items-center gap-1">
-                          <MapPin size={12} /> Pick on Map
-                        </button>
-                      </div>
-                      <div className="flex items-center gap-3 text-xs text-slate-600 font-mono">
-                        <span className="bg-white border border-slate-200 px-2 py-1 rounded-lg">
-                          Lat: {Number(addWarehouseForm.lat).toFixed(5)}
-                        </span>
-                        <span className="bg-white border border-slate-200 px-2 py-1 rounded-lg">
-                          Lng: {Number(addWarehouseForm.lng).toFixed(5)}
-                        </span>
-                      </div>
-                      <p className="text-[10px] text-slate-400 font-medium">
-                        Riders will navigate to these exact coordinates when
-                        delivering outstation parcels.
-                      </p>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-500 uppercase">
-                        Notes (Optional)
-                      </label>
-                      <input
-                        type="text"
-                        value={addWarehouseForm.notes}
-                        onChange={(e) =>
-                          setAddWarehouseForm((f) => ({
-                            ...f,
-                            notes: e.target.value,
-                          }))
-                        }
-                        placeholder="Gate number, delivery instructions..."
-                        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary"
-                      />
-                    </div>
-
-                    <label className="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={addWarehouseForm.isActive}
-                        onChange={(e) =>
-                          setAddWarehouseForm((f) => ({
-                            ...f,
-                            isActive: e.target.checked,
-                          }))
-                        }
-                        className="accent-primary h-4 w-4"
-                      />
-                      Active (available for outstation drop-off)
-                    </label>
-
                     <button
                       type="submit"
-                      disabled={warehouseSaving}
-                      className="w-full bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all">
+                      disabled={manualRateSaving || couriers.length === 0}
+                      className="w-full bg-[color:var(--primary)] hover:opacity-90 disabled:opacity-50 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all">
                       <Save size={16} />
-                      {warehouseSaving ? "Saving..." : "Add Warehouse"}
+                      {manualRateSaving ? "Saving..." : "Save Rates"}
                     </button>
                   </div>
                 </form>
               </div>
 
-              <div className="lg:col-span-3 bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden">
-                <div className="p-5 border-b border-slate-100 flex items-center justify-between gap-3">
-                  <div>
-                    <h2 className="text-base font-black text-slate-800 flex items-center gap-2">
-                      <WarehouseIcon className="text-primary" size={18} />{" "}
-                      Warehouses
-                    </h2>
-                    <p className="text-xs text-slate-400 mt-1">
-                      {warehouses.length} warehouses · riders deliver outstation
-                      parcels here
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={fetchWarehouses}
-                    className="px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-200 text-slate-600 hover:bg-slate-50">
-                    Refresh
-                  </button>
+              <div className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden">
+                <div className="p-5 border-b border-slate-100">
+                  <h2 className="text-base font-black text-slate-800 flex items-center gap-2">
+                    <Route className="text-primary" size={18} /> Routes &amp;
+                    Charges
+                  </h2>
+                  <p className="text-xs text-slate-400 mt-1">
+                    {groupedCityRates.length} routes priced · a route with no
+                    charge for the customer's chosen courier is not bookable
+                    · each route applies both ways (Surat → Indore also
+                    covers Indore → Surat) unless you add the reverse
+                    direction separately with its own rate
+                  </p>
                 </div>
-
-                <div className="p-5 space-y-3">
-                  {warehouseLoading ? (
-                    <div className="py-12 text-center text-sm text-slate-400">
-                      Loading warehouses...
-                    </div>
-                  ) : warehouses.length === 0 ? (
-                    <div className="py-12 text-center text-sm text-slate-400">
-                      No warehouses added yet. Add a warehouse on the left with
-                      map coordinates.
-                    </div>
+                <div className="divide-y divide-slate-100">
+                  {cityRatesLoading ? (
+                    <p className="text-sm text-slate-400 text-center py-10 font-medium">
+                      Loading...
+                    </p>
+                  ) : groupedCityRates.length === 0 ? (
+                    <p className="text-sm text-slate-400 text-center py-10 font-medium">
+                      No rates uploaded yet.
+                    </p>
                   ) : (
-                    warehouses.map((w) => (
+                    groupedCityRates.map((route) => (
                       <div
-                        key={w._id}
-                        className="p-4 rounded-2xl border border-slate-100 bg-slate-50/60 hover:bg-slate-50 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-3">
-                        <div className="space-y-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-black text-slate-800">
-                              {w.name}
-                            </span>
-                            {w.city && (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 text-slate-700">
-                                {w.city}
-                              </span>
-                            )}
-                            <button
-                              type="button"
-                              onClick={() => handleToggleWarehouseActive(w)}
-                              className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                                w.isActive !== false
-                                  ? "bg-emerald-100 text-emerald-700"
-                                  : "bg-red-100 text-red-600"
-                              }`}>
-                              {w.isActive !== false ? "Active" : "Inactive"}
-                            </button>
-                          </div>
-                          <p className="text-xs text-slate-500 line-clamp-1">
-                            {w.address}
-                          </p>
-                          <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-400 font-mono">
-                            {w.phone && <span>📞 {w.phone}</span>}
-                            {w.contactPerson && (
-                              <span>👤 {w.contactPerson}</span>
-                            )}
-                            <span>
-                              📍 {Number(w.lat).toFixed(4)},{" "}
-                              {Number(w.lng).toFixed(4)}
-                            </span>
-                          </div>
+                        key={`${route.originCity}__${route.destinationCity}`}
+                        className="p-4 space-y-2">
+                        <div className="text-sm font-black text-slate-800 flex items-center gap-1.5">
+                          {route.originCity}
+                          <ArrowRight size={14} className="text-slate-400" />
+                          {route.destinationCity}
                         </div>
-
-                        <div className="flex items-center gap-2 shrink-0 self-end md:self-center">
-                          <button
-                            type="button"
-                            onClick={() => startEditWarehouse(w)}
-                            className="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-white border border-slate-200/80 shadow-sm transition-all"
-                            title="Edit Warehouse">
-                            <Pencil size={15} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setWarehouseToDelete(w)}
-                            className="p-2 rounded-xl text-red-500 hover:text-red-700 hover:bg-red-50 border border-red-100 shadow-sm transition-all"
-                            title="Delete Warehouse">
-                            <Trash2 size={15} />
-                          </button>
+                        <div className="flex flex-wrap gap-1.5">
+                          {route.rates.map((rate) => (
+                            <span
+                              key={rate._id}
+                              className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">
+                              {rate.courierCompanyId?.name || "Unknown courier"}: ₹
+                              {rate.charge}
+                              <button
+                                type="button"
+                                onClick={() => setRateRowToDelete(rate)}
+                                className="text-slate-400 hover:text-red-600"
+                                title="Remove">
+                                <XCircle size={12} />
+                              </button>
+                            </span>
+                          ))}
                         </div>
                       </div>
                     ))
@@ -2568,7 +2016,7 @@ const AdminParcelDashboard = () => {
                           <span
                             className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
                               review.status === "approved"
-                                ? "bg-emerald-50 text-emerald-700"
+                                ? "bg-orange-50 text-orange-700"
                                 : "bg-slate-100 text-slate-500"
                             }`}>
                             {review.status}
@@ -2611,7 +2059,7 @@ const AdminParcelDashboard = () => {
                             onClick={() =>
                               handleReviewStatus(review._id, "approved")
                             }
-                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100">
+                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border border-orange-200 text-orange-700 bg-orange-50 hover:bg-orange-100">
                             <Eye size={14} /> Publish
                           </button>
                         )}
@@ -2629,7 +2077,7 @@ const AdminParcelDashboard = () => {
               {/* Stat grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
                 <div className="bg-white border border-slate-100 rounded-3xl p-5 shadow-sm flex items-center gap-4">
-                  <div className="h-12 w-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 shrink-0">
+                  <div className="h-12 w-12 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-600 shrink-0">
                     <ClipboardList size={24} />
                   </div>
                   <div>
@@ -2671,7 +2119,7 @@ const AdminParcelDashboard = () => {
                 </div>
 
                 <div className="bg-white border border-slate-100 rounded-3xl p-5 shadow-sm flex items-center gap-4">
-                  <div className="h-12 w-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 shrink-0">
+                  <div className="h-12 w-12 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-600 shrink-0">
                     <DollarSign size={24} />
                   </div>
                   <div>
@@ -2704,13 +2152,8 @@ const AdminParcelDashboard = () => {
                   </div>
                   <div className="bg-slate-50 p-4 rounded-2xl">
                     <span className="text-slate-400 font-bold block uppercase">
-                      Riders Payout (base{" "}
-                      {reports.riderBaseFareSharePercent ??
-                        pricing.riderBaseFareSharePercent}
-                      % + distance{" "}
-                      {reports.riderDistanceFareSharePercent ??
-                        pricing.riderDistanceFareSharePercent}
-                      %)
+                      Riders Payout (₹
+                      {reports.riderPerKmRate ?? pricing.riderPerKmRate}/km)
                     </span>
                     <span className="text-lg font-black text-slate-800 mt-1 block">
                       ₹{Number(reports.riderPayout || 0).toFixed(2)}
@@ -2897,7 +2340,7 @@ const AdminParcelDashboard = () => {
                           setLateRefundSaving(false);
                         }
                       }}
-                      className="px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60">
+                      className="px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider bg-orange-600 text-white hover:bg-orange-700 disabled:opacity-60">
                       {lateRefundSaving ? "Saving..." : "Approve → Wallet"}
                     </button>
                     <button
@@ -2932,7 +2375,7 @@ const AdminParcelDashboard = () => {
                 </div>
               )}
               {selectedParcel.lateRefundRequest?.status === "approved" && (
-                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 font-semibold space-y-1">
+                <div className="rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-900 font-semibold space-y-1">
                   <p>
                     Late refund approved: ₹
                     {Number(
@@ -2942,7 +2385,7 @@ const AdminParcelDashboard = () => {
                   </p>
                   {(selectedParcel.lateRefundRequest.lateByLabel ||
                     selectedParcel.pickupSla?.lateByLabel) && (
-                    <p className="text-xs font-medium text-emerald-800">
+                    <p className="text-xs font-medium text-orange-800">
                       Partner was{" "}
                       {selectedParcel.lateRefundRequest.lateByLabel ||
                         selectedParcel.pickupSla?.lateByLabel}
@@ -2969,7 +2412,7 @@ const AdminParcelDashboard = () => {
                         ? "bg-green-100 text-green-700"
                         : selectedParcel.status === "CANCELLED"
                           ? "bg-red-100 text-red-600"
-                          : "bg-blue-100 text-blue-700"
+                          : "bg-orange-100 text-orange-700"
                     }`}>
                     {selectedParcel.status}
                   </span>
@@ -3019,7 +2462,7 @@ const AdminParcelDashboard = () => {
                     </div>
                   )}
                   {selectedParcel.paymentStatus === "REFUNDED" && (
-                    <p className="mt-2 text-[11px] font-bold text-emerald-700">
+                    <p className="mt-2 text-[11px] font-bold text-orange-700">
                       ₹{Number(selectedParcel.payableFare || selectedParcel.fare || 0).toFixed(2)}{" "}
                       refunded to the customer's original payment method
                     </p>
@@ -3033,6 +2476,13 @@ const AdminParcelDashboard = () => {
                   <span className="text-sm font-black text-slate-800 mt-1 block">
                     ₹{selectedParcel.fare} ({selectedParcel.weight} KG)
                   </span>
+                  {selectedParcel.fareBreakdown && (
+                    <span className="text-[11px] text-slate-500 font-medium mt-1 block">
+                      Delivery ₹{selectedParcel.fareBreakdown.baseFare || 0}
+                      {Number(selectedParcel.fareBreakdown.courierCharge) > 0 &&
+                        ` + Courier (${selectedParcel.courierCompany || "—"}) ₹${selectedParcel.fareBreakdown.courierCharge}`}
+                    </span>
+                  )}
                 </div>
 
                 <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
@@ -3052,11 +2502,15 @@ const AdminParcelDashboard = () => {
                     {selectedParcel.parcelType || "outstation"}
                   </span>
                   <p className="text-[11px] text-slate-500 mt-0.5 font-medium">
-                    {selectedParcel.warehouseId?.name
-                      ? `Hub: ${selectedParcel.warehouseId.name}`
+                    {selectedParcel.courierCompanyId?.name
+                      ? `Courier: ${selectedParcel.courierCompanyId.name}${
+                          selectedParcel.courierCompanyId.phone
+                            ? ` (${selectedParcel.courierCompanyId.phone})`
+                            : ""
+                        }`
                       : selectedParcel.sellerId?.shopName
                         ? `Seller hub: ${selectedParcel.sellerId.shopName}`
-                        : "No hub assigned"}
+                        : "No courier assigned"}
                   </p>
                 </div>
               </div>
@@ -3146,7 +2600,7 @@ const AdminParcelDashboard = () => {
 
                 <div className="border-t border-slate-100 pt-4">
                   <strong className="text-slate-800 block text-xs mb-1 uppercase tracking-wider">
-                    {selectedParcel.warehouseId ? "Dropoff (Warehouse)" : "Dropoff Address"}
+                    {selectedParcel.courierCompanyId ? "Drop at Courier" : "Dropoff Address"}
                   </strong>
                   <p className="font-bold text-slate-700">
                     {selectedParcel.dropAddress?.name} (
@@ -3383,8 +2837,8 @@ const AdminParcelDashboard = () => {
                   </h3>
                   <p className="text-xs text-slate-400 mt-1">
                     {editingCourierIsOther
-                      ? "Set the platform charge for the customer-typed courier option."
-                      : "Update name, charges, office address, and visibility."}
+                      ? "This option has no editable fields of its own."
+                      : "Update name, contact, zones, and visibility."}
                   </p>
                 </div>
                 <button
@@ -3412,8 +2866,8 @@ const AdminParcelDashboard = () => {
                       </p>
                       <p className="text-[11px] text-slate-500 mt-1">
                         Customers who pick this option type their own courier
-                        company name. You only control the platform charge
-                        below.
+                        company name. You can only toggle whether this option
+                        is shown.
                       </p>
                     </div>
                   ) : (
@@ -3437,67 +2891,82 @@ const AdminParcelDashboard = () => {
                         />
                       </div>
 
-                      <CourierLocationFields
-                        location={editCourierForm.location}
-                        onFieldChange={(field, value) =>
-                          updateCourierFormLocation(
-                            setEditCourierForm,
-                            field,
-                            value,
-                          )
-                        }
-                        onOpenMap={() => setCourierMapPickerTarget("edit")}
-                      />
-                    </>
-                  )}
-
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-500 uppercase">
-                      Platform Charge (₹)
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="1"
-                      required
-                      value={editCourierForm.platformCharge}
-                      onChange={(e) =>
-                        setEditCourierForm((f) => ({
-                          ...f,
-                          platformCharge: maskAmount(e.target.value),
-                        }))
-                      }
-                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary"
-                    />
-                    <p className="text-[10px] text-slate-400 font-medium">
-                      Extra platform fee added to customer fare when this
-                      courier is selected.
-                    </p>
-                  </div>
-
-                  {!editingCourierIsOther && (
-                    <>
                       <div className="space-y-1">
                         <label className="text-xs font-bold text-slate-500 uppercase">
-                          Courier Company Charge (₹)
+                          Contact Phone
                         </label>
                         <input
-                          type="number"
-                          min="0"
-                          step="1"
+                          type="tel"
+                          inputMode="numeric"
                           required
-                          value={editCourierForm.companyCharge}
+                          value={editCourierForm.phone}
                           onChange={(e) =>
                             setEditCourierForm((f) => ({
                               ...f,
-                              companyCharge: maskAmount(e.target.value),
+                              phone: maskPhone(e.target.value),
                             }))
                           }
+                          placeholder="10-digit number"
                           className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary"
                         />
-                        <p className="text-[10px] text-slate-400 font-medium">
-                          How much this courier company itself charges.
-                        </p>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-500 uppercase">
+                          Zones
+                        </label>
+                        <div className="rounded-xl border border-slate-200 p-3 space-y-2 max-h-56 overflow-y-auto">
+                          <label className="flex items-center gap-2 text-xs font-bold text-primary cursor-pointer pb-2 border-b border-slate-100">
+                            <input
+                              type="checkbox"
+                              checked={editCourierForm.allZones}
+                              onChange={(e) =>
+                                setEditCourierForm((f) => ({
+                                  ...f,
+                                  allZones: e.target.checked,
+                                  zoneIds: e.target.checked ? [] : f.zoneIds,
+                                }))
+                              }
+                              className="accent-primary h-4 w-4"
+                            />
+                            All Zones (Global — every zone)
+                          </label>
+                          {zones.length === 0 ? (
+                            <p className="text-xs text-slate-400">
+                              No active zones configured yet.
+                            </p>
+                          ) : (
+                            zones.map((zone) => (
+                              <label
+                                key={zone._id}
+                                className={`flex items-center gap-2 text-xs font-bold text-slate-600 cursor-pointer ${
+                                  editCourierForm.allZones
+                                    ? "opacity-40 pointer-events-none"
+                                    : ""
+                                }`}>
+                                <input
+                                  type="checkbox"
+                                  disabled={editCourierForm.allZones}
+                                  checked={editCourierForm.zoneIds.includes(
+                                    String(zone._id),
+                                  )}
+                                  onChange={(e) =>
+                                    setEditCourierForm((f) => ({
+                                      ...f,
+                                      zoneIds: e.target.checked
+                                        ? [...f.zoneIds, String(zone._id)]
+                                        : f.zoneIds.filter(
+                                            (id) => id !== String(zone._id),
+                                          ),
+                                    }))
+                                  }
+                                  className="accent-primary h-4 w-4"
+                                />
+                                {formatZoneLabel(zone.name, zone.city)}
+                              </label>
+                            ))
+                          )}
+                        </div>
                       </div>
 
                       <div className="space-y-1">
@@ -3546,7 +3015,7 @@ const AdminParcelDashboard = () => {
                   <button
                     type="submit"
                     disabled={courierSaving}
-                    className="flex-1 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all">
+                    className="flex-1 bg-[color:var(--primary)] hover:opacity-90 disabled:opacity-50 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all">
                     <Save size={16} />
                     {courierSaving ? "Saving..." : "Update"}
                   </button>
@@ -3610,292 +3079,36 @@ const AdminParcelDashboard = () => {
         </div>
       )}
 
-      <MapPicker
-        isOpen={Boolean(courierMapPickerTarget)}
-        onClose={() => setCourierMapPickerTarget(null)}
-        onConfirm={handleCourierMapConfirm}
-        initialLocation={
-          activeCourierMapLocation?.lat && activeCourierMapLocation?.lng
-            ? {
-                lat: activeCourierMapLocation.lat,
-                lng: activeCourierMapLocation.lng,
-              }
-            : null
-        }
-        title="Select Courier Office Location"
-        searchPlaceholder="Search courier branch area..."
-        showRadius={false}
-        preferCurrentLocationOnOpen={false}
-      />
-
-      {/* Edit Warehouse Modal */}
-      {warehouseEditModalOpen &&
-        createPortal(
-          <div className="fixed inset-0 z-[1000] bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 overflow-hidden overscroll-none touch-none">
-            <div
-              className="absolute inset-0 z-0"
-              onClick={closeWarehouseEditModal}
-              aria-hidden="true"
-            />
-            <div
-              className="relative z-10 bg-white rounded-3xl border border-slate-100 shadow-xl max-w-lg w-full overflow-hidden flex flex-col touch-auto max-h-[90vh]"
-              onClick={(e) => e.stopPropagation()}>
-              <div className="p-5 border-b border-slate-100 flex justify-between items-start shrink-0">
-                <div>
-                  <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
-                    <Pencil className="text-primary" size={18} />
-                    Edit Warehouse
-                  </h3>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Update warehouse location, contact, and operational status.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={closeWarehouseEditModal}
-                  className="p-1.5 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors">
-                  <XCircle size={22} />
-                </button>
-              </div>
-
-              <form
-                onSubmit={handleUpdateWarehouse}
-                className="flex flex-col flex-1 min-h-0 overflow-hidden">
-                <div className="p-5 space-y-4 overflow-y-auto overscroll-contain flex-1 min-h-0 modal-scroll-pad">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-500 uppercase">
-                      Warehouse Name *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={editWarehouseForm.name}
-                      onChange={(e) =>
-                        setEditWarehouseForm((f) => ({
-                          ...f,
-                          name: maskName(e.target.value, 80),
-                        }))
-                      }
-                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-500 uppercase">
-                      Address *
-                    </label>
-                    <textarea
-                      rows={2}
-                      required
-                      value={editWarehouseForm.address}
-                      onChange={(e) =>
-                        setEditWarehouseForm((f) => ({
-                          ...f,
-                          address: e.target.value,
-                        }))
-                      }
-                      className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary resize-none"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-500 uppercase">
-                        City
-                      </label>
-                      <input
-                        type="text"
-                        value={editWarehouseForm.city}
-                        onChange={(e) =>
-                          setEditWarehouseForm((f) => ({
-                            ...f,
-                            city: maskName(e.target.value, 60),
-                          }))
-                        }
-                        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-500 uppercase">
-                        Pincode
-                      </label>
-                      <input
-                        type="text"
-                        value={editWarehouseForm.pincode}
-                        onChange={(e) =>
-                          setEditWarehouseForm((f) => ({
-                            ...f,
-                            pincode: maskPincode(e.target.value),
-                          }))
-                        }
-                        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-500 uppercase">
-                        Phone
-                      </label>
-                      <input
-                        type="text"
-                        value={editWarehouseForm.phone}
-                        onChange={(e) =>
-                          setEditWarehouseForm((f) => ({
-                            ...f,
-                            phone: maskPhone(e.target.value),
-                          }))
-                        }
-                        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-500 uppercase">
-                        Contact Person
-                      </label>
-                      <input
-                        type="text"
-                        value={editWarehouseForm.contactPerson}
-                        onChange={(e) =>
-                          setEditWarehouseForm((f) => ({
-                            ...f,
-                            contactPerson: maskName(e.target.value, 60),
-                          }))
-                        }
-                        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary"
-                      />
-                    </div>
-                  </div>
-
-                  {zones.length > 0 && (
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-500 uppercase">
-                        Zone *
-                      </label>
-                      <select
-                        value={editWarehouseForm.zoneId}
-                        onChange={(e) =>
-                          setEditWarehouseForm((f) => ({ ...f, zoneId: e.target.value }))
-                        }
-                        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary bg-white"
-                      >
-                        <option value="">Select a zone</option>
-                        {zones.map((zone) => (
-                          <option key={zone._id} value={zone._id}>
-                            {formatZoneLabel(zone.name, zone.city)}
-                          </option>
-                        ))}
-                      </select>
-                      <p className="text-[11px] text-slate-400">
-                        The map pin below must land inside this zone's boundary.
-                      </p>
-                    </div>
-                  )}
-
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3.5 space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-                        <MapPin size={14} className="text-primary" /> Map
-                        Coordinates *
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (zones.length > 0 && !editWarehouseForm.zoneId) {
-                            toast.error("Select a zone first");
-                            return;
-                          }
-                          setWarehouseMapPickerTarget("edit");
-                        }}
-                        className="px-2.5 py-1 rounded-lg bg-primary text-white text-[11px] font-bold hover:bg-primary/90 transition-all flex items-center gap-1">
-                        <MapPin size={12} /> Update on Map
-                      </button>
-                    </div>
-                    <div className="flex items-center gap-3 text-xs text-slate-600 font-mono">
-                      <span className="bg-white border border-slate-200 px-2 py-1 rounded-lg">
-                        Lat: {Number(editWarehouseForm.lat).toFixed(5)}
-                      </span>
-                      <span className="bg-white border border-slate-200 px-2 py-1 rounded-lg">
-                        Lng: {Number(editWarehouseForm.lng).toFixed(5)}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-500 uppercase">
-                      Notes
-                    </label>
-                    <input
-                      type="text"
-                      value={editWarehouseForm.notes}
-                      onChange={(e) =>
-                        setEditWarehouseForm((f) => ({
-                          ...f,
-                          notes: e.target.value,
-                        }))
-                      }
-                      className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary"
-                    />
-                  </div>
-
-                  <label className="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={editWarehouseForm.isActive}
-                      onChange={(e) =>
-                        setEditWarehouseForm((f) => ({
-                          ...f,
-                          isActive: e.target.checked,
-                        }))
-                      }
-                      className="accent-primary h-4 w-4"
-                    />
-                    Active (available for outstation drop-off)
-                  </label>
-                </div>
-
-                <div className="p-4 border-t border-slate-100 flex gap-2 justify-end shrink-0 bg-slate-50/50">
-                  <button
-                    type="button"
-                    onClick={closeWarehouseEditModal}
-                    className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-100 transition-all">
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={warehouseSaving}
-                    className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-bold text-sm flex items-center gap-1.5 transition-all shadow-sm">
-                    <Save size={15} />
-                    {warehouseSaving ? "Saving..." : "Save Changes"}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>,
-          document.body,
-        )}
-
-      {/* Delete Warehouse Confirmation Modal */}
-      {warehouseToDelete && (
-        <div className="fixed inset-0 z-[1000] bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+      {/* Delete City Rate Confirm Modal */}
+      {rateRowToDelete && (
+        <div className="fixed inset-0 z-[1000] bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 overflow-hidden overscroll-none">
           <div
-            className="bg-white rounded-3xl border border-slate-100 shadow-xl max-w-sm w-full p-5 space-y-4"
+            className="absolute inset-0 z-0"
+            onClick={() => setRateRowToDelete(null)}
+            aria-hidden="true"
+          />
+          <div
+            className="relative z-10 bg-white rounded-3xl border border-slate-100 shadow-xl max-w-sm w-full overflow-hidden p-6 space-y-4"
             onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start gap-3">
               <div className="h-10 w-10 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center shrink-0">
-                <AlertCircle size={22} />
+                <Trash2 size={18} />
               </div>
               <div>
                 <h3 className="text-base font-black text-slate-800">
-                  Delete Warehouse?
+                  Remove This Rate?
                 </h3>
                 <p className="text-sm text-slate-500 font-medium mt-1">
-                  Remove{" "}
+                  {rateRowToDelete.courierCompanyId?.name || "This courier"}{" "}
+                  will no longer be bookable from{" "}
                   <span className="font-black text-slate-800">
-                    {warehouseToDelete.name}
+                    {rateRowToDelete.originCity}
+                  </span>{" "}
+                  to{" "}
+                  <span className="font-black text-slate-800">
+                    {rateRowToDelete.destinationCity}
                   </span>
-                  . This cannot be undone.
+                  .
                 </p>
               </div>
             </div>
@@ -3903,50 +3116,21 @@ const AdminParcelDashboard = () => {
             <div className="flex gap-2 pt-1">
               <button
                 type="button"
-                disabled={warehouseDeleting}
-                onClick={() => setWarehouseToDelete(null)}
-                className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 disabled:opacity-50">
+                onClick={() => setRateRowToDelete(null)}
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50">
                 Cancel
               </button>
               <button
                 type="button"
-                disabled={warehouseDeleting}
-                onClick={handleDeleteWarehouse}
-                className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm disabled:opacity-50">
-                {warehouseDeleting ? "Deleting..." : "Delete"}
+                onClick={confirmDeleteCityRate}
+                className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm">
+                Remove
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Warehouse MapPicker */}
-      <MapPicker
-        isOpen={Boolean(warehouseMapPickerTarget)}
-        onClose={() => setWarehouseMapPickerTarget(null)}
-        onConfirm={handleWarehouseMapConfirm}
-        initialLocation={
-          warehouseMapPickerTarget === "edit"
-            ? {
-                lat: Number(editWarehouseForm.lat),
-                lng: Number(editWarehouseForm.lng),
-              }
-            : warehouseMapPickerTarget === "add"
-              ? {
-                  lat: Number(addWarehouseForm.lat),
-                  lng: Number(addWarehouseForm.lng),
-                }
-              : null
-        }
-        title="Select Warehouse Location on Map"
-        searchPlaceholder="Search warehouse area or address..."
-        showRadius={false}
-        preferCurrentLocationOnOpen={false}
-        boundary={activeWarehouseZone?.points || null}
-        boundaryLabel={
-          activeWarehouseZone?.name ? `the "${activeWarehouseZone.name}" zone` : "the selected zone"
-        }
-      />
     </div>
   );
 };

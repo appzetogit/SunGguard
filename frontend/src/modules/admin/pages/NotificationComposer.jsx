@@ -412,7 +412,7 @@ const NotificationComposer = () => {
                             <button
                                 onClick={handleSend}
                                 disabled={!title || !message || isSending}
-                                className="ds-btn ds-btn-lg w-full bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                className="ds-btn ds-btn-lg w-full bg-[color:var(--primary)] text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                             >
                                 <HiOutlineBolt className="ds-icon-md text-amber-400" />
                                 {isSending ? 'SENDING...' : 'BLAST SIGNAL'}
@@ -538,7 +538,7 @@ const NotificationComposer = () => {
                                     className={cn(
                                         "w-full p-4 rounded-xl text-left transition-all",
                                         selectedSegment === seg.id
-                                            ? "bg-slate-900 text-white shadow-lg ring-2 ring-slate-900"
+                                            ? "bg-[color:var(--primary)] text-white shadow-lg ring-2 ring-slate-900"
                                             : "bg-white text-slate-700 ring-1 ring-slate-200 hover:ring-slate-300"
                                     )}
                                 >

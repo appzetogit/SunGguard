@@ -214,7 +214,7 @@ const PorterGst = () => {
             <button
               onClick={load}
               disabled={loading}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-xs font-bold text-white disabled:opacity-50 dark:bg-white dark:text-slate-900"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[color:var(--primary)] px-3 py-2 text-xs font-bold text-white disabled:opacity-50 dark:bg-white dark:text-slate-900"
             >
               <RotateCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
               Refresh
@@ -358,7 +358,7 @@ const PorterGst = () => {
                 <button
                   onClick={() => save(key)}
                   disabled={!isDirty(key) || saving === key}
-                  className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-slate-900 py-2.5 text-xs font-bold text-white disabled:opacity-40 dark:bg-white dark:text-slate-900"
+                  className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-[color:var(--primary)] py-2.5 text-xs font-bold text-white disabled:opacity-40 dark:bg-white dark:text-slate-900"
                 >
                   {saving === key ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -439,7 +439,7 @@ const PorterGst = () => {
                 className={cn(
                   "rounded-lg px-3 py-1.5 text-xs font-semibold",
                   ledgerSource === key
-                    ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
+                    ? "bg-[color:var(--primary)] text-white dark:bg-white dark:text-slate-900"
                     : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
                 )}
               >

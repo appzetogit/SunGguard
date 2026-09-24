@@ -2,7 +2,6 @@ import mongoose from "mongoose";
 import Parcel from "../models/parcel.js";
 import ParcelConfig from "../models/parcelConfig.js";
 import Delivery from "../models/delivery.js";
-import Warehouse from "../models/warehouse.js";
 import { distanceMeters } from "../utils/geoUtils.js";
 import { getParcelRiderIdsNearPickup } from "./deliveryNearbyService.js";
 import { getActiveZoneById, isPointInZoneId } from "./deliveryZoneService.js";
@@ -81,7 +80,7 @@ async function assertRiderWithinPickupRadius(deliveryOid, parcelId) {
     }
   }
 
-  const radiusKm = settings.baseSearchRadiusKm;
+  const radiusKm = settings.deliveryRadiusKm;
   if (distanceMeters(pickupLat, pickupLng, lat, lng) > radiusKm * 1000) {
     const err = new Error(
       `You must be within ${radiusKm} km of the pickup location to accept this parcel`,
@@ -96,74 +95,47 @@ const DEFAULT_PARCEL_SEARCH_TIMEOUT_MS = () =>
 const PARCEL_SEARCH_MAX_ATTEMPTS = () =>
   parseInt(process.env.PARCEL_SEARCH_MAX_ATTEMPTS || "3", 10);
 
-function clampPercent(value, fallback = 80) {
-  const n = Number(value);
-  if (!Number.isFinite(n)) return fallback;
-  return Math.min(100, Math.max(0, n));
-}
-
 function money(n) {
   return Math.round((Number(n) || 0) * 100) / 100;
 }
 
 /**
- * The pre-tax value of a parcel, for the legacy whole-fare payout fallbacks.
+ * Rider payout = distance from where the rider stood when they accepted the
+ * job to the pickup point, at the admin's configured per-km rate.
  *
- * `parcel.fare` became tax-inclusive when GST was added to the rate card, so
- * taking a rider's percentage straight off it hands them a slice of the
- * government's tax — the one thing the payout rules say must never happen.
- * `taxableAmount` is the exact pre-tax value when it is recorded; subtracting
- * the recorded tax is exact too. A booking that charged no tax is unaffected,
- * which is every booking made before GST was switched on.
+ * Deliberately not a share of the fare: the fare is now a flat delivery
+ * charge with no distance component (see utils/parcelFare.js), and what the
+ * rider actually did — the pickup leg — has nothing to do with what the
+ * courier drop is priced at. `riderAcceptLocation` is a one-time GPS snapshot
+ * taken in riderAcceptParcel; a parcel that never accepted (still SEARCHING,
+ * or a legacy row from before this field existed) has none, and this
+ * degrades to 0 rather than throwing — a rider preview or a report should
+ * never crash because one field is missing.
  */
-function preTaxFare(parcel) {
-  const breakdown = parcel?.fareBreakdown || {};
-  const taxable = Number(breakdown.taxableAmount) || 0;
-  if (taxable > 0) return taxable;
-  const fare = Number(parcel?.fare) || 0;
-  return Math.max(0, money(fare - (Number(breakdown.gstAmount) || 0)));
-}
+export function computeRiderParcelEarnings(parcel, settingsOrRate = {}) {
+  const riderPerKmRate =
+    typeof settingsOrRate === "number"
+      ? Math.max(0, settingsOrRate)
+      : Math.max(0, Number(settingsOrRate?.riderPerKmRate) || 0);
 
-/**
- * Rider payout = % of base fare + % of distance fare (weight charge excluded).
- * Accepts either a parcel doc or explicit breakdown numbers.
- */
-export function computeRiderParcelEarnings(parcelOrFare, settingsOrPercent = 80) {
-  // Legacy call: computeRiderParcelEarnings(totalFare, 80)
-  if (typeof parcelOrFare === "number") {
-    const share = clampPercent(settingsOrPercent, 80) / 100;
-    return money(parcelOrFare * share);
+  const accept = parcel?.riderAcceptLocation;
+  const pickup = parcel?.pickupAddress;
+  const acceptLat = Number(accept?.lat);
+  const acceptLng = Number(accept?.lng);
+  const pickupLat = Number(pickup?.lat);
+  const pickupLng = Number(pickup?.lng);
+
+  if (
+    !Number.isFinite(acceptLat) ||
+    !Number.isFinite(acceptLng) ||
+    !Number.isFinite(pickupLat) ||
+    !Number.isFinite(pickupLng)
+  ) {
+    return 0;
   }
 
-  const settings =
-    typeof settingsOrPercent === "number"
-      ? {
-          riderBaseFareSharePercent: settingsOrPercent,
-          riderDistanceFareSharePercent: settingsOrPercent,
-          riderSharePercent: settingsOrPercent,
-        }
-      : settingsOrPercent || {};
-
-  const legacy = clampPercent(settings.riderSharePercent, 80);
-  const basePct =
-    clampPercent(settings.riderBaseFareSharePercent ?? legacy, legacy) / 100;
-  const distancePct =
-    clampPercent(settings.riderDistanceFareSharePercent ?? legacy, legacy) / 100;
-
-  const breakdown = parcelOrFare?.fareBreakdown || parcelOrFare || {};
-  let baseFare = Number(breakdown.baseFare);
-  let distanceFare = Number(breakdown.distanceFare);
-
-  // Older parcels without breakdown: fall back to total fare share (legacy).
-  // Taken on the PRE-TAX value — see `preTaxFare`.
-  if (!Number.isFinite(baseFare) && !Number.isFinite(distanceFare)) {
-    return money(preTaxFare(parcelOrFare) * (legacy / 100));
-  }
-
-  baseFare = Number.isFinite(baseFare) ? baseFare : 0;
-  distanceFare = Number.isFinite(distanceFare) ? distanceFare : 0;
-
-  return money(baseFare * basePct + distanceFare * distancePct);
+  const earningKm = distanceMeters(acceptLat, acceptLng, pickupLat, pickupLng) / 1000;
+  return money(earningKm * riderPerKmRate);
 }
 
 const timeoutTimers = new Map();
@@ -175,18 +147,13 @@ function toDeliveryObjectId(deliveryId) {
   return new mongoose.Types.ObjectId(id);
 }
 
-export function parcelBroadcastPayloadFromDoc(parcel, extra = {}, settingsOrPercent = 80) {
+export function parcelBroadcastPayloadFromDoc(parcel, extra = {}, settings = {}) {
   const pickup = parcel.pickupAddress?.fullAddress || "Pickup location";
   const drop = parcel.dropAddress?.fullAddress || "Drop location";
   const fare = Number(parcel.fare) || 0;
-  const settings =
-    typeof settingsOrPercent === "number"
-      ? {
-          riderSharePercent: settingsOrPercent,
-          riderBaseFareSharePercent: settingsOrPercent,
-          riderDistanceFareSharePercent: settingsOrPercent,
-        }
-      : settingsOrPercent || {};
+  // No riderAcceptLocation yet at broadcast time — the rider has not
+  // accepted, so the real payout distance is unknown until they do. The
+  // preview earning is 0 here by construction (see computeRiderParcelEarnings).
   const earnings = computeRiderParcelEarnings(parcel, settings);
   const paymentMethod = String(parcel.paymentMethod || "COD").toUpperCase();
   const isCod = paymentMethod === "COD";
@@ -204,8 +171,7 @@ export function parcelBroadcastPayloadFromDoc(parcel, extra = {}, settingsOrPerc
       drop,
       fare,
       earnings,
-      riderBaseFareSharePercent: settings.riderBaseFareSharePercent,
-      riderDistanceFareSharePercent: settings.riderDistanceFareSharePercent,
+      riderPerKmRate: settings.riderPerKmRate,
       weight: parcel.weight,
       distance: parcel.distance,
       deliverySpeed: parcel.deliverySpeed === "express" ? "express" : "normal",
@@ -213,12 +179,7 @@ export function parcelBroadcastPayloadFromDoc(parcel, extra = {}, settingsOrPerc
       collectAmount,
       type: "PARCEL",
       parcelType: parcel.parcelType || "outstation",
-      deliveryInstruction:
-        parcel.deliveryInstruction ||
-        (parcel.parcelType === "local"
-          ? "deliver_to_receiver"
-          : "deliver_to_warehouse"),
-      warehouseId: parcel.warehouseId || null,
+      courierCompanyId: parcel.courierCompanyId || null,
     },
     searchExpiresAt: parcel.searchExpiresAt,
     ...extra,
@@ -249,7 +210,7 @@ async function emitParcelBroadcastForPickup(parcel, extra = {}) {
   const lat = Number(parcel.pickupAddress?.lat);
   const lng = Number(parcel.pickupAddress?.lng);
   const settings = await ParcelConfig.getSearchSettings();
-  const radiusKm = parcel.searchMeta?.radiusKm ?? settings.baseSearchRadiusKm;
+  const radiusKm = settings.deliveryRadiusKm;
   // Null for a parcel with no zone (unzoned install, or booked before zones
   // existed) — emitParcelBroadcast then keeps the old, unzoned reach.
   const zone = await getActiveZoneById(parcel.zoneId);
@@ -260,51 +221,6 @@ async function emitParcelBroadcastForPickup(parcel, extra = {}) {
     parcelBroadcastPayloadFromDoc(parcel, extra, settings),
     { zone },
   );
-}
-
-/**
- * Attach nearest warehouse for outstation parcels.
- * Updates warehouseId, dropAddress, and deliveryInstruction.
- * Never emits to seller!
- */
-export async function tryAutoAssignParcelToWarehouse(parcelDoc) {
-  const lat = Number(parcelDoc.pickupAddress?.lat);
-  const lng = Number(parcelDoc.pickupAddress?.lng);
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-
-  // Zone-scoped when the booking has one, so a job never routes to a
-  // warehouse outside the zone its own dispatch is confined to.
-  const warehouse = await Warehouse.findNearestActive(lat, lng, null, parcelDoc.zoneId || null);
-  if (!warehouse?._id) return null;
-
-  const dropAddress = {
-    name: warehouse.name,
-    phone: warehouse.phone || parcelDoc.dropAddress?.phone || "0000000000",
-    fullAddress: warehouse.address + (warehouse.city ? `, ${warehouse.city}` : ""),
-    lat: Number(warehouse.lat),
-    lng: Number(warehouse.lng),
-  };
-
-  const updated = await Parcel.findOneAndUpdate(
-    {
-      _id: parcelDoc._id,
-      status: { $in: ["REQUESTED", "SEARCHING"] },
-    },
-    {
-      $set: {
-        warehouseId: warehouse._id,
-        dropAddress,
-        deliveryInstruction: "deliver_to_warehouse",
-      },
-    },
-    { new: true },
-  );
-
-  if (updated) {
-    emitToAdmins("parcel:status:update", updated);
-  }
-
-  return updated;
 }
 
 /**
@@ -405,19 +321,19 @@ export async function fetchParcelsForSeller(sellerId) {
 }
 
 export async function startParcelBroadcast(parcelDoc) {
-  // Only local parcels attach to nearby seller hubs.
-  // Outstation parcels attach to nearest warehouse and NEVER emit to seller app!
+  // Only local parcels attach to nearby seller hubs. Outstation parcels
+  // already have their drop destination (the customer-selected courier
+  // company) set at creation time — see createParcel in parcelController.js —
+  // and NEVER emit to seller app.
   if (parcelDoc.parcelType === "local") {
     await tryAutoAssignParcelToSeller(parcelDoc);
-  } else {
-    await tryAutoAssignParcelToWarehouse(parcelDoc);
   }
 
   const parcelId = parcelDoc._id?.toString?.() || String(parcelDoc._id);
   const now = new Date();
   const searchMs = DEFAULT_PARCEL_SEARCH_TIMEOUT_MS();
   const settings = await ParcelConfig.getSearchSettings();
-  const radiusKm = settings.baseSearchRadiusKm;
+  const radiusKm = settings.deliveryRadiusKm;
   const searchExpiresAt = new Date(now.getTime() + searchMs);
 
   const updated = await Parcel.findByIdAndUpdate(
@@ -478,12 +394,9 @@ export async function processParcelSearchTimeout(parcelId, attempt) {
   const settings = await ParcelConfig.getSearchSettings();
 
   if (currentAttempt < maxAttempts) {
-    const nextRadius =
-      Math.round(
-        (meta.radiusKm || settings.baseSearchRadiusKm) *
-          settings.radiusMultiplier *
-          100,
-      ) / 100;
+    // Fixed radius on every retry — admin's configured deliveryRadiusKm is a
+    // hard cap, not an expanding search (see ParcelConfig).
+    const nextRadius = settings.deliveryRadiusKm;
     const searchExpiresAt = new Date(now.getTime() + DEFAULT_PARCEL_SEARCH_TIMEOUT_MS());
 
     const updated = await Parcel.findOneAndUpdate(
@@ -600,7 +513,7 @@ export async function fetchAvailableParcelsForRider(deliveryId) {
     const pickupLng = Number(parcel.pickupAddress?.lng);
     if (!Number.isFinite(pickupLat) || !Number.isFinite(pickupLng)) continue;
 
-    const radiusKm = settings.baseSearchRadiusKm;
+    const radiusKm = settings.deliveryRadiusKm;
     if (distanceMeters(pickupLat, pickupLng, lat, lng) > radiusKm * 1000) continue;
 
     // Same zone rule the broadcast and the claim both enforce (see
@@ -683,7 +596,7 @@ export async function parcelAcceptAtomic(deliveryId, parcelId, idempotencyKey) {
           const parcel = await Parcel.findById(parcelId)
             .populate("customerId", "name phone")
             .populate("sellerId", "name shopName phone address location")
-            .populate("warehouseId", "name address city phone lat lng")
+            .populate("courierCompanyId", "name phone")
             .lean();
           return { parcel, duplicate: true };
         }
@@ -694,6 +607,17 @@ export async function parcelAcceptAtomic(deliveryId, parcelId, idempotencyKey) {
   }
 
   const now = new Date();
+  // Snapshot of where the rider physically stood when they accepted — this
+  // is what their payout gets computed against (see computeRiderParcelEarnings),
+  // not their live location later on.
+  const acceptCoords = (
+    await Delivery.findById(deliveryOid).select("location").lean()
+  )?.location?.coordinates;
+  const riderAcceptLocation =
+    Array.isArray(acceptCoords) && acceptCoords.length >= 2
+      ? { lat: Number(acceptCoords[1]), lng: Number(acceptCoords[0]) }
+      : null;
+
   const updated = await Parcel.findOneAndUpdate(
     {
       _id: parcelId,
@@ -707,6 +631,7 @@ export async function parcelAcceptAtomic(deliveryId, parcelId, idempotencyKey) {
         deliveryPartnerId: deliveryOid,
         status: "ACCEPTED",
         acceptedAt: now,
+        ...(riderAcceptLocation ? { riderAcceptLocation } : {}),
       },
       $unset: { searchExpiresAt: 1, searchMeta: 1 },
     },
@@ -715,7 +640,7 @@ export async function parcelAcceptAtomic(deliveryId, parcelId, idempotencyKey) {
     .populate("customerId", "name phone")
     .populate("deliveryPartnerId", "name phone vehicleType vehicleNumber profileImage location")
     .populate("sellerId", "name shopName phone address location")
-    .populate("warehouseId", "name address city phone lat lng");
+    .populate("courierCompanyId", "name phone");
 
   if (!updated) {
     const existing = await Parcel.findById(parcelId).lean();

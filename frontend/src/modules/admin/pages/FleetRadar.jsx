@@ -153,7 +153,7 @@ const FleetRadar = () => {
                   className={cn(
                     "w-full text-left p-4 rounded-2xl transition-all group",
                     selectedRider?.id === r.id
-                      ? "bg-slate-900 text-white shadow-lg"
+                      ? "bg-[color:var(--primary)] text-white shadow-lg"
                       : "hover:bg-slate-50 text-slate-700",
                   )}>
                   <div className="flex items-center gap-3">

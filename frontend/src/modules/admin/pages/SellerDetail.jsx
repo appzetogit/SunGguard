@@ -99,7 +99,7 @@ const SellerDetail = () => {
                             <RotateCw className={cn("h-4 w-4 text-primary", isRefreshing && "animate-spin")} />
                             SYNC DATA
                         </button>
-                        <button className="ds-btn ds-btn-md bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-200">
+                        <button className="ds-btn ds-btn-md bg-[color:var(--primary)] text-white hover:opacity-90 shadow-lg shadow-slate-200">
                             <Edit3 className="h-4 w-4" />
                             EDIT SHOP
                         </button>
@@ -293,7 +293,7 @@ const SellerDetail = () => {
                                         />
                                         {/* Store Marker */}
                                         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                                            <div className="h-10 w-10 bg-slate-900 text-white rounded-2xl flex items-center justify-center shadow-2xl ring-4 ring-white z-10 relative">
+                                            <div className="h-10 w-10 bg-[color:var(--primary)] text-white rounded-2xl flex items-center justify-center shadow-2xl ring-4 ring-white z-10 relative">
                                                 <Building2 className="h-5 w-5" />
                                             </div>
                                             <div className="absolute inset-0 bg-primary rounded-2xl animate-ping opacity-20" />
@@ -336,7 +336,7 @@ const SellerDetail = () => {
                                             <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Store Identity</h5>
                                             <div className="space-y-4">
                                                 <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                                                    <div className="h-12 w-12 rounded-xl bg-slate-900 text-white flex items-center justify-center">
+                                                    <div className="h-12 w-12 rounded-xl bg-[color:var(--primary)] text-white flex items-center justify-center">
                                                         <Building2 className="h-6 w-6" />
                                                     </div>
                                                     <div>
@@ -376,7 +376,7 @@ const SellerDetail = () => {
                                     <div className="ds-section-spacing">
                                         <div>
                                             <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Operational Status</h5>
-                                            <div className="p-6 bg-slate-900 rounded-xl text-white">
+                                            <div className="p-6 bg-[color:var(--primary)] rounded-xl text-white">
                                                 <div className="flex items-center justify-between mb-6">
                                                     <div className="flex items-center gap-2">
                                                         <div className="h-2 w-2 rounded-full bg-brand-500 animate-pulse"></div>
@@ -455,7 +455,7 @@ const SellerDetail = () => {
                     </Card>
 
                     {/* Quick Notifications */}
-                    <Card className="p-4 border-none shadow-xl ring-1 ring-slate-900 bg-slate-900 rounded-xl text-white">
+                    <Card className="p-4 border-none shadow-xl ring-1 ring-slate-900 bg-[color:var(--primary)] rounded-xl text-white">
                         <h4 className="text-[10px] font-bold opacity-40 uppercase tracking-[0.2em] mb-6">Strategic Comms</h4>
                         <div className="space-y-4">
                             <p className="text-xs font-medium text-slate-400 italic leading-relaxed">Send a high-priority push to the shop manager app.</p>

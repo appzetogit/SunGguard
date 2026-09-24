@@ -17,9 +17,9 @@ import { cityParcelAdminApi } from "../../services/cityParcelAdminApi";
  */
 
 const ACTOR_TONE = {
-  customer: "bg-blue-50 text-blue-700",
-  rider: "bg-emerald-50 text-emerald-700",
-  admin: "bg-violet-50 text-violet-700",
+  customer: "bg-orange-50 text-orange-700",
+  rider: "bg-orange-50 text-orange-700",
+  admin: "bg-orange-50 text-orange-700",
   system: "bg-slate-100 text-slate-600",
 };
 
@@ -27,7 +27,7 @@ const ACTOR_TONE = {
 // views, kept local since that one isn't shared/exported — the point is a
 // consistent look, not a shared object.
 const STATUS_TONE = {
-  DELIVERED: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  DELIVERED: "bg-orange-50 text-orange-700 border-orange-200",
   RETURNED: "bg-slate-100 text-slate-600 border-slate-200",
   CANCELLED: "bg-slate-100 text-slate-500 border-slate-200",
   DELIVERY_FAILED: "bg-rose-50 text-rose-700 border-rose-200",
@@ -48,7 +48,7 @@ const StatusChip = ({ status }) => (
   <span
     className={cn(
       "inline-flex shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-wide",
-      STATUS_TONE[status] || "bg-blue-50 text-blue-700 border-blue-200",
+      STATUS_TONE[status] || "bg-orange-50 text-orange-700 border-orange-200",
     )}
   >
     {String(status || "").replace(/_/g, " ")}
@@ -292,7 +292,7 @@ const ParcelDetailDrawer = ({ cityParcelId, onClose }) => {
                     {Number.isFinite(v.gpsAccuracyM) ? ` (±${v.gpsAccuracyM} m)` : ""}
                   </Row>
                   <Row label="Location check">
-                    <span className={v.proximityPassed ? "text-emerald-600" : "text-amber-700"}>
+                    <span className={v.proximityPassed ? "text-orange-600" : "text-amber-700"}>
                       {v.proximityPassed ? "Passed" : "Overridden"}
                     </span>
                   </Row>
@@ -415,7 +415,7 @@ const ParcelDetailDrawer = ({ cityParcelId, onClose }) => {
                             href={`https://maps.google.com/?q=${e.location.lat},${e.location.lng}`}
                             target="_blank"
                             rel="noreferrer"
-                            className="mt-0.5 inline-flex items-center gap-1 font-mono text-[11px] text-blue-600 hover:underline"
+                            className="mt-0.5 inline-flex items-center gap-1 font-mono text-[11px] text-orange-600 hover:underline"
                           >
                             <MapPin className="h-3 w-3" />
                             {e.location.lat.toFixed(5)}, {e.location.lng.toFixed(5)}

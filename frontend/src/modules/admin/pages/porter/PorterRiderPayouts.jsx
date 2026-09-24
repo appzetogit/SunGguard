@@ -78,16 +78,16 @@ const PorterRiderPayouts = () => {
             label: "Paid to riders",
             value: rupees(summary.totalPaid),
             icon: Banknote,
-            color: "text-emerald-600",
-            bg: "bg-emerald-500/10 border border-emerald-200 dark:border-emerald-900",
+            color: "text-orange-600",
+            bg: "bg-orange-500/10 border border-orange-200 dark:border-orange-900",
             note: `${summary.entries || 0} settlements`,
         },
         {
             label: "Riders paid",
             value: Number(summary.riders || 0).toLocaleString("en-IN"),
             icon: Users,
-            color: "text-blue-600",
-            bg: "bg-blue-500/10 border border-blue-200 dark:border-blue-900",
+            color: "text-orange-600",
+            bg: "bg-orange-500/10 border border-orange-200 dark:border-orange-900",
             note: "With at least one porter job",
         },
         {
@@ -209,7 +209,7 @@ const PorterRiderPayouts = () => {
                                 {items.map((row) => (
                                     <tr
                                         key={row.id}
-                                        className="transition-colors hover:bg-slate-50/60 dark:hover:bg-slate-800/40"
+                                        className="transition-colors hover:bg-slate-50/60 dark:hover:opacity-90/40"
                                     >
                                         <td className="px-5 py-3.5">
                                             <p className="text-sm font-bold text-slate-900 dark:text-white">

@@ -144,7 +144,7 @@ const DeliveryFunds = () => {
                     <button
                         onClick={handleBulkSettle}
                         disabled={isProcessing}
-                        className="flex items-center space-x-2 bg-slate-900 text-white px-6 py-3.5 rounded-2xl text-xs font-bold hover:bg-slate-800 transition-all shadow-xl active:scale-95 group disabled:opacity-50"
+                        className="flex items-center space-x-2 bg-[color:var(--primary)] text-white px-6 py-3.5 rounded-2xl text-xs font-bold hover:opacity-90 transition-all shadow-xl active:scale-95 group disabled:opacity-50"
                     >
                         {isProcessing ? <RotateCw className="h-4 w-4 animate-spin" /> : <Banknote className="h-4 w-4 group-hover:scale-110 transition-transform" />}
                         <span>{isProcessing ? 'PROCESSING...' : 'BULK SETTLE ALL'}</span>
@@ -252,7 +252,7 @@ const DeliveryFunds = () => {
                                     <tr key={tx._id} className="group hover:bg-slate-50/50 transition-all duration-300">
                                         <td className="px-5 py-7 pl-12">
                                             <div className="flex items-center gap-4">
-                                                <div className="h-10 w-10 rounded-xl bg-slate-900/5 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all shadow-sm">
+                                                <div className="h-10 w-10 rounded-xl bg-slate-900/5 flex items-center justify-center text-slate-400 group-hover:bg-[color:var(--primary)] group-hover:text-white transition-all shadow-sm">
                                                     <ArrowUpRight className="h-5 w-5" />
                                                 </div>
                                                 <div>
@@ -419,7 +419,7 @@ const DeliveryFunds = () => {
                                 </div>
 
                                 <div className="mt-10 flex gap-4">
-                                    <button className="flex-1 py-4.5 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl active:scale-95 transition-all">
+                                    <button className="flex-1 py-4.5 bg-[color:var(--primary)] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl active:scale-95 transition-all">
                                         Download Receipt
                                     </button>
                                     <button className="p-4.5 bg-slate-100 text-slate-600 rounded-2xl hover:bg-slate-200 transition-all">

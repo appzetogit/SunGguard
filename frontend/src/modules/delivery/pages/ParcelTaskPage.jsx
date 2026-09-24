@@ -17,7 +17,8 @@ const NEXT_STATUS = {
   ACCEPTED: { next: "RIDER_ASSIGNED", label: "Start Ride to Customer" },
   RIDER_ASSIGNED: { next: "PICKUP_REACHED", label: "Reached Customer" },
   // PICKUP_REACHED → PICKED_UP only after customer OTP verification (handled separately).
-  PICKED_UP: { next: "OUT_FOR_DELIVERY", label: "Start Hub Drop" },
+  // After PICKED_UP the rider goes straight to the courier drop-off + proof
+  // (no more intermediate OUT_FOR_DELIVERY status/step).
 };
 const TO_CUSTOMER_STATUSES = new Set(["ACCEPTED", "RIDER_ASSIGNED", "PICKUP_REACHED"]);
 
@@ -40,16 +41,6 @@ function toLatLng(point) {
   return { lat, lng };
 }
 
-/** Seller GeoJSON is [lng, lat]. */
-function sellerToLatLng(seller) {
-  const coords = seller?.location?.coordinates;
-  if (!Array.isArray(coords) || coords.length < 2) return null;
-  const lat = Number(coords[1]);
-  const lng = Number(coords[0]);
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-  return { lat, lng };
-}
-
 function formatDistanceKm(meters) {
   const m = Number(meters);
   if (!Number.isFinite(m) || m < 0) return null;
@@ -64,7 +55,7 @@ const ParcelTaskPage = () => {
   const [saving, setSaving] = useState(false);
   const [otp, setOtp] = useState("");
   const [pickupProofUrl, setPickupProofUrl] = useState("");
-  const [hubProofUrl, setHubProofUrl] = useState("");
+  const [deliveryProofUrl, setDeliveryProofUrl] = useState("");
   const [parcel, setParcel] = useState(null);
   const [routeData, setRouteData] = useState(null);
   const [routeLoading, setRouteLoading] = useState(false);
@@ -77,11 +68,6 @@ const ParcelTaskPage = () => {
   const [isSheetDragging, setIsSheetDragging] = useState(false);
   // Customer at the door asking to pay by UPI instead of cash.
   const [codQrOpen, setCodQrOpen] = useState(false);
-  // Picking which zone warehouse to actually drop this parcel at.
-  const [warehousePickerOpen, setWarehousePickerOpen] = useState(false);
-  const [zoneWarehouses, setZoneWarehouses] = useState([]);
-  const [loadingWarehouses, setLoadingWarehouses] = useState(false);
-  const [changingWarehouseId, setChangingWarehouseId] = useState("");
   const mapRef = useRef(null);
   const routePolylineRef = useRef(null);
   const assignedRequestRef = useRef({ inFlight: false, lastFetchedAt: 0 });
@@ -207,29 +193,11 @@ const ParcelTaskPage = () => {
     () => toLatLng(parcel?.pickupAddress),
     [parcel?.pickupAddress?.lat, parcel?.pickupAddress?.lng],
   );
-  const isOutstation =
-    parcel?.parcelType === "outstation" ||
-    Boolean(parcel?.warehouseId) ||
-    parcel?.deliveryInstruction === "deliver_to_warehouse" ||
-    !parcel?.sellerId;
-
-  const dropPoint = useMemo(() => {
-    if (isOutstation && parcel?.dropAddress?.lat && parcel?.dropAddress?.lng) {
-      return { lat: Number(parcel.dropAddress.lat), lng: Number(parcel.dropAddress.lng) };
-    }
-    return sellerToLatLng(parcel?.sellerId);
-  }, [isOutstation, parcel?.dropAddress?.lat, parcel?.dropAddress?.lng, parcel?.sellerId]);
-
-  const dropName = isOutstation
-    ? parcel?.dropAddress?.name || parcel?.warehouseId?.name || "Warehouse"
-    : parcel?.sellerId?.shopName || parcel?.sellerId?.name || "Seller hub";
-
-  const dropAddressText = isOutstation
-    ? parcel?.dropAddress?.fullAddress || parcel?.warehouseId?.address || ""
-    : parcel?.sellerId?.address || "";
-
-  const courierCompanyName =
-    parcel?.courierCompany || parcel?.dropAddress?.name || "";
+  // Drop destination is always the customer-selected courier company now —
+  // it has no pinned location (just name + phone), so there is no
+  // route/map for this leg, only "go there yourself, upload photo when done".
+  const courierName = parcel?.courierCompanyId?.name || "";
+  const courierPhone = parcel?.courierCompanyId?.phone || "";
   const courierCity = parcel?.destinationCity || "";
   const customerName =
     parcel?.pickupAddress?.name || parcel?.customerId?.name || "Customer";
@@ -253,20 +221,17 @@ const ParcelTaskPage = () => {
     ].filter(Boolean);
   }, [parcel?.packageDetails]);
 
-  // Primary job: go to customer and collect parcel. After pickup, route to warehouse (outstation) or seller hub.
+  // Primary job: go to customer and collect parcel. After pickup, the rider
+  // drives to the courier company themselves — no pinned location for it,
+  // so there is no second-leg route/map phase anymore.
   const routeEndpoints = useMemo(() => {
     if (!riderLocation) return null;
     if (goingToCustomer || !parcel?.status) {
       if (!pickupPoint) return null;
       return { origin: riderLocation, destination: pickupPoint, phase: "pickup" };
     }
-    if (!dropPoint) return null;
-    return {
-      origin: riderLocation,
-      destination: dropPoint,
-      phase: isOutstation ? "warehouse" : "seller",
-    };
-  }, [riderLocation, goingToCustomer, parcel?.status, pickupPoint, dropPoint, isOutstation]);
+    return null;
+  }, [riderLocation, goingToCustomer, parcel?.status, pickupPoint]);
 
   const distanceLabel = useMemo(
     () => formatDistanceKm(routeData?.distanceMeters),
@@ -299,16 +264,14 @@ const ParcelTaskPage = () => {
     const bounds = new window.google.maps.LatLngBounds();
     (path || []).forEach((point) => bounds.extend(point));
     if (riderLocation) bounds.extend(riderLocation);
-    if (goingToCustomer && pickupPoint) bounds.extend(pickupPoint);
-    if (!goingToCustomer && dropPoint) bounds.extend(dropPoint);
-    if (!goingToCustomer && pickupPoint) bounds.extend(pickupPoint);
+    if (pickupPoint) bounds.extend(pickupPoint);
     map.fitBounds(bounds, {
       top: 96,
       right: 36,
       bottom: Math.round(window.innerHeight * 0.42),
       left: 36,
     });
-  }, [riderLocation, goingToCustomer, pickupPoint, dropPoint]);
+  }, [riderLocation, pickupPoint]);
 
   const fetchRoute = useCallback(async () => {
     if (!parcelId || !routeEndpoints) return;
@@ -410,12 +373,10 @@ const ParcelTaskPage = () => {
   }, [linePath, fitRouteOnMap]);
 
   const mapCenter = useMemo(() => {
-    if (goingToCustomer && pickupPoint) return pickupPoint;
-    if (!goingToCustomer && dropPoint) return dropPoint;
-    if (riderLocation) return riderLocation;
     if (pickupPoint) return pickupPoint;
+    if (riderLocation) return riderLocation;
     return { lat: 22.7196, lng: 75.8577 };
-  }, [goingToCustomer, pickupPoint, dropPoint, riderLocation]);
+  }, [pickupPoint, riderLocation]);
 
   const handleAdvance = async () => {
     if (!parcel || !statusStep || saving) return;
@@ -455,42 +416,6 @@ const ParcelTaskPage = () => {
       toast.error(error.response?.data?.message || "Failed to update status");
     } finally {
       setSaving(false);
-    }
-  };
-
-  const openWarehousePicker = async () => {
-    if (!parcel) return;
-    setWarehousePickerOpen(true);
-    setLoadingWarehouses(true);
-    try {
-      const res = await parcelApi.getWarehousesForParcel(parcel._id);
-      setZoneWarehouses(res.data?.results || []);
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Couldn't load nearby warehouses");
-    } finally {
-      setLoadingWarehouses(false);
-    }
-  };
-
-  const handleSelectWarehouse = async (warehouseId) => {
-    if (!parcel || changingWarehouseId) return;
-    setChangingWarehouseId(warehouseId);
-    try {
-      const res = await parcelApi.riderUpdateWarehouse({
-        parcelId: parcel._id,
-        warehouseId,
-      });
-      if (res.data?.success) {
-        setParcel(res.data.result || parcel);
-        setWarehousePickerOpen(false);
-        toast.success("Drop warehouse updated");
-      } else {
-        toast.error(res.data?.message || "Failed to update warehouse");
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to update warehouse");
-    } finally {
-      setChangingWarehouseId("");
     }
   };
 
@@ -543,26 +468,26 @@ const ParcelTaskPage = () => {
     }
   };
 
-  const handleHubDrop = async () => {
+  const handleCourierDrop = async () => {
     if (!parcel || saving) return;
-    if (!hubProofUrl) {
-      toast.error("Upload a photo proof at the hub before confirming drop");
+    if (!deliveryProofUrl) {
+      toast.error("Upload a photo proof at the courier company before confirming");
       return;
     }
     setSaving(true);
     try {
       const res = await parcelApi.riderCompleteDelivery({
         parcelId: parcel._id,
-        deliveryProofImage: hubProofUrl,
+        deliveryProofImage: deliveryProofUrl,
       });
       if (res.data?.success) {
-        toast.success("Parcel dropped at hub");
+        toast.success("Parcel dropped at courier company");
         navigate("/delivery/dashboard");
       } else {
-        toast.error(res.data?.message || "Failed to drop at hub");
+        toast.error(res.data?.message || "Failed to confirm courier drop");
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to drop at hub");
+      toast.error(error.response?.data?.message || "Failed to confirm courier drop");
     } finally {
       setSaving(false);
     }
@@ -634,27 +559,6 @@ const ParcelTaskPage = () => {
                 )}
               </>
             )}
-            {!goingToCustomer && dropPoint && (
-              <>
-                <Marker
-                  position={dropPoint}
-                  title={dropName}
-                  label={{ text: isOutstation ? "W" : "S", color: "white", fontWeight: "700" }}
-                />
-                <OverlayView
-                  position={dropPoint}
-                  mapPaneName={OverlayView.FLOAT_PANE}
-                  getPixelPositionOffset={(width, height) => ({
-                    x: -(width / 2),
-                    y: -(height + 42),
-                  })}
-                >
-                  <div className="rounded-lg bg-white px-2.5 py-1 shadow-md border border-slate-200 text-[10px] font-black text-slate-800 whitespace-nowrap max-w-[160px] truncate">
-                    {dropName}
-                  </div>
-                </OverlayView>
-              </>
-            )}
             {distanceLabel && routeEndpoints?.origin && routeEndpoints?.destination && (
               <OverlayView
                 position={{
@@ -694,15 +598,9 @@ const ParcelTaskPage = () => {
       <div className="absolute top-4 left-4 right-4 z-20 rounded-2xl bg-white/90 backdrop-blur-md px-4 py-3 shadow">
         <div className="flex items-center justify-between gap-2">
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Parcel Task</p>
-          {isOutstation ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-700">
-              🏭 Deliver to Warehouse
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-700">
-              📦 Deliver to Receiver
-            </span>
-          )}
+          <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-700">
+            📦 Drop at Courier
+          </span>
         </div>
         <div className="flex items-center justify-between gap-3 mt-1">
           <p className="text-sm font-black text-slate-900">ID: #{String(parcel._id).slice(-6)}</p>
@@ -724,7 +622,7 @@ const ParcelTaskPage = () => {
         <p className="text-[11px] font-semibold text-slate-500 mt-1">
           {goingToCustomer
             ? `Go to customer · collect parcel${distanceLabel ? ` · ${distanceLabel}` : ""}`
-            : `Drop at ${dropName}${distanceLabel ? ` · ${distanceLabel}` : ""}`}
+            : `Drop at ${courierName || "courier company"}`}
           {parcel.deliverySpeed === "express" ? " · 10 min" : " · 30 min"}
         </p>
         {isParcelCod && (
@@ -761,9 +659,9 @@ const ParcelTaskPage = () => {
               </p>
             </div>
           )}
-        {(courierCompanyName || courierCity) && (
+        {(courierName || courierCity) && (
           <p className="text-[10px] text-slate-400 mt-0.5">
-            Courier: {courierCompanyName || "—"}
+            Courier: {courierName || "—"}
             {courierCity ? ` · ${courierCity}` : ""}
           </p>
         )}
@@ -830,30 +728,22 @@ const ParcelTaskPage = () => {
               <div className="flex items-start gap-2 pt-1 border-t border-slate-200/80">
                 <MapPin className="h-4 w-4 mt-0.5 text-primary" />
                 <div>
-                  <p className="text-[11px] font-black text-slate-700">
-                    {isOutstation ? "Warehouse drop" : "Seller hub drop"}
+                  <p className="text-[11px] font-black text-slate-700">Drop at courier company</p>
+                  <p className="text-xs font-semibold text-slate-800">
+                    {courierName || "Courier company"}
                   </p>
-                  <p className="text-xs font-semibold text-slate-800">{dropName}</p>
-                  {dropAddressText ? (
-                    <p className="text-[11px] text-slate-500 mt-0.5">{dropAddressText}</p>
+                  {courierPhone ? (
+                    <a
+                      href={`tel:${courierPhone}`}
+                      className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-brand-50 px-2.5 py-1 text-[11px] font-black text-brand-700"
+                    >
+                      <Phone className="h-3 w-3" />
+                      {courierPhone}
+                    </a>
                   ) : null}
-                  {distanceLabel ? (
-                    <p className="text-[11px] font-bold text-blue-600 mt-0.5">
-                      Distance: {distanceLabel}
-                    </p>
+                  {courierCity ? (
+                    <p className="text-[11px] text-slate-500 mt-0.5">{courierCity}</p>
                   ) : null}
-                </div>
-              </div>
-            )}
-            {(courierCompanyName || courierCity) && (
-              <div className="flex items-start gap-2 pt-1 border-t border-slate-200/80">
-                <MapPin className="h-4 w-4 mt-0.5 text-slate-400" />
-                <div>
-                  <p className="text-[11px] font-black text-slate-500">Courier (destination)</p>
-                  <p className="text-xs text-slate-600">
-                    {courierCompanyName || "—"}
-                    {courierCity ? ` · ${courierCity}` : ""}
-                  </p>
                 </div>
               </div>
             )}
@@ -890,12 +780,6 @@ const ParcelTaskPage = () => {
               Waiting for your GPS… Enable location so the route to the customer can load.
             </div>
           )}
-          {!goingToCustomer && !dropPoint && (
-            <div className="rounded-xl border border-amber-100 bg-amber-50/80 px-3 py-2 text-[11px] text-amber-900">
-              {isOutstation ? "Warehouse location is missing for this parcel." : "Seller hub location is missing for this parcel."}
-            </div>
-          )}
-
           {parcel.status === "PICKUP_REACHED" && !completed && !cancelled && (
             <div className="rounded-xl border border-orange-200 bg-orange-50/80 px-3 py-2.5 space-y-3">
               <p className="text-xs font-bold text-slate-800">
@@ -932,34 +816,40 @@ const ParcelTaskPage = () => {
             </div>
           )}
 
-          {(parcel.status === "PICKED_UP" || parcel.status === "OUT_FOR_DELIVERY") &&
-            !completed &&
-            !cancelled && (
+          {parcel.status === "PICKED_UP" && !completed && !cancelled && (
             <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 px-3 py-2.5 space-y-3">
-              <div className="flex items-start justify-between gap-2">
-                <p className="text-xs font-bold text-slate-800">
-                  {isOutstation ? `Drop at ${dropName}` : "Drop at seller hub"}
-                </p>
-                {isOutstation && (
-                  <button
-                    type="button"
-                    onClick={openWarehousePicker}
-                    disabled={saving}
-                    className="shrink-0 text-[11px] font-black text-primary underline disabled:opacity-50"
-                  >
-                    Change
-                  </button>
-                )}
-              </div>
-              <p className="text-[11px] text-slate-600 leading-snug">
-                {isOutstation
-                  ? "No OTP needed here. Upload a warehouse photo, hand the parcel (and COD cash if any) at the warehouse, then confirm."
-                  : "No OTP needed here. Upload a hub photo, hand the parcel (and COD cash if any) to the hub, then confirm."}
+              <p className="text-xs font-bold text-slate-800">
+                Drop at {courierName || "the courier company"}
               </p>
-              {isOutstation && parcel.receiverAddress && (
+              <p className="text-[11px] text-slate-600 leading-snug">
+                No OTP needed here. Take the parcel (and COD cash if any) to the
+                courier company shown below, hand it over, upload a photo proof,
+                then confirm.
+              </p>
+              <div className="rounded-xl border border-slate-200 bg-white px-2.5 py-2">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-wide">
+                  Courier company
+                </p>
+                <p className="text-[12px] font-bold text-slate-800 mt-0.5">
+                  {courierName || "—"}
+                </p>
+                {courierPhone ? (
+                  <a
+                    href={`tel:${courierPhone}`}
+                    className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-brand-50 px-2.5 py-1 text-[11px] font-black text-brand-700"
+                  >
+                    <Phone className="h-3 w-3" />
+                    {courierPhone}
+                  </a>
+                ) : null}
+                {courierCity ? (
+                  <p className="text-[11px] text-slate-500 mt-1">{courierCity}</p>
+                ) : null}
+              </div>
+              {parcel.receiverAddress && (
                 <div className="rounded-xl border border-slate-200 bg-white px-2.5 py-2">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-wide">
-                    Final receiver (for the warehouse's label)
+                    Final receiver (for the courier's label)
                   </p>
                   <p className="text-[12px] font-bold text-slate-800 mt-0.5">
                     {parcel.receiverAddress.name} · {parcel.receiverAddress.phone}
@@ -971,99 +861,21 @@ const ParcelTaskPage = () => {
                   </p>
                 </div>
               )}
-              {isOutstation && warehousePickerOpen && (
-                <div className="rounded-xl border border-slate-200 bg-white p-2.5 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <p className="text-[11px] font-black text-slate-500 uppercase tracking-wide">
-                      Warehouses in your zone
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => setWarehousePickerOpen(false)}
-                      className="text-[11px] font-bold text-slate-400"
-                    >
-                      Close
-                    </button>
-                  </div>
-                  {loadingWarehouses && (
-                    <p className="text-[11px] text-slate-400 py-2 text-center">Loading…</p>
-                  )}
-                  {!loadingWarehouses && zoneWarehouses.length === 0 && (
-                    <p className="text-[11px] text-slate-400 py-2 text-center">
-                      No other warehouses found in this parcel's zone.
-                    </p>
-                  )}
-                  {!loadingWarehouses &&
-                    zoneWarehouses.map((w, index) => {
-                      const isCurrent = String(w._id) === String(parcel.warehouseId?._id || parcel.warehouseId);
-                      return (
-                        <button
-                          key={w._id}
-                          type="button"
-                          onClick={() => handleSelectWarehouse(w._id)}
-                          disabled={Boolean(changingWarehouseId) || isCurrent}
-                          className={`w-full text-left rounded-lg border px-2.5 py-2 flex items-start justify-between gap-2 transition-colors ${
-                            isCurrent
-                              ? "border-primary bg-primary/5"
-                              : "border-slate-100 hover:border-slate-300"
-                          } disabled:opacity-70`}
-                        >
-                          <div className="min-w-0">
-                            <p className="text-[12px] font-bold text-slate-800 truncate">
-                              {w.name}
-                              {index === 0 && !isCurrent ? (
-                                <span className="ml-1.5 text-[9px] font-black uppercase text-emerald-600">
-                                  Nearest
-                                </span>
-                              ) : null}
-                              {isCurrent ? (
-                                <span className="ml-1.5 text-[9px] font-black uppercase text-primary">
-                                  Current
-                                </span>
-                              ) : null}
-                            </p>
-                            <p className="text-[10px] text-slate-500 truncate">
-                              {w.address}
-                              {w.city ? `, ${w.city}` : ""}
-                            </p>
-                          </div>
-                          {Number.isFinite(w.distanceMeters) && (
-                            <span className="shrink-0 text-[10px] font-bold text-slate-400">
-                              {w.distanceMeters >= 1000
-                                ? `${(w.distanceMeters / 1000).toFixed(1)} km`
-                                : `${w.distanceMeters} m`}
-                            </span>
-                          )}
-                        </button>
-                      );
-                    })}
-                </div>
-              )}
               <ParcelProofCapture
-                label={isOutstation ? "Warehouse drop photo proof" : "Hub drop photo proof"}
-                hint={isOutstation ? "Photo of parcel handed over at the warehouse" : "Photo of parcel handed over at the seller hub"}
-                value={hubProofUrl}
-                onChange={setHubProofUrl}
+                label="Courier drop photo proof"
+                hint="Photo of parcel handed over at the courier company"
+                value={deliveryProofUrl}
+                onChange={setDeliveryProofUrl}
                 disabled={saving}
               />
-              {parcel.status === "PICKED_UP" && (
-                <button
-                  type="button"
-                  onClick={handleAdvance}
-                  disabled={saving}
-                  className="w-full py-2 rounded-xl bg-primary text-white text-[13px] font-black disabled:opacity-70"
-                >
-                  {saving ? "Updating..." : (isOutstation ? "Start Warehouse Drop" : "Start Hub Drop")}
-                </button>
-              )}
               <button
                 type="button"
-                onClick={handleHubDrop}
-                disabled={saving || !hubProofUrl}
+                onClick={handleCourierDrop}
+                disabled={saving || !deliveryProofUrl}
                 className="w-full py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-black flex items-center justify-center gap-2 disabled:opacity-70"
               >
                 <CheckCircle2 size={16} />
-                {saving ? "Dropping..." : (isOutstation ? "Confirm Warehouse Drop" : "Confirm Hub Drop")}
+                {saving ? "Confirming..." : "Mark as Delivered"}
               </button>
             </div>
           )}
@@ -1072,8 +884,7 @@ const ParcelTaskPage = () => {
             !cancelled &&
             statusStep &&
             parcel.status !== "PICKUP_REACHED" &&
-            parcel.status !== "PICKED_UP" &&
-            parcel.status !== "OUT_FOR_DELIVERY" && (
+            parcel.status !== "PICKED_UP" && (
             <div className="grid grid-cols-1 gap-2">
               <button
                 type="button"

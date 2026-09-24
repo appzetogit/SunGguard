@@ -296,7 +296,7 @@ function parcelInvoiceBody(booking) {
       drop: booking.dropAddress?.fullAddress || "",
       destinationCity: booking.destinationCity || "",
       courier: booking.courierCompany || "",
-      warehouse: booking.warehouseId?.name || "",
+      courierCompany: booking.courierCompanyId?.name || "",
       distanceKm: booking.distance,
       speed: booking.deliverySpeed,
     },
@@ -347,7 +347,7 @@ export async function buildPorterInvoice({ kind, bookingId, requesterId, isAdmin
       : await Parcel.findOne({ _id: bookingId, ...scope })
           .populate("customerId", "name phone email")
           .populate("deliveryPartnerId", "name phone vehicleNumber")
-          .populate("warehouseId", "name address city")
+          .populate("courierCompanyId", "name phone")
           .lean();
 
   if (!booking) {

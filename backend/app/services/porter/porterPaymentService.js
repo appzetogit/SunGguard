@@ -121,7 +121,7 @@ function buildBookingSnapshot(kind, booking) {
     deliverySpeed: booking.deliverySpeed,
     pickupWindow: booking.pickupWindow,
     preferredPickupDate: booking.preferredPickupDate,
-    warehouseId: booking.warehouseId ? String(booking.warehouseId) : null,
+    courierCompanyId: booking.courierCompanyId ? String(booking.courierCompanyId) : null,
     bookedAt: booking.createdAt,
   };
 }

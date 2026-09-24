@@ -400,7 +400,7 @@ const SupportTickets = () => {
                                 className={cn(
                                     "w-full text-left p-4 pr-10 rounded-2xl transition-all group relative overflow-hidden border border-slate-800/20 bg-white",
                                     selectedTicket?.id === t.id
-                                        ? "bg-slate-900 text-white shadow-xl translate-x-1 border-black/30"
+                                        ? "bg-[color:var(--primary)] text-white shadow-xl translate-x-1 border-black/30"
                                         : "hover:bg-slate-50 hover:border-slate-800/30 text-slate-700"
                                 )}
                             >
@@ -579,7 +579,7 @@ const SupportTickets = () => {
                                     <div key={m.id} className={cn("flex flex-col", m.isAdmin ? "items-end" : "items-start")}>
                                         <div className={cn(
                                             "max-w-[80%] p-4 rounded-xl text-sm font-medium leading-relaxed shadow-sm",
-                                            m.isAdmin ? "bg-slate-900 text-white rounded-tr-sm" : "bg-white text-slate-700 border border-slate-800/40 rounded-tl-sm"
+                                            m.isAdmin ? "bg-[color:var(--primary)] text-white rounded-tr-sm" : "bg-white text-slate-700 border border-slate-800/40 rounded-tl-sm"
                                         )}>
                                             {m.mediaUrl ? (
                                                 <img

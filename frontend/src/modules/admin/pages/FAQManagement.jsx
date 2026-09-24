@@ -269,7 +269,7 @@ const FAQManagement = () => {
                                 onClick={() => setActiveCategory('All')}
                                 className={cn(
                                     "w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-bold transition-all",
-                                    activeCategory === 'All' ? "bg-slate-900 text-white shadow-lg" : "text-slate-600 hover:bg-slate-50"
+                                    activeCategory === 'All' ? "bg-[color:var(--primary)] text-white shadow-lg" : "text-slate-600 hover:bg-slate-50"
                                 )}
                             >
                                 <span className="flex items-center gap-3">
@@ -566,7 +566,7 @@ const FAQManagement = () => {
                             className="w-full pl-11 pr-4 py-4 bg-white ring-1 ring-slate-200 rounded-2xl text-[10px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-brand-500/10 transition-all"
                         />
                     </div>
-                    <button onClick={handleAddCategory} className="ds-btn ds-btn-md w-full bg-slate-900 text-white hover:bg-slate-800">GENERATE NEW CATEGORY</button>
+                    <button onClick={handleAddCategory} className="ds-btn ds-btn-md w-full bg-[color:var(--primary)] text-white hover:opacity-90">GENERATE NEW CATEGORY</button>
                 </div>
             </Modal>
         </div>

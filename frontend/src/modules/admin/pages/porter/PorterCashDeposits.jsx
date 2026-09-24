@@ -156,7 +156,7 @@ const PorterCashDeposits = () => {
       label: "Awaiting Review",
       value: rupees(pending.amount),
       icon: Clock,
-      tint: "bg-blue-500/10 text-blue-600 border-blue-200 dark:border-blue-900",
+      tint: "bg-orange-500/10 text-orange-600 border-orange-200 dark:border-orange-900",
       note: `${pending.count} deposit${pending.count === 1 ? "" : "s"} to check`,
     },
     {
@@ -210,9 +210,9 @@ const PorterCashDeposits = () => {
         * arrived with no reference tying it to a rider or to specific jobs.
         * Approving below now means approving against a captured payment.
         */}
-      <Card className="border-emerald-100 bg-emerald-50/60 dark:border-emerald-900/40 dark:bg-emerald-950/20">
+      <Card className="border-orange-100 bg-orange-50/60 dark:border-orange-900/40 dark:bg-orange-950/20">
         <div className="flex items-start gap-3">
-          <span className="rounded-xl bg-emerald-100 p-2.5 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+          <span className="rounded-xl bg-orange-100 p-2.5 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300">
             <ShieldCheck className="h-5 w-5" />
           </span>
           <div>
@@ -243,7 +243,7 @@ const PorterCashDeposits = () => {
                 className={cn(
                   "rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors",
                   tab === t.key
-                    ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
+                    ? "bg-[color:var(--primary)] text-white dark:bg-white dark:text-slate-900"
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300",
                 )}
               >
@@ -331,7 +331,7 @@ const PorterCashDeposits = () => {
                             setReview({ deposit: row, approve: true });
                             setAdminNote("");
                           }}
-                          className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2.5 py-1.5 text-[11px] font-bold text-emerald-700 transition hover:bg-emerald-500 hover:text-white dark:bg-emerald-950/40 dark:text-emerald-400"
+                          className="inline-flex items-center gap-1 rounded-lg bg-orange-50 px-2.5 py-1.5 text-[11px] font-bold text-orange-700 transition hover:bg-orange-500 hover:text-white dark:bg-orange-950/40 dark:text-orange-400"
                         >
                           <CheckCircle2 className="h-3.5 w-3.5" />
                           Approve
@@ -459,7 +459,7 @@ const PorterCashDeposits = () => {
                 onClick={handleReview}
                 className={cn(
                   "inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold text-white disabled:opacity-60",
-                  review.approve ? "bg-emerald-600" : "bg-rose-600",
+                  review.approve ? "bg-orange-600" : "bg-rose-600",
                 )}
               >
                 {submitting && <Loader2 className="h-4 w-4 animate-spin" />}

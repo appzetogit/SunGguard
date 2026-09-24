@@ -27,17 +27,23 @@ const addressDetailsSchema = new mongoose.Schema({
     trim: true,
     default: "",
   },
+  /** Only meaningful on pickupAddress — matched against ParcelCityRate for the courier's city-to-city charge. */
+  city: {
+    type: String,
+    trim: true,
+    default: "",
+  },
 }, { _id: false });
 
 /**
- * Who the parcel is actually for, once it leaves the warehouse.
+ * Who the parcel is actually for, once it leaves the courier company's counter.
  *
  * Deliberately separate from `addressDetailsSchema`: `dropAddress` on this
- * model is always the warehouse the rider hands the parcel to (see
- * createParcel/tryAutoAssignParcelToWarehouse), never the end customer. This
- * is the address the courier company hands the parcel on to — no lat/lng,
- * since nobody in this flow dispatches or navigates to it; it exists to be
- * printed on a shipping label at the warehouse.
+ * model is always the customer-selected courier company the rider physically
+ * drives the parcel to and drops with a photo proof (see createParcel) — never
+ * the end customer. This is the address the courier company hands the parcel
+ * on to from there; no lat/lng, since nobody in this flow dispatches or
+ * navigates against it — it exists to be printed on a shipping label.
  */
 const receiverAddressSchema = new mongoose.Schema({
   name: {
@@ -242,8 +248,9 @@ const parcelSchema = new mongoose.Schema(
      * The rider deposits what they collected and an admin approves it; see
      * services/riderCashService.js. WITH_SELLER survives only for the legacy
      * seller-hub route (parcels that actually carry a sellerId). Outstation
-     * parcels drop at a warehouse, which nobody logs in as, so they go from
-     * RIDER_HOLDING straight to REMITTED_TO_ADMIN when a deposit is approved.
+     * parcels drop at a courier company counter, which nobody logs in as, so
+     * they go from RIDER_HOLDING straight to REMITTED_TO_ADMIN when a deposit
+     * is approved.
      */
     codSettlement: {
       collectAmount: { type: Number, default: 0 },
@@ -298,14 +305,6 @@ const parcelSchema = new mongoose.Schema(
       default: null,
       index: true,
     },
-    /** Parcel hub seller who auto-accepts within their service radius. */
-    /** Warehouse for outstation drop-off */
-    warehouseId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Warehouse",
-      default: null,
-      index: true,
-    },
     /**
      * The zone the pickup point resolved into at creation, for outstation
      * bookings only (see resolveFirstMile/createParcel). Null for a local
@@ -326,12 +325,6 @@ const parcelSchema = new mongoose.Schema(
       enum: ["outstation", "local"],
       default: "outstation",
       index: true,
-    },
-    /** Instruction displayed to the delivery rider */
-    deliveryInstruction: {
-      type: String,
-      enum: ["deliver_to_warehouse", "deliver_to_receiver"],
-      default: "deliver_to_warehouse",
     },
     /** Parcel hub seller who auto-accepts within their service radius (local parcels only). */
     sellerId: {
@@ -356,6 +349,25 @@ const parcelSchema = new mongoose.Schema(
     }],
     acceptedAt: {
       type: Date,
+      default: null,
+    },
+    /**
+     * Snapshot of the rider's own GPS fix the moment they accepted the job.
+     *
+     * Used only to compute payout distance — how far the rider actually has
+     * to travel from wherever they were standing to the pickup point (see
+     * computeRiderParcelEarnings in services/parcelWorkflowService.js). Never
+     * backfilled for older parcels, which is why every reader of this field
+     * has to tolerate it being null.
+     */
+    riderAcceptLocation: {
+      type: new mongoose.Schema(
+        {
+          lat: { type: Number },
+          lng: { type: Number },
+        },
+        { _id: false },
+      ),
       default: null,
     },
     /**
@@ -429,5 +441,23 @@ parcelSchema.pre("validate", function syncPayableFare(next) {
   }
   next();
 });
+
+/**
+ * `warehouseId`/`deliveryInstruction` were retired when the warehouse hop was
+ * removed (rider now drives straight to the customer-picked courier
+ * company). Mongo keeps whatever was last written on old bookings until
+ * explicitly unset, so a parcel saved before this migration otherwise
+ * carries the dead fields in every API response forever. Runs once per
+ * process — this touches every parcel ever booked, not a singleton doc.
+ */
+let legacyFieldsCleaned = false;
+parcelSchema.statics.cleanupLegacyFields = async function () {
+  if (legacyFieldsCleaned) return;
+  legacyFieldsCleaned = true;
+  await this.collection.updateMany(
+    { $or: [{ warehouseId: { $exists: true } }, { deliveryInstruction: { $exists: true } }] },
+    { $unset: { warehouseId: "", deliveryInstruction: "" } },
+  );
+};
 
 export default mongoose.model("Parcel", parcelSchema);

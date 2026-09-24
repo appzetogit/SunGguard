@@ -178,16 +178,16 @@ const OrdersList = () => {
                 value: `₹${Number(summary.totalAmount || 0).toLocaleString('en-IN')}`, 
                 trend: '+12.5%', 
                 icon: IndianRupee, 
-                color: 'text-emerald-600',
-                bg: 'bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800'
+                color: 'text-orange-600',
+                bg: 'bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-800'
             },
             { 
                 label: 'Active Pipeline', 
                 value: summary.activeOrders, 
                 trend: '+5 Today', 
                 icon: ShoppingBag, 
-                color: 'text-blue-600',
-                bg: 'bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800'
+                color: 'text-orange-600',
+                bg: 'bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-800'
             },
             { 
                 label: 'Average Fulfillment', 
@@ -202,8 +202,8 @@ const OrdersList = () => {
                 value: '98.4%', 
                 trend: '+0.4%', 
                 icon: CheckCircle2, 
-                color: 'text-purple-600',
-                bg: 'bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800'
+                color: 'text-orange-600',
+                bg: 'bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-800'
             },
         ];
     }, [summary]);
@@ -263,7 +263,7 @@ const OrdersList = () => {
                                                         "w-full text-left px-3 py-2 rounded-lg text-xs font-semibold transition-colors",
                                                         dateRange === range 
                                                             ? "bg-primary/10 text-primary" 
-                                                            : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                                            : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:opacity-90"
                                                     )}
                                                 >
                                                     {range}
@@ -347,7 +347,7 @@ const OrdersList = () => {
                                     <tr 
                                         key={order.id} 
                                         onClick={() => navigate(`/admin/orders/view/${order.id}`)}
-                                        className="ds-table-row hover:bg-slate-50/80 dark:hover:bg-slate-800/40 cursor-pointer transition-colors"
+                                        className="ds-table-row hover:bg-slate-50/80 dark:hover:opacity-90/40 cursor-pointer transition-colors"
                                     >
                                         <td className="ds-table-cell py-4.5 px-6">
                                             <div className="flex items-center gap-3.5">

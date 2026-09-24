@@ -43,57 +43,29 @@ const packageCategorySchema = new mongoose.Schema(
 
 const parcelConfigSchema = new mongoose.Schema(
   {
-    baseFare: {
+    /**
+     * Flat delivery charge for an outstation booking — the whole customer
+     * price (pre-tax, pre-multi-day) regardless of distance, weight or which
+     * courier company the customer picked. The rider drives the parcel to the
+     * customer-selected courier company themselves; there is no separate
+     * distance-priced leg to charge for.
+     */
+    fixedDeliveryCharge: {
       type: Number,
       default: 40,
       min: 0,
     },
-    perKmCharge: {
+    /** Per-km rate paid to the rider for the pickup leg (see riderAcceptLocation on Parcel). */
+    riderPerKmRate: {
       type: Number,
-      default: 10,
+      default: 8,
       min: 0,
     },
-    weightCharge: {
-      type: Number,
-      default: 15, // Charge per KG (so if package is 0.5 KG, weight charge = 0.5 * 15 = 7.5)
-      min: 0,
-    },
-    /** Initial search radius (km) used to notify nearby parcel delivery partners. */
-    baseSearchRadiusKm: {
+    /** Fixed radius (km) used to broadcast/retry a parcel to nearby riders. */
+    deliveryRadiusKm: {
       type: Number,
       default: 5,
       min: 1,
-      max: 100,
-    },
-    /** Multiplier applied when search expands after a timeout with no accept. */
-    radiusMultiplier: {
-      type: Number,
-      default: 1.6,
-      min: 1,
-      max: 5,
-    },
-    /**
-     * @deprecated Prefer riderBaseFareSharePercent + riderDistanceFareSharePercent.
-     * Kept as fallback default for both when new fields are unset.
-     */
-    riderSharePercent: {
-      type: Number,
-      default: 80,
-      min: 0,
-      max: 100,
-    },
-    /** % of base fare paid to the delivery partner. */
-    riderBaseFareSharePercent: {
-      type: Number,
-      default: 80,
-      min: 0,
-      max: 100,
-    },
-    /** % of distance fare paid to the delivery partner. */
-    riderDistanceFareSharePercent: {
-      type: Number,
-      default: 80,
-      min: 0,
       max: 100,
     },
     /** Customer "Package Details" options (admin-managed). */
@@ -106,23 +78,6 @@ const parcelConfigSchema = new mongoose.Schema(
       type: [packageCategorySchema],
       default: () => DEFAULT_PACKAGE_CATEGORIES.map((c) => ({ ...c })),
     },
-    maxWeightKg: {
-      type: Number,
-      default: 1,
-      min: 0.1,
-      max: 50,
-    },
-    /** Extra charge when customer selects Express delivery speed. */
-    expressCharge: {
-      type: Number,
-      default: 0,
-      min: 0,
-    },
-    packageDescriptionPlaceholder: {
-      type: String,
-      default: "E.g. keys, critical document papers...",
-      trim: true,
-    },
     /**
      * GST on the outstation fare. Deliberately independent of the local rate
      * card in models/cityParcelConfig.js — the two products are commonly
@@ -134,12 +89,6 @@ const parcelConfigSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
-
-function clampPercent(value, fallback = 80) {
-  const n = Number(value);
-  if (!Number.isFinite(n)) return fallback;
-  return Math.min(100, Math.max(0, n));
-}
 
 function normalizePackageTypes(list) {
   if (!Array.isArray(list) || !list.length) {
@@ -201,26 +150,52 @@ function normalizePackageCategories(list) {
   return out;
 }
 
+/**
+ * Fields retired when pricing moved to a flat delivery charge (see
+ * utils/parcelFare.js). Mongo keeps whatever was last written until
+ * explicitly unset, so a document saved before this migration otherwise
+ * carries this dead weight in every API response forever.
+ */
+const LEGACY_FIELDS = [
+  "baseFare",
+  "perKmCharge",
+  "weightCharge",
+  "baseSearchRadiusKm",
+  "radiusMultiplier",
+  "riderSharePercent",
+  "riderBaseFareSharePercent",
+  "riderDistanceFareSharePercent",
+  "maxWeightKg",
+  "packageDescriptionPlaceholder",
+  "expressCharge",
+];
+
+// Runs the $unset at most once per process — getOrCreate is called on nearly
+// every parcel request (getSearchSettings), so this must not become a
+// per-call DB write once the one-time cleanup is done.
+let legacyFieldsCleaned = false;
+
 // Helper static method to get the singleton config or create default
 parcelConfigSchema.statics.getOrCreate = async function () {
   let config = await this.findOne();
   if (!config) {
     config = await this.create({
-      baseFare: 40,
-      perKmCharge: 10,
-      weightCharge: 15,
-      baseSearchRadiusKm: 5,
-      radiusMultiplier: 1.6,
-      riderSharePercent: 80,
-      riderBaseFareSharePercent: 80,
-      riderDistanceFareSharePercent: 80,
+      fixedDeliveryCharge: 40,
+      riderPerKmRate: 8,
+      deliveryRadiusKm: 5,
       packageTypes: DEFAULT_PACKAGE_TYPES.map((t) => ({ ...t })),
       packageCategories: DEFAULT_PACKAGE_CATEGORIES.map((c) => ({ ...c })),
-      maxWeightKg: 1,
-      expressCharge: 0,
-      packageDescriptionPlaceholder: "E.g. keys, critical document papers...",
     });
+    legacyFieldsCleaned = true;
     return config;
+  }
+
+  if (!legacyFieldsCleaned) {
+    legacyFieldsCleaned = true;
+    await this.collection.updateOne(
+      { _id: config._id },
+      { $unset: Object.fromEntries(LEGACY_FIELDS.map((f) => [f, ""])) },
+    );
   }
 
   let dirty = false;
@@ -231,22 +206,6 @@ parcelConfigSchema.statics.getOrCreate = async function () {
   // Seed defaults for docs created before categories existed.
   if (!Array.isArray(config.packageCategories)) {
     config.packageCategories = DEFAULT_PACKAGE_CATEGORIES.map((c) => ({ ...c }));
-    dirty = true;
-  }
-  // Repairs a missing or nonsensical limit only.
-  //
-  // This used to also reset the value whenever it was exactly 5 — a one-off
-  // correction for an old bad default that was left running on every call.
-  // The effect was that an admin could set Max Weight to 5 kg on the pricing
-  // screen, see it save, and have the next booking silently put it back to 1,
-  // refusing every parcel over a kilo with no explanation. 5 is a perfectly
-  // valid limit and is now kept.
-  if (config.maxWeightKg == null || !(Number(config.maxWeightKg) > 0)) {
-    config.maxWeightKg = 1;
-    dirty = true;
-  }
-  if (!config.packageDescriptionPlaceholder) {
-    config.packageDescriptionPlaceholder = "E.g. keys, critical document papers...";
     dirty = true;
   }
   if (dirty) await config.save();
@@ -273,45 +232,24 @@ parcelConfigSchema.statics.getPublicBookingConfig = async function () {
       ? packageTypes
       : DEFAULT_PACKAGE_TYPES.map(({ value, label }) => ({ value, label })),
     packageCategories,
-    maxWeightKg: Math.min(50, Math.max(0.1, Number(config.maxWeightKg) || 1)),
-    expressCharge: Math.round((Math.max(0, Number(config.expressCharge) || 0) + Number.EPSILON) * 100) / 100,
-    packageDescriptionPlaceholder:
-      config.packageDescriptionPlaceholder ||
-      "E.g. keys, critical document papers...",
   };
 };
 
 parcelConfigSchema.statics.getSearchSettings = async function () {
   const config = await this.getOrCreate();
   const envRadius = parseFloat(process.env.PARCEL_SEARCH_RADIUS_KM || "5", 10);
-  const envMultiplier = parseFloat(process.env.PARCEL_RADIUS_MULTIPLIER || "1.6", 10);
 
-  const baseSearchRadiusKm = Math.min(
+  const deliveryRadiusKm = Math.min(
     100,
-    Math.max(1, Number(config.baseSearchRadiusKm) || envRadius || 5),
+    Math.max(1, Number(config.deliveryRadiusKm) || envRadius || 5),
   );
-  const radiusMultiplier = Math.min(
-    5,
-    Math.max(1, Number(config.radiusMultiplier) || envMultiplier || 1.6),
-  );
-
-  const legacyShare = clampPercent(config.riderSharePercent, 80);
-  const riderBaseFareSharePercent = clampPercent(
-    config.riderBaseFareSharePercent ?? legacyShare,
-    legacyShare,
-  );
-  const riderDistanceFareSharePercent = clampPercent(
-    config.riderDistanceFareSharePercent ?? legacyShare,
-    legacyShare,
-  );
+  const riderPerKmRate = Math.max(0, Number(config.riderPerKmRate) || 0);
+  const fixedDeliveryCharge = Math.max(0, Number(config.fixedDeliveryCharge) || 0);
 
   return {
-    baseSearchRadiusKm,
-    radiusMultiplier,
-    riderSharePercent: legacyShare,
-    riderBaseFareSharePercent,
-    riderDistanceFareSharePercent,
-    riderShareRatio: legacyShare / 100,
+    deliveryRadiusKm,
+    riderPerKmRate,
+    fixedDeliveryCharge,
   };
 };
 

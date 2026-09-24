@@ -30,8 +30,8 @@ const STATUS_META = {
   RIDER_ASSIGNED: { tone: "transit", label: "On The Way" },
   PICKUP_REACHED: { tone: "transit", label: "At Pickup" },
   PICKED_UP: { tone: "transit", label: "Picked Up" },
-  OUT_FOR_DELIVERY: { tone: "transit", label: "To Hub" },
-  DELIVERED: { tone: "done", label: "At Hub" },
+  OUT_FOR_DELIVERY: { tone: "transit", label: "To Courier" },
+  DELIVERED: { tone: "done", label: "Handed To Courier" },
   CANCELLED: { tone: "idle", label: "Cancelled" },
 };
 
@@ -46,7 +46,7 @@ const TIMELINE = [
   { key: "REQUESTED", label: "Booked", at: (p) => p.createdAt },
   { key: "ACCEPTED", label: "Rider assigned", at: (p) => p.acceptedAt },
   { key: "PICKED_UP", label: "Collected from you", at: (p) => p.codSettlement?.riderCollectedAt || p.pickedUpAt },
-  { key: "DELIVERED", label: "Handed to courier hub", at: (p) => p.deliveredAt },
+  { key: "DELIVERED", label: "Handed to courier", at: (p) => p.deliveredAt },
 ];
 
 const REACHED = {
@@ -148,7 +148,7 @@ const ParcelDetail = () => {
   const isCod = String(parcel.paymentMethod).toUpperCase() === "COD";
   const breakdown = parcel.fareBreakdown || {};
   const rider = parcel.deliveryPartnerId;
-  const hub = parcel.warehouseId;
+  const courier = parcel.courierCompanyId;
   const pkg = parcel.packageDetails || {};
 
   // An outstation booking can cover a window of days; the customer is billed
@@ -282,12 +282,14 @@ const ParcelDetail = () => {
         <Section icon={Building2} title="Handed to">
           <Row label="Courier">{parcel.courierCompany || "—"}</Row>
           <Row label="Destination">{parcel.destinationCity || "—"}</Row>
-          {hub?.name && <Row label="Drop hub">{hub.name}</Row>}
-          {hub?.address && (
-            <p className="mt-1 text-[12px] leading-relaxed text-sg-ink-3">
-              {hub.address}
-              {hub.city ? `, ${hub.city}` : ""}
-            </p>
+          {courier?.name && <Row label="Drop location">{courier.name}</Row>}
+          {courier?.phone && (
+            <a
+              href={`tel:${courier.phone}`}
+              className="mt-0.5 inline-flex items-center gap-1.5 text-[12px] font-semibold text-sg-ink-2"
+            >
+              <Phone className="h-3 w-3" /> {courier.phone}
+            </a>
           )}
         </Section>
 

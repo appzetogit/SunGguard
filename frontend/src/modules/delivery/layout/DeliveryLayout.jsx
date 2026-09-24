@@ -326,7 +326,6 @@ const DeliveryLayout = () => {
         paymentMethod: String(p.paymentMethod || "").toUpperCase() || "COD",
         collectAmount: Number(p.collectAmount) || 0,
         parcelType: p.parcelType || "outstation",
-        deliveryInstruction: p.deliveryInstruction || "deliver_to_warehouse",
         expiresAt: payload.searchExpiresAt || null,
         isBroadcast: true,
       });
@@ -378,7 +377,6 @@ const DeliveryLayout = () => {
         paymentMethod: String(p.paymentMethod || "").toUpperCase() || "COD",
         collectAmount: Number(p.collectAmount) || 0,
         parcelType: "city_parcel",
-        deliveryInstruction: "deliver_to_receiver",
         expiresAt: payload.searchExpiresAt || null,
         isBroadcast: true,
       });
@@ -1514,15 +1512,13 @@ const DeliveryLayout = () => {
                       </span>
                     )}
                     <div className="flex flex-wrap items-center justify-center gap-1.5 mb-2">
-                      {activeParcelOffer.isCityParcel ||
-                      activeParcelOffer.deliveryInstruction ===
-                        "deliver_to_receiver" ? (
+                      {activeParcelOffer.isCityParcel ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-emerald-800">
                           📦 Deliver to Receiver
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-amber-800">
-                          🏭 Deliver to Warehouse
+                          📦 Drop at Courier
                         </span>
                       )}
                       {activeParcelOffer.deliverySpeed === "express" ? (
@@ -1560,10 +1556,9 @@ const DeliveryLayout = () => {
                             {Number(activeParcelOffer.collectAmount).toFixed(2)}
                           </p>
                           <p className="text-[10px] font-semibold text-amber-700/80 mt-1">
-                            Hand this full cash to the seller hub
                             {activeParcelOffer.isCityParcel
                               ? "Deposit cash after delivery"
-                              : "Hand this cash at the warehouse"}
+                              : "Hand this cash at the courier company"}
                           </p>
                         </div>
                       )}
@@ -1579,12 +1574,9 @@ const DeliveryLayout = () => {
                       </div>
                       <div className="border-t border-slate-200/60 pt-2.5">
                         <strong className="text-slate-800 block mb-0.5">
-                          Dropoff:
-                          {activeParcelOffer.isCityParcel ||
-                          activeParcelOffer.deliveryInstruction ===
-                            "deliver_to_receiver"
+                          {activeParcelOffer.isCityParcel
                             ? "Dropoff (Receiver):"
-                            : "Dropoff (Warehouse):"}
+                            : "Dropoff (Courier):"}
                         </strong>
                         <p className="text-slate-500 font-medium line-clamp-2">
                           {activeParcelOffer.drop}

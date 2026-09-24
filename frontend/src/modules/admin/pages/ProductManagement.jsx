@@ -424,7 +424,7 @@ const ProductManagement = () => {
                             className={cn(
                                 "rounded-xl px-4 py-2 text-xs font-bold transition-all",
                                 filterApprovalStatus === item.key
-                                    ? "bg-slate-900 text-white"
+                                    ? "bg-[color:var(--primary)] text-white"
                                     : "bg-white ring-1 ring-slate-200 text-slate-600 hover:bg-slate-50"
                             )}
                         >
@@ -582,7 +582,7 @@ const ProductManagement = () => {
 
                                     {/* Variant Column */}
                                     <td
-                                        className="px-6 py-4 cursor-pointer align-middle transition-colors group/variant hover:bg-purple-50/60"
+                                        className="px-6 py-4 cursor-pointer align-middle transition-colors group/variant hover:bg-orange-50/60"
                                         onClick={(e) => {
                                              e.stopPropagation();
                                              setViewingVariants(p);
@@ -590,8 +590,8 @@ const ProductManagement = () => {
                                         }}
                                     >
                                         {p.variants && p.variants.length > 0 ? (
-                                            <div className="inline-flex items-center gap-1.5 rounded-full bg-purple-50 dark:bg-purple-950/40 px-3 py-1 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
-                                                <HiOutlineSwatch className="h-3.5 w-3.5 shrink-0 text-purple-500" />
+                                            <div className="inline-flex items-center gap-1.5 rounded-full bg-orange-50 dark:bg-orange-950/40 px-3 py-1 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800">
+                                                <HiOutlineSwatch className="h-3.5 w-3.5 shrink-0 text-orange-500" />
                                                 <span className="text-xs font-medium whitespace-nowrap">
                                                     {p.variants.length} Variant{p.variants.length > 1 ? 's' : ''}
                                                 </span>
@@ -635,7 +635,7 @@ const ProductManagement = () => {
                                             <button
                                                 onClick={() => handleModerationAction(p, 'approve')}
                                                 disabled={moderatingActionId === `approve:${p._id}`}
-                                                className="flex h-9 w-9 shrink-0 items-center justify-center hover:bg-emerald-50 hover:text-emerald-600 rounded-xl transition-all text-slate-400 shadow-sm ring-1 ring-slate-100 disabled:opacity-60"
+                                                className="flex h-9 w-9 shrink-0 items-center justify-center hover:bg-orange-50 hover:text-orange-600 rounded-xl transition-all text-slate-400 shadow-sm ring-1 ring-slate-100 disabled:opacity-60"
                                                 title="Approve product"
                                             >
                                                 <HiOutlineCheckCircle className="h-4 w-4" />
@@ -706,7 +706,7 @@ const ProductManagement = () => {
                             {/* Modal Header */}
                             <div className="flex items-center justify-between p-6 border-b border-slate-100">
                                 <div className="flex items-center space-x-3">
-                                    <div className="h-10 w-10 bg-slate-900 text-white rounded-xl flex items-center justify-center">
+                                    <div className="h-10 w-10 bg-[color:var(--primary)] text-white rounded-xl flex items-center justify-center">
                                         <HiOutlineCube className="h-5 w-5" />
                                     </div>
                                     <div>
@@ -1007,7 +1007,7 @@ const ProductManagement = () => {
                                             <div className="space-y-3 pt-2">
                                                 <div className="flex items-center justify-between gap-4">
                                                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Gallery Photos</label>
-                                                    <label className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-900 text-white text-[10px] font-bold uppercase tracking-widest cursor-pointer hover:-translate-y-0.5 transition-all">
+                                                    <label className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-[color:var(--primary)] text-white text-[10px] font-bold uppercase tracking-widest cursor-pointer hover:-translate-y-0.5 transition-all">
                                                         <HiOutlinePhoto className="h-4 w-4" />
                                                         <span>Add Photos</span>
                                                         <input
@@ -1064,7 +1064,7 @@ const ProductManagement = () => {
                                 <button
                                     onClick={handleSave}
                                     disabled={isSaving}
-                                    className="bg-slate-900 text-white px-10 py-2.5 rounded-xl text-xs font-bold shadow-xl hover:-translate-y-0.5 transition-all disabled:opacity-50"
+                                    className="bg-[color:var(--primary)] text-white px-10 py-2.5 rounded-xl text-xs font-bold shadow-xl hover:-translate-y-0.5 transition-all disabled:opacity-50"
                                 >
                                     {isSaving ? 'SAVING...' : 'SAVE CHANGES'}
                                 </button>
@@ -1238,7 +1238,7 @@ const ProductManagement = () => {
                     <div className="mt-8 flex justify-end">
                         <button
                             onClick={() => setIsVariantsViewModalOpen(false)}
-                            className="bg-slate-900 text-white px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:-translate-y-0.5 transition-all active:scale-95"
+                            className="bg-[color:var(--primary)] text-white px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:-translate-y-0.5 transition-all active:scale-95"
                         >
                             CLOSE VIEWER
                         </button>

@@ -106,7 +106,7 @@ const CategoryHierarchy = () => {
   const ListItem = ({ item, isSelected, onClick, hasChildren, type }) => {
     const activeClass = isSelected
       ? "bg-primary/10 border-primary/30 text-primary dark:bg-primary/20 shadow-sm"
-      : "hover:bg-slate-50 dark:hover:bg-slate-800/50 border-transparent text-slate-700 dark:text-slate-300";
+      : "hover:bg-slate-50 dark:hover:opacity-90/50 border-transparent text-slate-700 dark:text-slate-300";
 
     const iconColor = isSelected ? "text-primary" : "text-slate-400";
 
@@ -245,7 +245,7 @@ const CategoryHierarchy = () => {
             title="Main Categories (L2)"
             icon={Folder}
             count={activeLevel2.length}
-            accentColor="bg-purple-500"
+            accentColor="bg-orange-500"
           />
 
           {!selectedHeader ? (
@@ -285,7 +285,7 @@ const CategoryHierarchy = () => {
             title="Subcategories (L3)"
             icon={Tag}
             count={activeSubs.length}
-            accentColor="bg-blue-500"
+            accentColor="bg-orange-500"
           />
 
           {!selectedLevel2 ? (

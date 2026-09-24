@@ -178,7 +178,7 @@ const PorterCustomerDetail = () => {
 
       {/* Stats + Revenue */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Card className="overflow-hidden rounded-xl border-none bg-slate-900 p-6 text-white shadow-lg lg:col-span-1">
+        <Card className="overflow-hidden rounded-xl border-none bg-[color:var(--primary)] p-6 text-white shadow-lg lg:col-span-1">
           <p className="text-[11px] font-bold uppercase tracking-widest text-white/60">Lifetime Spend on Porter</p>
           <h2 className="mt-1 text-3xl font-black">{formatMoney(customer.totalSpent)}</h2>
           <div className="mt-4 flex items-center gap-2 text-xs font-semibold text-white/80">
@@ -242,7 +242,7 @@ const PorterCustomerDetail = () => {
                         navigate(`/admin/parcels?parcelId=${b.id}`);
                       }}
                       title="View full booking detail and status history"
-                      className="cursor-pointer hover:bg-slate-50/70 dark:hover:bg-slate-800/40"
+                      className="cursor-pointer hover:bg-slate-50/70 dark:hover:opacity-90/40"
                     >
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-2.5">
@@ -303,7 +303,7 @@ const PorterCustomerDetail = () => {
             )}
           </Card>
 
-          <Card className="border-none bg-slate-900 text-white" title={<span className="text-white/70">Account Control</span>}>
+          <Card className="border-none bg-[color:var(--primary)] text-white" title={<span className="text-white/70">Account Control</span>}>
             <p className="text-xs text-white/60">
               {customer.isActive
                 ? "This customer can currently log in and book Porter deliveries."

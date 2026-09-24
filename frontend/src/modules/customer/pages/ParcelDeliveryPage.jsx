@@ -70,16 +70,16 @@ import {
 } from "../components/parcel/waybillKit";
 
 const FALLBACK_COURIER_COMPANIES = [
-  { id: "", name: "Blue Dart", platformCharge: 0, companyCharge: 0 },
-  { id: "", name: "DTDC", platformCharge: 0, companyCharge: 0 },
-  { id: "", name: "Delhivery", platformCharge: 0, companyCharge: 0 },
-  { id: "", name: "India Post", platformCharge: 0, companyCharge: 0 },
-  { id: "", name: "Ekart", platformCharge: 0, companyCharge: 0 },
-  { id: "", name: "Ecom Express", platformCharge: 0, companyCharge: 0 },
-  { id: "", name: "XpressBees", platformCharge: 0, companyCharge: 0 },
-  { id: "", name: "FedEx", platformCharge: 0, companyCharge: 0 },
-  { id: "", name: "DHL", platformCharge: 0, companyCharge: 0 },
-  { id: "", name: "Shadowfax", platformCharge: 0, companyCharge: 0 },
+  { id: "", name: "Blue Dart" },
+  { id: "", name: "DTDC" },
+  { id: "", name: "Delhivery" },
+  { id: "", name: "India Post" },
+  { id: "", name: "Ekart" },
+  { id: "", name: "Ecom Express" },
+  { id: "", name: "XpressBees" },
+  { id: "", name: "FedEx" },
+  { id: "", name: "DHL" },
+  { id: "", name: "Shadowfax" },
 ];
 
 const BOOKING_DURATION_MODES = [
@@ -237,12 +237,7 @@ const useInScreenMenu = (
 const menuClass =
   "overflow-y-auto overscroll-contain rounded-2xl border border-slate-200 bg-white shadow-[0_20px_50px_-20px_rgba(15,23,42,0.45)]";
 
-const CourierCompanySelect = ({
-  companies,
-  value,
-  onChange,
-  hideSelectedPlatformCharge = false,
-}) => {
+const CourierCompanySelect = ({ companies, value, onChange }) => {
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
   const { rootRef, listRef, menuStyle } = useInScreenMenu(
@@ -277,13 +272,6 @@ const CourierCompanySelect = ({
             <span className="font-semibold text-slate-900 truncate">
               {selected.name}
             </span>
-            {!hideSelectedPlatformCharge && !selected.isOther && (
-              <span
-                className="shrink-0 text-[11px] font-bold text-[color:var(--primary)]"
-                style={{ fontFamily: MONO }}>
-                {formatInr(selected.platformCharge)}
-              </span>
-            )}
           </span>
         ) : (
           <span className="text-slate-400">Pick a courier company</span>
@@ -318,7 +306,6 @@ const CourierCompanySelect = ({
             {companies.map((company) => {
               const optionValue = company.id || company.name;
               const isSelected = optionValue === selectedValue;
-              const platformFee = Number(company.platformCharge) || 0;
               return (
                 <button
                   key={optionValue}
@@ -343,13 +330,6 @@ const CourierCompanySelect = ({
                       }`}>
                       {company.isOther ? "Another company" : company.name}
                     </span>
-                    {!company.isOther && (
-                      <span
-                        className="text-[11px] font-bold text-slate-400 shrink-0"
-                        style={{ fontFamily: MONO }}>
-                        {formatInr(platformFee)}
-                      </span>
-                    )}
                   </div>
                 </button>
               );
@@ -459,10 +439,10 @@ const OUTSTATION_DRAFT_TTL_MS = 60 * 60 * 1000;
  * This is the longest booking form in the app — sender details, courier,
  * destination, package, pickup window — and a refresh used to wipe all of
  * it and drop the customer back at step 0. Config-derived fields (max
- * weight, express charge, the courier list, the nearest warehouse) are
- * deliberately NOT restored from here; those are re-fetched fresh on
- * mount, since a stale copy could silently disagree with a rate-card
- * change an admin made in the meantime.
+ * weight, express charge, the zone-filtered courier list) are deliberately
+ * NOT restored from here; those are re-fetched fresh on mount, since a
+ * stale copy could silently disagree with a rate-card change an admin made
+ * in the meantime.
  */
 function loadOutstationBookingDraft() {
   return (
@@ -514,12 +494,13 @@ const ParcelDeliveryPage = () => {
   };
 
   /**
-   * Who the parcel is actually for, once it leaves the warehouse.
+   * Who the parcel is actually for, once the courier company takes it
+   * onward from our rider.
    *
-   * Separate from `pickupDetails` and unrelated to `dropAddress` (which the
-   * server always fills with the warehouse — see createParcel). No map pin:
-   * nobody dispatches against this point, it only has to be readable enough
-   * for the warehouse to label the parcel for the courier company.
+   * Separate from `pickupDetails` and unrelated to `dropAddress` (which is
+   * just a label for the courier company's counter our rider drops it at —
+   * see createParcel). No map pin: nobody dispatches against this point, it
+   * only has to be readable enough to label the parcel for the courier.
    */
   const [receiverDetails, setReceiverDetails] = useState(() => ({
     name: "",
@@ -565,8 +546,7 @@ const ParcelDeliveryPage = () => {
     Boolean(outstationDraft.customCourierNameSaved),
   );
   const [destinationCity, setDestinationCity] = useState(outstationDraft.destinationCity || "");
-  const [nearestWarehouse, setNearestWarehouse] = useState(null);
-  const [warehouseLoading, setWarehouseLoading] = useState(false);
+  const [courierLoading, setCourierLoading] = useState(false);
   const [zones, setZones] = useState([]);
   const [bookingDurationMode, setBookingDurationMode] = useState(
     outstationDraft.bookingDurationMode || "one_day",
@@ -701,25 +681,35 @@ const ParcelDeliveryPage = () => {
     }
   }, [courierCompanyId, isOtherCourier]);
 
+  // The courier dropdown is filtered to whichever companies actually cover
+  // the customer's own pickup zone — a company that doesn't serve this area
+  // can't be handed the parcel, so it shouldn't be offered at all. Falls
+  // back to the unfiltered FALLBACK_COURIER_COMPANIES list while loading or
+  // if the lookup fails.
   useEffect(() => {
     const lat = Number(pickupDetails.lat);
     const lng = Number(pickupDetails.lng);
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
 
     let cancelled = false;
-    setWarehouseLoading(true);
+    setCourierLoading(true);
     parcelApi
-      .getNearestWarehouse(lat, lng)
+      .getCouriersForLocation(lat, lng)
       .then((res) => {
-        if (!cancelled && res.data?.success) {
-          setNearestWarehouse(res.data.result || null);
-        }
+        if (cancelled || !res.data?.success) return;
+        const list = Array.isArray(res.data.result) ? res.data.result : [];
+        setCourierCompanies(
+          list.map((c) => ({
+            id: String(c.id || c._id || ""),
+            name: c.name,
+            phone: c.phone || "",
+            isOther: c.isOther === true,
+          })),
+        );
       })
-      .catch(() => {
-        if (!cancelled) setNearestWarehouse(null);
-      })
+      .catch(() => {})
       .finally(() => {
-        if (!cancelled) setWarehouseLoading(false);
+        if (!cancelled) setCourierLoading(false);
       });
 
     return () => {
@@ -796,6 +786,9 @@ const ParcelDeliveryPage = () => {
   // Fare Estimation
   const [fareEstimation, setFareEstimation] = useState(null);
   const [estimating, setEstimating] = useState(false);
+  // Persists past the toast so "why is Confirm disabled" stays answered on
+  // screen — e.g. this courier doesn't ship the chosen route.
+  const [fareError, setFareError] = useState(null);
 
   // Coupon
   const [availableCoupons, setAvailableCoupons] = useState([]);
@@ -821,18 +814,9 @@ const ParcelDeliveryPage = () => {
       if (cfg.packageDescriptionPlaceholder) {
         setPackageDescriptionPlaceholder(cfg.packageDescriptionPlaceholder);
       }
-      if (Array.isArray(cfg.courierCompanies) && cfg.courierCompanies.length) {
-        setCourierCompanies(
-          cfg.courierCompanies.map((c) => ({
-            id: String(c.id || c._id || ""),
-            name: c.name,
-            platformCharge: Number(c.platformCharge) || 0,
-            companyCharge: Number(c.companyCharge) || 0,
-            location: c.location || null,
-            isOther: c.isOther === true,
-          })),
-        );
-      }
+      // Courier companies are no longer set from the unfiltered booking
+      // config — they're fetched zone-filtered against the pickup point
+      // instead (see the getCouriersForLocation effect above).
     } catch (error) {
       console.error("Failed to load parcel booking config", error);
     }
@@ -867,14 +851,23 @@ const ParcelDeliveryPage = () => {
         setFareEstimation(null);
         return;
       }
-      if (pickupDetails.lat && pickupDetails.lng && weightKg > 0) {
+      if (
+        pickupDetails.lat &&
+        pickupDetails.lng &&
+        pickupDetails.city?.trim() &&
+        destinationCity &&
+        weightKg > 0
+      ) {
         setEstimating(true);
         try {
           const res = await parcelApi.calculateFare({
             pickupLat: pickupDetails.lat,
             pickupLng: pickupDetails.lng,
-            // Sent so the quote resolves its first mile exactly the way the
-            // booking below does; without it the two can price differently.
+            // The courier's city-to-city charge is looked up from these two —
+            // sent so the quote resolves the exact same way the booking below
+            // does; without them the two can price (or refuse) differently.
+            pickupCity: pickupDetails.city,
+            destinationCity,
             parcelType: "outstation",
             weight: weightKg,
             courierCompanyId: selectedCourier?.id || undefined,
@@ -887,6 +880,7 @@ const ParcelDeliveryPage = () => {
           if (res.data && res.data.success) {
             const result = res.data.result || {};
             setFareEstimation(result);
+            setFareError(null);
             if (result.configuredExpressCharge != null) {
               setExpressCharge(
                 Math.max(0, Number(result.configuredExpressCharge) || 0),
@@ -900,11 +894,13 @@ const ParcelDeliveryPage = () => {
             "Failed to calculate fare";
           toast.error(msg);
           setFareEstimation(null);
+          setFareError(msg);
         } finally {
           setEstimating(false);
         }
       } else {
         setFareEstimation(null);
+        setFareError(null);
       }
     };
 
@@ -913,6 +909,8 @@ const ParcelDeliveryPage = () => {
   }, [
     pickupDetails.lat,
     pickupDetails.lng,
+    pickupDetails.city,
+    destinationCity,
     weightKg,
     selectedCourier?.id,
     selectedCourier?.name,
@@ -958,6 +956,8 @@ const ParcelDeliveryPage = () => {
       const res = await parcelApi.validateCoupon({
         pickupLat: pickupDetails.lat,
         pickupLng: pickupDetails.lng,
+        pickupCity: pickupDetails.city,
+        destinationCity,
         parcelType: "outstation",
         weight: weightKg,
         courierCompanyId: selectedCourier?.id || undefined,
@@ -1210,56 +1210,23 @@ const ParcelDeliveryPage = () => {
   const confirmAndBook = async () => {
     setConfirmOpen(false);
     const composedAddress = composePickupFullAddress(pickupDetails);
-    const dropAddress = (() => {
-      if (nearestWarehouse) {
-        return {
-          name: nearestWarehouse.name,
-          phone:
-            String(nearestWarehouse.phone || pickupDetails.phone || "")
-              .replace(/\D/g, "")
-              .slice(-10) || "0000000000",
-          fullAddress:
-            nearestWarehouse.address +
-            (nearestWarehouse.city ? `, ${nearestWarehouse.city}` : ""),
-          lat: Number(nearestWarehouse.lat),
-          lng: Number(nearestWarehouse.lng),
-        };
-      }
-
-      const loc = selectedCourier?.location || {};
-      const hasStoredLocation =
-        loc.fullAddress?.trim() &&
-        Number.isFinite(Number(loc.lat)) &&
-        Number.isFinite(Number(loc.lng));
-
-      if (hasStoredLocation) {
-        return {
-          name: selectedCourier.name,
-          phone:
-            String(loc.phone || pickupDetails.phone || "")
-              .replace(/\D/g, "")
-              .slice(-10) || "0000000000",
-          fullAddress: loc.fullAddress.trim(),
-          lat: Number(loc.lat),
-          lng: Number(loc.lng),
-        };
-      }
-
-      // Last resort: neither a resolved warehouse nor a stored courier
-      // location. Rather than invent a destination-city coordinate, pin the
-      // drop record to the pickup point — it's a label at this stage, not a
-      // route, and the parcel physically starts there.
-      return {
-        name: courierCompany,
-        phone:
-          String(pickupDetails.phone || "")
-            .replace(/\D/g, "")
-            .slice(-10) || "0000000000",
-        fullAddress: `${courierCompany} drop point, ${destinationCity}`,
-        lat: pickupDetails.lat,
-        lng: pickupDetails.lng,
-      };
-    })();
+    // The rider now personally carries the parcel to the chosen courier
+    // company's counter and drops it there (with photo proof) — there is no
+    // warehouse hop anymore. The drop record is just a label for that
+    // counter; nobody dispatches against its lat/lng, so it defaults to the
+    // pickup point as a placeholder.
+    const dropAddress = {
+      name: courierCompany,
+      phone:
+        String(selectedCourier?.phone || pickupDetails.phone || "")
+          .replace(/\D/g, "")
+          .slice(-10) || "0000000000",
+      fullAddress: selectedCourier?.isOther
+        ? `${courierCompany} drop point, ${destinationCity}`
+        : courierCompany,
+      lat: pickupDetails.lat ?? 0,
+      lng: pickupDetails.lng ?? 0,
+    };
 
     const resolvedPickupDate = bookingDurationParams.preferredPickupDate;
 
@@ -1273,6 +1240,8 @@ const ParcelDeliveryPage = () => {
           lat: pickupDetails.lat,
           lng: pickupDetails.lng,
           pincode: pickupDetails.pincode?.trim() || undefined,
+          // Matched against the admin's courier city-to-city rate card.
+          city: pickupDetails.city?.trim(),
         },
         dropAddress,
         receiverAddress: {
@@ -1296,7 +1265,6 @@ const ParcelDeliveryPage = () => {
           ? customCourierName.trim()
           : undefined,
         destinationCity,
-        warehouseId: nearestWarehouse?._id || undefined,
         parcelType: "outstation",
         pickupWindow: bookingDurationParams.pickupWindow,
         pickupWindowDays: bookingDurationParams.pickupWindowDays,
@@ -1397,9 +1365,13 @@ const ParcelDeliveryPage = () => {
     loading ||
     estimating ||
     !pickupDetails.lat ||
+    !pickupDetails.city?.trim() ||
     !destinationCity ||
     !selectedCourier ||
     (isOtherCourier && !customCourierNameSaved) ||
+    // No confirmed price (e.g. the courier doesn't ship this route — see
+    // "service not available" from calculateFare) means nothing to book.
+    !fareEstimation?.fare ||
     !paymentMethod;
 
   const totalFare = fareEstimation
@@ -1732,16 +1704,15 @@ const ParcelDeliveryPage = () => {
                             filled={Boolean(selectedCourier)}
                             hint={
                               selectedCourier && !isOtherCourier
-                                ? "Their platform charge is already in the fare."
-                                : "Whoever you normally post with."
+                                ? "Our rider will drop your parcel here in person."
+                                : courierLoading
+                                  ? "Finding couriers that serve your area…"
+                                  : "Whoever you normally post with."
                             }>
                             <CourierCompanySelect
                               companies={courierCompanies}
                               value={courierCompanyId}
                               onChange={setCourierCompanyId}
-                              hideSelectedPlatformCharge={
-                                isOtherCourier && !customCourierNameSaved
-                              }
                             />
                           </Field>
 
@@ -1762,7 +1733,7 @@ const ParcelDeliveryPage = () => {
                                   filled={customCourierNameSaved}
                                   hint={
                                     customCourierNameSaved
-                                      ? "Saved. The platform charge is now in the fare."
+                                      ? "Saved."
                                       : "Type the name, then press Enter to save it."
                                   }
                                   adornment={
@@ -2339,6 +2310,14 @@ const ParcelDeliveryPage = () => {
                         </Sheet>
                       </motion.div>
 
+                      {fareError && (
+                        <motion.div variants={stackItem}>
+                          <div className="rounded-2xl bg-red-50 border border-red-100 text-red-700 text-sm font-semibold px-4 py-3">
+                            {fareError}
+                          </div>
+                        </motion.div>
+                      )}
+
                       {/* The consignment receipt */}
                       <motion.div variants={stackItem}>
                         <div className="rounded-[26px] bg-[#0B1220] text-white overflow-hidden shadow-[0_20px_50px_-24px_rgba(11,18,32,0.9)]">
@@ -2352,7 +2331,7 @@ const ParcelDeliveryPage = () => {
                                   <Money value={totalFare} />
                                 </div>
                               </div>
-                              {fareEstimation && (
+                              {fareEstimation && fareEstimation.distance != null && (
                                 <div className="text-right">
                                   <Caption className="text-slate-400">
                                     Distance
@@ -2379,28 +2358,46 @@ const ParcelDeliveryPage = () => {
                                 />
                               </div>
                               <div className="px-5 py-4 space-y-2.5">
-                                {Number(fareEstimation.distanceFare) > 0 && (
+                                {Number(fareEstimation.fixedDeliveryCharge) > 0 ? (
                                   <LeaderRow
-                                    label={`Distance ${fareEstimation.distance} km${
-                                      fareEstimation.perKmCharge != null
-                                        ? ` × ₹${Number(fareEstimation.perKmCharge).toFixed(2)}`
-                                        : ""
-                                    }`}
-                                    value={`₹${Number(fareEstimation.distanceFare).toFixed(2)}`}
+                                    label="Delivery charge"
+                                    value={`₹${Number(fareEstimation.fixedDeliveryCharge).toFixed(2)}`}
+                                  />
+                                ) : null}
+                                {Number(fareEstimation.courierCharge) > 0 && (
+                                  <LeaderRow
+                                    label={`${courierCompany || "Courier"} charge (${pickupDetails.city} → ${destinationCity})`}
+                                    value={`₹${Number(fareEstimation.courierCharge).toFixed(2)}`}
                                   />
                                 )}
-                                <LeaderRow
-                                  label={`Weight ${weightKg} kg`}
-                                  value={`₹${Number(fareEstimation.weightFare).toFixed(2)}`}
-                                />
-                                {Number(fareEstimation.platformCharge) > 0 &&
-                                  (!isOtherCourier ||
-                                    customCourierNameSaved) && (
-                                    <LeaderRow
-                                      label="Platform charge"
-                                      value={`₹${Number(fareEstimation.platformCharge).toFixed(2)}`}
-                                    />
-                                  )}
+                                {!(Number(fareEstimation.fixedDeliveryCharge) > 0) && (
+                                  <>
+                                    {Number(fareEstimation.distanceFare) > 0 && (
+                                      <LeaderRow
+                                        label={`Distance ${fareEstimation.distance} km${
+                                          fareEstimation.perKmCharge != null
+                                            ? ` × ₹${Number(fareEstimation.perKmCharge).toFixed(2)}`
+                                            : ""
+                                        }`}
+                                        value={`₹${Number(fareEstimation.distanceFare).toFixed(2)}`}
+                                      />
+                                    )}
+                                    {Number(fareEstimation.weightFare) > 0 && (
+                                      <LeaderRow
+                                        label={`Weight ${weightKg} kg`}
+                                        value={`₹${Number(fareEstimation.weightFare).toFixed(2)}`}
+                                      />
+                                    )}
+                                    {Number(fareEstimation.platformCharge) > 0 &&
+                                      (!isOtherCourier ||
+                                        customCourierNameSaved) && (
+                                        <LeaderRow
+                                          label="Platform charge"
+                                          value={`₹${Number(fareEstimation.platformCharge).toFixed(2)}`}
+                                        />
+                                      )}
+                                  </>
+                                )}
                                 {deliverySpeed === "express" && (
                                   <LeaderRow
                                     label="Express pickup"

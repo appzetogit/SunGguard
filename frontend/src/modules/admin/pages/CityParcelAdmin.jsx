@@ -32,7 +32,7 @@ const TABS = [
 ];
 
 const STATUS_TONE = {
-  DELIVERED: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  DELIVERED: "bg-orange-50 text-orange-700 border-orange-200",
   RETURNED: "bg-slate-100 text-slate-600 border-slate-200",
   CANCELLED: "bg-slate-100 text-slate-500 border-slate-200",
   DELIVERY_FAILED: "bg-rose-50 text-rose-700 border-rose-200",
@@ -47,7 +47,7 @@ const Chip = ({ status }) => (
   <span
     className={cn(
       "inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold tracking-wide",
-      STATUS_TONE[status] || "bg-blue-50 text-blue-700 border-blue-200",
+      STATUS_TONE[status] || "bg-orange-50 text-orange-700 border-orange-200",
     )}
   >
     {String(status || "").replace(/_/g, " ")}
@@ -138,7 +138,7 @@ const AssignModal = ({ parcel, onClose, onAssigned }) => {
                         unavailable
                           ? "text-slate-400"
                           : r.isOnline
-                            ? "text-emerald-600"
+                            ? "text-orange-600"
                             : "text-slate-400",
                       )}
                     >
@@ -163,7 +163,7 @@ const AssignModal = ({ parcel, onClose, onAssigned }) => {
             type="button"
             disabled={!picked || saving}
             onClick={assign}
-            className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
+            className="inline-flex items-center gap-2 rounded-lg bg-[color:var(--primary)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
           >
             {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
             Assign
@@ -387,7 +387,7 @@ const CityParcelAdmin = () => {
             className={cn(
               "rounded-lg px-4 py-2 text-sm font-semibold transition",
               tab === t.value
-                ? "bg-slate-900 text-white"
+                ? "bg-[color:var(--primary)] text-white"
                 : "bg-white text-slate-600 border border-slate-200",
             )}
           >
@@ -496,7 +496,7 @@ const CityParcelAdmin = () => {
               type="button"
               onClick={saveConfig}
               disabled={savingConfig}
-              className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-lg bg-[color:var(--primary)] px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
             >
               {savingConfig ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -566,7 +566,7 @@ const CityParcelAdmin = () => {
                         type="button"
                         disabled={busyId === p._id}
                         onClick={() => review(p, true)}
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-[13px] font-semibold text-white disabled:opacity-50"
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-orange-600 px-3.5 py-2 text-[13px] font-semibold text-white disabled:opacity-50"
                       >
                         <Check className="h-3.5 w-3.5" />
                         Approve &amp; pay
@@ -624,7 +624,7 @@ const CityParcelAdmin = () => {
                         <button
                           type="button"
                           onClick={() => setAssignTarget(p)}
-                          className="rounded-lg bg-slate-900 px-3.5 py-2 text-[13px] font-semibold text-white"
+                          className="rounded-lg bg-[color:var(--primary)] px-3.5 py-2 text-[13px] font-semibold text-white"
                         >
                           Assign rider
                         </button>

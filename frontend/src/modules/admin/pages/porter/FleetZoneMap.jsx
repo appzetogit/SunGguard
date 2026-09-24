@@ -202,7 +202,7 @@ const FleetZoneMap = () => {
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors",
                 autoRefresh
-                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
+                  ? "bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-400"
                   : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
               )}
               title={autoRefresh ? "Auto-refresh every 20s" : "Auto-refresh paused"}
@@ -227,9 +227,9 @@ const FleetZoneMap = () => {
       <div className="ds-grid-cards-4">
         {[
           { label: "Online Riders", value: stats.online, icon: Users, color: "text-slate-700", bg: "bg-slate-100 border border-slate-200" },
-          { label: "Inside a Zone", value: stats.inZone, icon: Layers, color: "text-emerald-600", bg: "bg-emerald-50 border border-emerald-200" },
+          { label: "Inside a Zone", value: stats.inZone, icon: Layers, color: "text-orange-600", bg: "bg-orange-50 border border-orange-200" },
           { label: "Outside Any Zone", value: stats.unzoned, icon: MapPin, color: "text-amber-600", bg: "bg-amber-50 border border-amber-200" },
-          { label: "Zones Covered", value: stats.zonesCovered, icon: Radio, color: "text-blue-600", bg: "bg-blue-50 border border-blue-200" },
+          { label: "Zones Covered", value: stats.zonesCovered, icon: Radio, color: "text-orange-600", bg: "bg-orange-50 border border-orange-200" },
         ].map((s) => (
           <StatCard key={s.label} label={s.label} value={s.value} icon={s.icon} color={s.color} bg={s.bg} />
         ))}
@@ -398,13 +398,13 @@ const RiderRow = ({ rider, active, onClick }) => (
     onClick={onClick}
     className={cn(
       "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors",
-      active ? "bg-primary/10" : "hover:bg-slate-50 dark:hover:bg-slate-800/60",
+      active ? "bg-primary/10" : "hover:bg-slate-50 dark:hover:opacity-90/60",
     )}
   >
     <span
       className={cn(
         "relative h-2 w-2 shrink-0 rounded-full",
-        rider.isBusy ? "bg-amber-500" : "bg-emerald-500",
+        rider.isBusy ? "bg-amber-500" : "bg-orange-500",
       )}
     />
     <div className="min-w-0 flex-1">

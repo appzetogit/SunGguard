@@ -51,7 +51,7 @@ const CITY = {
   riderDistanceFareSharePercent: 70,
 };
 
-const PARCEL = { perKmCharge: 10, weightCharge: 15, expressCharge: 25 };
+const PARCEL = { fixedDeliveryCharge: 80 };
 
 const GST_ON = { enabled: true, percent: 18, inclusive: false, gstin: "27AAAAA0000A1Z5" };
 const GST_OFF = { enabled: false, percent: 0 };
@@ -221,7 +221,7 @@ describe("coupon x GST: does the invoice reconcile with the tax actually due?", 
 
 describe("outstation breakdown carries the tax it charged", () => {
   it("exposes every field the booking record and GST report read", () => {
-    const daily = computeParcelDailyFare({ config: PARCEL, distanceKm: 5, weightKg: 2 });
+    const daily = computeParcelDailyFare({ config: PARCEL });
     const priced = applyBillableDaysToFare(daily, 1, GST_ON);
 
     // 80 taxable, 14.40 tax, 94.40 charged to the customer.
@@ -299,29 +299,35 @@ describe("invoice reconciles end to end", () => {
   });
 });
 
-describe("outstation legacy payout fallback excludes tax", () => {
-  it("pays a share of the pre-tax value, not of the tax-inclusive fare", async () => {
+describe("outstation payout is a distance calc, independent of tax and fare", () => {
+  it("is unaffected by GST or the fare recorded on the parcel", async () => {
     const { computeRiderParcelEarnings } = await import(
       "../app/services/parcelWorkflowService.js"
     );
 
-    // A legacy row: fare recorded, no pre-tax line items, but tax was charged.
-    // fare 118 = 100 taxable + 18 tax. 80% of the taxable 100 is 80 —
-    // 80% of 118 would be 94.40, handing the rider 14.40 of the government's
-    // tax.
-    const legacyWithTax = {
+    const pickupAddress = { lat: 28.6139, lng: 77.209 };
+    const riderAcceptLocation = { lat: 28.622, lng: 77.209 };
+
+    // Whatever the fare/tax on the parcel say, the payout only reads
+    // riderAcceptLocation → pickupAddress distance and the configured rate —
+    // a legacy row missing fareBreakdown/tax fields pays exactly the same.
+    const withTax = {
       fare: 118,
       fareBreakdown: { taxableAmount: 100, gstAmount: 18 },
+      pickupAddress,
+      riderAcceptLocation,
     };
-    expect(computeRiderParcelEarnings(legacyWithTax, { riderSharePercent: 80 })).toBe(80);
+    const withoutTax = { fare: 80, pickupAddress, riderAcceptLocation };
 
-    // Derives the same answer when only the tax amount was recorded.
-    const noTaxable = { fare: 118, fareBreakdown: { gstAmount: 18 } };
-    expect(computeRiderParcelEarnings(noTaxable, { riderSharePercent: 80 })).toBe(80);
+    const earningWithTax = computeRiderParcelEarnings(withTax, { riderPerKmRate: 8 });
+    const earningWithoutTax = computeRiderParcelEarnings(withoutTax, { riderPerKmRate: 8 });
+    expect(earningWithTax).toBe(earningWithoutTax);
+    expect(earningWithTax).toBeGreaterThan(0);
 
-    // A booking from before GST existed is untouched: 80% of 118 = 94.40.
-    const preGst = { fare: 118, fareBreakdown: {} };
-    expect(computeRiderParcelEarnings(preGst, { riderSharePercent: 80 })).toBe(94.4);
+    // A legacy row with no accept-location snapshot at all pays nothing —
+    // there is nothing to measure a distance against.
+    const legacyNoSnapshot = { fare: 118, fareBreakdown: {}, pickupAddress };
+    expect(computeRiderParcelEarnings(legacyNoSnapshot, { riderPerKmRate: 8 })).toBe(0);
   });
 });
 
@@ -331,13 +337,8 @@ describe("outstation legacy payout fallback excludes tax", () => {
 
 describe("outstation fare with billable days", () => {
   it("taxes the multi-day total once", () => {
-    const daily = computeParcelDailyFare({
-      config: PARCEL,
-      distanceKm: 5,
-      weightKg: 2,
-      platformCharge: 0,
-    });
-    // (5 x 10) + (2 x 15) = 50 + 30 = 80/day
+    const daily = computeParcelDailyFare({ config: PARCEL });
+    // Flat delivery charge, unaffected by distance/weight — 80/day.
     expect(daily.fare).toBe(80);
 
     const priced = applyBillableDaysToFare(daily, 7, GST_ON);

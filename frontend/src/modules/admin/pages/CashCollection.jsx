@@ -260,7 +260,7 @@ const CashCollection = () => {
                 <div className="flex items-center gap-3">
                     <button
                         onClick={openSettings}
-                        className="flex items-center gap-2 px-5 py-3 bg-slate-900 text-white rounded-2xl text-xs font-bold hover:bg-slate-800 transition-all shadow-lg active:scale-95"
+                        className="flex items-center gap-2 px-5 py-3 bg-[color:var(--primary)] text-white rounded-2xl text-xs font-bold hover:opacity-90 transition-all shadow-lg active:scale-95"
                     >
                         <Settings2 className="h-4 w-4" />
                         CASH POLICY
@@ -474,7 +474,7 @@ const CashCollection = () => {
                                                     </div>
                                                     <button
                                                         onClick={() => openLimitEditor(rider)}
-                                                        className="p-2.5 bg-slate-50 text-slate-400 rounded-xl hover:bg-slate-900 hover:text-white transition-all active:scale-95"
+                                                        className="p-2.5 bg-slate-50 text-slate-400 rounded-xl hover:bg-[color:var(--primary)] hover:text-white transition-all active:scale-95"
                                                         title="Set this rider's limit"
                                                     >
                                                         <Pencil className="h-4 w-4" />
@@ -593,7 +593,7 @@ const CashCollection = () => {
                         </div>
 
                         <div className="grid grid-cols-3 gap-4">
-                            <Card className="p-5 border-none bg-slate-900 text-white rounded-xl relative overflow-hidden">
+                            <Card className="p-5 border-none bg-[color:var(--primary)] text-white rounded-xl relative overflow-hidden">
                                 <p className="text-[10px] opacity-60 font-black uppercase tracking-widest mb-2">
                                     Holding
                                 </p>
@@ -669,7 +669,7 @@ const CashCollection = () => {
                                 openLimitEditor(selectedRider);
                                 setSelectedRider(null);
                             }}
-                            className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-xl transition-all active:scale-[0.98]"
+                            className="w-full py-4 bg-[color:var(--primary)] text-white rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-xl transition-all active:scale-[0.98]"
                         >
                             Change this rider&apos;s limit
                         </button>
@@ -775,7 +775,7 @@ const CashCollection = () => {
                             <button
                                 onClick={saveSettings}
                                 disabled={isSaving}
-                                className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-slate-800 transition-all shadow-xl flex items-center justify-center gap-3 disabled:opacity-50 active:scale-[0.98]"
+                                className="w-full py-4 bg-[color:var(--primary)] text-white rounded-2xl font-black text-[11px] uppercase tracking-widest hover:opacity-90 transition-all shadow-xl flex items-center justify-center gap-3 disabled:opacity-50 active:scale-[0.98]"
                             >
                                 {isSaving && <RotateCw className="h-4 w-4 animate-spin" />}
                                 {isSaving ? 'SAVING...' : 'SAVE POLICY'}
@@ -845,7 +845,7 @@ const CashCollection = () => {
                             <button
                                 onClick={() => saveRiderLimit(false)}
                                 disabled={isSaving}
-                                className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-slate-800 transition-all shadow-xl flex items-center justify-center gap-3 disabled:opacity-50 active:scale-[0.98]"
+                                className="w-full py-4 bg-[color:var(--primary)] text-white rounded-2xl font-black text-[11px] uppercase tracking-widest hover:opacity-90 transition-all shadow-xl flex items-center justify-center gap-3 disabled:opacity-50 active:scale-[0.98]"
                             >
                                 {isSaving && <RotateCw className="h-4 w-4 animate-spin" />}
                                 SAVE LIMIT

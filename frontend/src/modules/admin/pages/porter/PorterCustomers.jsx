@@ -101,9 +101,9 @@ const PorterCustomers = () => {
   const statCards = useMemo(
     () => [
       { label: "Porter Customers", value: stats.totalPorterCustomers, icon: Users, color: "text-slate-600", bg: "bg-slate-100 border border-slate-200 dark:bg-slate-800 dark:border-slate-700" },
-      { label: "Active", value: stats.active, icon: UserCheck, color: "text-emerald-600", bg: "bg-emerald-50 border border-emerald-200 dark:bg-emerald-950/40 dark:border-emerald-800" },
+      { label: "Active", value: stats.active, icon: UserCheck, color: "text-orange-600", bg: "bg-orange-50 border border-orange-200 dark:bg-orange-950/40 dark:border-orange-800" },
       { label: "Inactive", value: stats.inactive, icon: UserX, color: "text-rose-600", bg: "bg-rose-50 border border-rose-200 dark:bg-rose-950/40 dark:border-rose-800" },
-      { label: "Total Bookings", value: stats.totalBookings, icon: Package, color: "text-blue-600", bg: "bg-blue-50 border border-blue-200 dark:bg-blue-950/40 dark:border-blue-800" },
+      { label: "Total Bookings", value: stats.totalBookings, icon: Package, color: "text-orange-600", bg: "bg-orange-50 border border-orange-200 dark:bg-orange-950/40 dark:border-orange-800" },
       { label: "Total Revenue", value: formatMoney(stats.totalRevenue), icon: IndianRupee, color: "text-amber-600", bg: "bg-amber-50 border border-amber-200 dark:bg-amber-950/40 dark:border-amber-800" },
     ],
     [stats],
@@ -160,7 +160,7 @@ const PorterCustomers = () => {
                 className={cn(
                   "rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors",
                   statusFilter === tab.id
-                    ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
+                    ? "bg-[color:var(--primary)] text-white dark:bg-white dark:text-slate-900"
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700",
                 )}
               >
@@ -235,7 +235,7 @@ const PorterCustomers = () => {
                 </tr>
               ) : (
                 customers.map((c) => (
-                  <tr key={c.id} className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/40">
+                  <tr key={c.id} className="transition-colors hover:bg-slate-50/70 dark:hover:opacity-90/40">
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
                         <img
@@ -281,7 +281,7 @@ const PorterCustomers = () => {
                     </td>
                     <td className="px-5 py-4">
                       <Badge variant={c.isActive ? "success" : "error"}>
-                        <span className={cn("h-1.5 w-1.5 rounded-full", c.isActive ? "bg-emerald-500" : "bg-rose-500")} />
+                        <span className={cn("h-1.5 w-1.5 rounded-full", c.isActive ? "bg-orange-500" : "bg-rose-500")} />
                         {c.isActive ? "Active" : "Inactive"}
                       </Badge>
                     </td>
@@ -293,7 +293,7 @@ const PorterCustomers = () => {
                           title={c.isActive ? "Deactivate — blocks login" : "Activate — allows login"}
                           className={cn(
                             "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
-                            c.isActive ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-700",
+                            c.isActive ? "bg-orange-500" : "bg-slate-300 dark:bg-slate-700",
                           )}
                         >
                           <span
