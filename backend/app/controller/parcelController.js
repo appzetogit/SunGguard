@@ -316,7 +316,7 @@ export const calculateFare = async (req, res) => {
       courierCityCharge = cityCharge.charge;
     }
 
-    const daily = computeParcelDailyFare({ config, courierCharge: courierCityCharge });
+    const daily = computeParcelDailyFare({ config, courierCharge: courierCityCharge, weightKg: pkgWeight });
 
     const billableDays = resolveParcelBillableDays({
       pickupWindow,
@@ -456,7 +456,7 @@ export const validateBookingCoupon = async (req, res) => {
       courierCityCharge = cityCharge.charge;
     }
 
-    const daily = computeParcelDailyFare({ config, courierCharge: courierCityCharge });
+    const daily = computeParcelDailyFare({ config, courierCharge: courierCityCharge, weightKg: pkgWeight });
     const billableDays = resolveParcelBillableDays({
       pickupWindow,
       pickupWindowDays,
@@ -846,7 +846,7 @@ export const createParcel = async (req, res) => {
       courierCityCharge = cityCharge.charge;
     }
 
-    const daily = computeParcelDailyFare({ config, courierCharge: courierCityCharge });
+    const daily = computeParcelDailyFare({ config, courierCharge: courierCityCharge, weightKg: weight });
 
     const billableDays = resolveParcelBillableDays({
       pickupWindow: windowValue,
@@ -1776,6 +1776,7 @@ export const adminUpdatePricingConfig = async (req, res) => {
   try {
     const {
       fixedDeliveryCharge,
+      weightCharge,
       riderPerKmRate,
       deliveryRadiusKm,
       packageTypes,
@@ -1785,6 +1786,9 @@ export const adminUpdatePricingConfig = async (req, res) => {
     const config = await ParcelConfig.getOrCreate();
     if (fixedDeliveryCharge !== undefined) {
       config.fixedDeliveryCharge = Math.max(0, Number(fixedDeliveryCharge) || 0);
+    }
+    if (weightCharge !== undefined) {
+      config.weightCharge = Math.max(0, Number(weightCharge) || 0);
     }
     if (riderPerKmRate !== undefined) {
       config.riderPerKmRate = Math.max(0, Number(riderPerKmRate) || 0);
@@ -1801,7 +1805,7 @@ export const adminUpdatePricingConfig = async (req, res) => {
 
     await config.save();
     const fresh = await ParcelConfig.findById(config._id).select(
-      "fixedDeliveryCharge riderPerKmRate deliveryRadiusKm packageTypes packageCategories gst createdAt updatedAt",
+      "fixedDeliveryCharge weightCharge riderPerKmRate deliveryRadiusKm packageTypes packageCategories gst createdAt updatedAt",
     );
     return handleResponse(
       res,

@@ -84,6 +84,7 @@ export const adminUpdateCourierSchema = Joi.object({
  */
 export const adminUpdateParcelPricingSchema = Joi.object({
   fixedDeliveryCharge: money(),
+  weightCharge: money(),
   deliveryRadiusKm: Joi.number().min(1).max(100),
   riderPerKmRate: money(10000),
   // Passed through: the controller owns their shape, and stripping unknown

@@ -697,7 +697,7 @@ const ParcelDeliveryPage = () => {
       .getCouriersForLocation(lat, lng)
       .then((res) => {
         if (cancelled || !res.data?.success) return;
-        const list = Array.isArray(res.data.result) ? res.data.result : [];
+        const list = res.data.results || res.data.result || [];
         setCourierCompanies(
           list.map((c) => ({
             id: String(c.id || c._id || ""),
@@ -789,6 +789,9 @@ const ParcelDeliveryPage = () => {
   // Persists past the toast so "why is Confirm disabled" stays answered on
   // screen — e.g. this courier doesn't ship the chosen route.
   const [fareError, setFareError] = useState(null);
+  // Bumped on city-field blur to re-check the fare — typing "i", "in",
+  // "ind"... must not each fire a request; only the finished value should.
+  const [cityCheckTick, setCityCheckTick] = useState(0);
 
   // Coupon
   const [availableCoupons, setAvailableCoupons] = useState([]);
@@ -909,8 +912,10 @@ const ParcelDeliveryPage = () => {
   }, [
     pickupDetails.lat,
     pickupDetails.lng,
-    pickupDetails.city,
-    destinationCity,
+    // Not pickupDetails.city/destinationCity directly — those are free-typed
+    // text; re-checking on every keystroke fired a request per partial city
+    // name. cityCheckTick bumps on blur instead (see the two city inputs).
+    cityCheckTick,
     weightKg,
     selectedCourier?.id,
     selectedCourier?.name,
@@ -1170,6 +1175,15 @@ const ParcelDeliveryPage = () => {
     }
     if (isOtherCourier && !customCourierNameSaved) {
       return toast.error("Please enter courier company name and press Enter.");
+    }
+    if (estimating) {
+      return toast.error("Checking price for this route, please wait.");
+    }
+    if (!fareEstimation?.fare) {
+      return toast.error(
+        fareError ||
+          "This courier doesn't ship between the selected cities. Choose a different courier or destination.",
+      );
     }
     if (!receiverDetails.name?.trim() || !receiverDetails.phone?.trim()) {
       return toast.error("Please enter receiver name and phone.");
@@ -1578,6 +1592,7 @@ const ParcelDeliveryPage = () => {
                                 onChange={(e) =>
                                   updatePickupField("city", e.target.value)
                                 }
+                                onBlur={() => setCityCheckTick((t) => t + 1)}
                                 className={inputClass(
                                   Boolean(pickupDetails.city?.trim()),
                                 )}
@@ -1863,6 +1878,7 @@ const ParcelDeliveryPage = () => {
                                 placeholder="City"
                                 value={receiverDetails.city}
                                 onChange={(e) => updateReceiverField("city", e.target.value)}
+                                onBlur={() => setCityCheckTick((t) => t + 1)}
                                 className={inputClass(Boolean(receiverDetails.city?.trim()))}
                               />
                             </Field>
@@ -2364,39 +2380,17 @@ const ParcelDeliveryPage = () => {
                                     value={`₹${Number(fareEstimation.fixedDeliveryCharge).toFixed(2)}`}
                                   />
                                 ) : null}
+                                {Number(fareEstimation.weightFare) > 0 && (
+                                  <LeaderRow
+                                    label={`Weight ${weightKg} kg`}
+                                    value={`₹${Number(fareEstimation.weightFare).toFixed(2)}`}
+                                  />
+                                )}
                                 {Number(fareEstimation.courierCharge) > 0 && (
                                   <LeaderRow
                                     label={`${courierCompany || "Courier"} charge (${pickupDetails.city} → ${destinationCity})`}
                                     value={`₹${Number(fareEstimation.courierCharge).toFixed(2)}`}
                                   />
-                                )}
-                                {!(Number(fareEstimation.fixedDeliveryCharge) > 0) && (
-                                  <>
-                                    {Number(fareEstimation.distanceFare) > 0 && (
-                                      <LeaderRow
-                                        label={`Distance ${fareEstimation.distance} km${
-                                          fareEstimation.perKmCharge != null
-                                            ? ` × ₹${Number(fareEstimation.perKmCharge).toFixed(2)}`
-                                            : ""
-                                        }`}
-                                        value={`₹${Number(fareEstimation.distanceFare).toFixed(2)}`}
-                                      />
-                                    )}
-                                    {Number(fareEstimation.weightFare) > 0 && (
-                                      <LeaderRow
-                                        label={`Weight ${weightKg} kg`}
-                                        value={`₹${Number(fareEstimation.weightFare).toFixed(2)}`}
-                                      />
-                                    )}
-                                    {Number(fareEstimation.platformCharge) > 0 &&
-                                      (!isOtherCourier ||
-                                        customCourierNameSaved) && (
-                                        <LeaderRow
-                                          label="Platform charge"
-                                          value={`₹${Number(fareEstimation.platformCharge).toFixed(2)}`}
-                                        />
-                                      )}
-                                  </>
                                 )}
                                 {deliverySpeed === "express" && (
                                   <LeaderRow

@@ -176,6 +176,10 @@ export const adminDeleteCourierCompany = async (req, res) => {
  * active courier, same fallback every other zone-gated flow uses.
  */
 export const listCouriersForLocation = async (req, res) => {
+  // Courier list changes as admin edits it; Express's default ETag makes the
+  // browser reuse a stale 304 (e.g. an empty result from before couriers
+  // existed) forever otherwise.
+  res.set("Cache-Control", "no-store");
   try {
     const lat = Number(req.query.lat);
     const lng = Number(req.query.lng);

@@ -55,6 +55,12 @@ const parcelConfigSchema = new mongoose.Schema(
       default: 40,
       min: 0,
     },
+    /** ₹ charged per kg of package weight, added on top of fixedDeliveryCharge. */
+    weightCharge: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     /** Per-km rate paid to the rider for the pickup leg (see riderAcceptLocation on Parcel). */
     riderPerKmRate: {
       type: Number,

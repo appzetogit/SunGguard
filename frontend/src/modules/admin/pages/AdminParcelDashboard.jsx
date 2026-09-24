@@ -236,6 +236,7 @@ const AdminParcelDashboard = () => {
   // Pricing Config state
   const [pricing, setPricing] = useState({
     fixedDeliveryCharge: 0,
+    weightCharge: 0,
     deliveryRadiusKm: 5,
     riderPerKmRate: 0,
     packageCategories: [],
@@ -330,6 +331,7 @@ const AdminParcelDashboard = () => {
       const cfg = res.data.result || {};
       setPricing({
         fixedDeliveryCharge: cfg.fixedDeliveryCharge ?? 0,
+        weightCharge: cfg.weightCharge ?? 0,
         deliveryRadiusKm: cfg.deliveryRadiusKm ?? 5,
         riderPerKmRate: cfg.riderPerKmRate ?? 0,
         packageCategories: Array.isArray(cfg.packageCategories)
@@ -529,6 +531,7 @@ const AdminParcelDashboard = () => {
     try {
       const payload = {
         fixedDeliveryCharge: Number(pricing.fixedDeliveryCharge) || 0,
+        weightCharge: Number(pricing.weightCharge) || 0,
         deliveryRadiusKm: Number(pricing.deliveryRadiusKm) || 5,
         riderPerKmRate: Number(pricing.riderPerKmRate) || 0,
         packageCategories: pricing.packageCategories,
@@ -539,6 +542,7 @@ const AdminParcelDashboard = () => {
         setPricing((prev) => ({
           ...prev,
           fixedDeliveryCharge: cfg.fixedDeliveryCharge ?? prev.fixedDeliveryCharge,
+          weightCharge: cfg.weightCharge ?? prev.weightCharge,
           deliveryRadiusKm: cfg.deliveryRadiusKm ?? prev.deliveryRadiusKm,
           riderPerKmRate: cfg.riderPerKmRate ?? prev.riderPerKmRate,
           packageCategories: Array.isArray(cfg.packageCategories)
@@ -1198,8 +1202,8 @@ const AdminParcelDashboard = () => {
                       Charge
                     </h2>
                     <p className="text-xs text-slate-400 mt-1">
-                      The customer pays this flat amount regardless of distance
-                      or package weight.
+                      Flat fee plus a per-kg weight charge — the customer pays
+                      the sum of both regardless of distance.
                     </p>
                   </div>
 
@@ -1224,7 +1228,31 @@ const AdminParcelDashboard = () => {
                       />
                       <p className="text-[10px] text-slate-400 font-medium">
                         Charged to every customer booking, no matter the
-                        distance or weight involved.
+                        distance involved.
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-500 uppercase">
+                        Weight Charge (₹ / kg)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        required
+                        value={pricing.weightCharge}
+                        onChange={(e) =>
+                          setPricing((p) => ({
+                            ...p,
+                            weightCharge: e.target.value,
+                          }))
+                        }
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary"
+                      />
+                      <p className="text-[10px] text-slate-400 font-medium">
+                        Multiplied by the package weight the customer enters
+                        and added on top of the delivery charge. 0 = no
+                        weight charge.
                       </p>
                     </div>
                   </div>
