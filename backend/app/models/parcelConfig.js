@@ -165,7 +165,10 @@ function normalizePackageCategories(list) {
 const LEGACY_FIELDS = [
   "baseFare",
   "perKmCharge",
-  "weightCharge",
+  // NOT weightCharge — it was legacy when this list was first written, but
+  // it's a real, current field again (₹/kg weight pricing). Leaving it here
+  // meant every process restart re-ran this one-time $unset and silently
+  // wiped whatever the admin had just saved back to 0.
   "baseSearchRadiusKm",
   "radiusMultiplier",
   "riderSharePercent",
