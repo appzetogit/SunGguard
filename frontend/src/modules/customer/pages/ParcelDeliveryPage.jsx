@@ -521,7 +521,10 @@ const ParcelDeliveryPage = () => {
       .filter(Boolean)
       .join(", ");
 
-  const [maxWeightKg, setMaxWeightKg] = useState(1);
+  // Matches the server's hard cap (Parcel.packageDetails.weight schema max /
+  // the `const maxWeightKg = 50` in calculateFare/createParcel) — weight is
+  // priced per kg now, not admin-capped, so there's no config value to fetch.
+  const [maxWeightKg] = useState(50);
   const [expressCharge, setExpressCharge] = useState(0);
   const [packageDescriptionPlaceholder, setPackageDescriptionPlaceholder] =
     useState("E.g. keys, critical document papers...");
@@ -812,14 +815,13 @@ const ParcelDeliveryPage = () => {
         ? cfg.packageCategories
         : [];
       setPackageCategories(categories);
-      if (cfg.maxWeightKg != null) setMaxWeightKg(Number(cfg.maxWeightKg) || 1);
-      setExpressCharge(Math.max(0, Number(cfg.expressCharge) || 0));
-      if (cfg.packageDescriptionPlaceholder) {
-        setPackageDescriptionPlaceholder(cfg.packageDescriptionPlaceholder);
-      }
       // Courier companies are no longer set from the unfiltered booking
       // config — they're fetched zone-filtered against the pickup point
       // instead (see the getCouriersForLocation effect above).
+      // Weight is priced per kg now (ParcelConfig.weightCharge), not capped
+      // by admin — maxWeightKg was removed from the config, so this no
+      // longer comes back from the API. maxWeightKg state stays at its
+      // initial 50 (matching the server's hard schema cap).
     } catch (error) {
       console.error("Failed to load parcel booking config", error);
     }
