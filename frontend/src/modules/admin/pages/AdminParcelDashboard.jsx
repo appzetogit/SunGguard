@@ -252,6 +252,8 @@ const AdminParcelDashboard = () => {
     completed: 0,
     cancelled: 0,
     revenue: 0,
+    preTaxRevenue: 0,
+    gstCollected: 0,
     riderPerKmRate: 0,
     riderPayout: 0,
     adminCommission: 0,
@@ -2204,6 +2206,19 @@ const AdminParcelDashboard = () => {
                     <span className="text-[10px] text-slate-400 font-medium block mt-1">
                       Collected on behalf of courier companies — not platform
                       revenue, excluded from Admin Commission above
+                    </span>
+                  </div>
+                  <div className="bg-slate-50 p-4 rounded-2xl col-span-2">
+                    <span className="text-slate-400 font-bold block uppercase">
+                      GST Collected (tax, pass-through)
+                    </span>
+                    <span className="text-lg font-black text-slate-800 mt-1 block">
+                      ₹{Number(reports.gstCollected || 0).toFixed(2)}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-medium block mt-1">
+                      Government's tax, not platform revenue — excluded from
+                      Admin Commission above (also excluded from the courier
+                      pass-through, since GST applies to the delivery charge)
                     </span>
                   </div>
                 </div>

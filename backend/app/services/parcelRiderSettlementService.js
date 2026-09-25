@@ -14,10 +14,16 @@ export async function applyParcelDeliveredRiderEarning(parcel) {
 
   const settings = await ParcelConfig.getSearchSettings();
   let amount = roundCurrency(computeRiderParcelEarnings(parcel, settings));
-  // Older parcels may have fare set but empty/zero breakdown components.
-  // The share is taken on the PRE-TAX value: `fare` is tax-inclusive since GST
-  // was added to the rate card, and a rider is never paid a cut of the tax.
-  if (!(amount > 0) && Number(parcel.fare) > 0) {
+  // computeRiderParcelEarnings needs riderAcceptLocation — a GPS snapshot only
+  // taken when a rider accepts via the normal flow (parcelAcceptAtomic). A
+  // parcel assigned straight by an admin (adminAssignRider) has no such
+  // snapshot and always earns 0 here, with nothing to distance-price against.
+  // NOTE: this used to call computeRiderParcelEarnings(taxable, percent) —
+  // that function takes (parcel, settings), so `taxable` (a number) was being
+  // read as a parcel and always returned 0. The fallback never actually ran.
+  if (!(amount > 0) && !parcel.riderAcceptLocation && Number(parcel.fare) > 0) {
+    // The share is taken on the PRE-TAX value: `fare` is tax-inclusive since
+    // GST was added to the rate card, and a rider is never paid a cut of the tax.
     const taxable =
       Number(parcel.fareBreakdown?.taxableAmount) ||
       Math.max(
@@ -26,9 +32,8 @@ export async function applyParcelDeliveredRiderEarning(parcel) {
           Number(parcel.fare) - (Number(parcel.fareBreakdown?.gstAmount) || 0),
         ),
       );
-    amount = roundCurrency(
-      computeRiderParcelEarnings(taxable, settings.riderSharePercent || 80),
-    );
+    const legacyPercent = Math.max(0, Number(settings.riderSharePercent) || 80);
+    amount = roundCurrency((taxable * legacyPercent) / 100);
   }
   if (!(amount > 0)) return null;
 

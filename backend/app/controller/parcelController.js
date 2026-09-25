@@ -1693,6 +1693,13 @@ export const adminAssignRider = async (req, res) => {
     parcel.acceptedAt = new Date();
     parcel.searchExpiresAt = null;
     parcel.searchMeta = undefined;
+    // Same snapshot parcelAcceptAtomic takes on a normal accept — without it
+    // computeRiderParcelEarningBreakdown has nothing to measure a payout
+    // distance from, and this rider earns 0 for the job.
+    const riderCoords = rider.location?.coordinates;
+    if (Array.isArray(riderCoords) && riderCoords.length >= 2) {
+      parcel.riderAcceptLocation = { lat: Number(riderCoords[1]), lng: Number(riderCoords[0]) };
+    }
     await parcel.save();
 
     await recordParcelEvent({
@@ -1825,52 +1832,81 @@ export const adminUpdatePricingConfig = async (req, res) => {
 
 export const adminGetReports = async (req, res) => {
   try {
-    // "Total deliveries" counted rows nobody had paid for, so an abandoned
-    // pay screen quietly moved the completion rate.
-    const parcels = await Parcel.find(visibleParcels());
+    // Sums/counts done in Mongo, not by loading every parcel into Node — this
+    // used to be `Parcel.find(visibleParcels())` with no projection, which
+    // pulled every field of every parcel ever booked into memory just to
+    // count and sum a handful of numbers.
+    const match = visibleParcels();
+    const [facet] = await Parcel.aggregate([
+      { $match: match },
+      {
+        $facet: {
+          totalDeliveries: [{ $count: "n" }],
+          completed: [{ $match: { status: "DELIVERED" } }, { $count: "n" }],
+          cancelled: [{ $match: { status: "CANCELLED" } }, { $count: "n" }],
+          deliveredSums: [
+            { $match: { status: "DELIVERED" } },
+            {
+              $group: {
+                _id: null,
+                revenue: { $sum: { $ifNull: ["$payableFare", "$fare"] } },
+                discountGiven: { $sum: { $ifNull: ["$discountAmount", 0] } },
+                courierChargeCollected: {
+                  $sum: {
+                    $multiply: [
+                      { $ifNull: ["$fareBreakdown.courierCharge", 0] },
+                      { $max: [1, { $ifNull: ["$fareBreakdown.billableDays", 1] }] },
+                    ],
+                  },
+                },
+                preTaxRevenue: { $sum: { $ifNull: ["$fareBreakdown.taxableAmount", 0] } },
+              },
+            },
+          ],
+        },
+      },
+    ]);
 
-    const totalDeliveries = parcels.length;
-    const completed = parcels.filter(p => p.status === "DELIVERED").length;
-    const cancelled = parcels.filter(p => p.status === "CANCELLED").length;
-    
-    // Revenue is what the customer actually pays — `payableFare` when a
-    // coupon discounted the booking, otherwise `fare`.
-    const delivered = parcels.filter((p) => p.status === "DELIVERED");
-    const revenue = delivered.reduce((sum, p) => sum + (p.payableFare || p.fare), 0);
-    const totalDiscountGiven = Math.round(
-      (delivered.reduce((sum, p) => sum + (p.discountAmount || 0), 0) + Number.EPSILON) * 100,
-    ) / 100;
+    const totalDeliveries = facet.totalDeliveries[0]?.n || 0;
+    const completed = facet.completed[0]?.n || 0;
+    const cancelled = facet.cancelled[0]?.n || 0;
+    const sums = facet.deliveredSums[0] || {};
 
-    // What was collected FOR the courier company, on its behalf — not the
-    // platform's own money, so it must not be counted toward adminCommission
-    // below even though it passed through the same payment.
-    const courierChargeCollected = Math.round(
-      (delivered.reduce(
-        (sum, p) =>
-          sum +
-          (Number(p.fareBreakdown?.courierCharge) || 0) *
-            Math.max(1, Number(p.fareBreakdown?.billableDays) || 1),
-        0,
-      ) +
-        Number.EPSILON) *
-        100,
-    ) / 100;
+    const revenue = Math.round((Number(sums.revenue) || 0) * 100) / 100;
+    const totalDiscountGiven = Math.round((Number(sums.discountGiven) || 0) * 100) / 100;
+    const courierChargeCollected =
+      Math.round((Number(sums.courierChargeCollected) || 0) * 100) / 100;
+    const preTaxRevenue = Math.round((Number(sums.preTaxRevenue) || 0) * 100) / 100;
 
+    // Rider payout needs the haversine distance between riderAcceptLocation
+    // and pickupAddress per parcel — not expressible as a Mongo $group sum —
+    // so this one still loops in Node, but over only the two small fields it
+    // needs rather than the full documents.
     const settings = await ParcelConfig.getSearchSettings();
+    const deliveredForPayout = await Parcel.find(
+      { ...match, status: "DELIVERED" },
+      "riderAcceptLocation pickupAddress",
+    ).lean();
     const riderPayout = Math.round(
-      (delivered.reduce(
+      (deliveredForPayout.reduce(
         (sum, p) => sum + computeRiderParcelEarnings(p, settings),
         0,
       ) +
         Number.EPSILON) *
         100,
     ) / 100;
-    // The platform's own margin: what customers paid, minus the courier's
+    // `revenue` above is tax-INCLUSIVE (it's `fare`/`payableFare`, the number
+    // the customer actually pays). GST is the government's money, not the
+    // platform's, so admin's margin has to come off the pre-tax total —
+    // `fareBreakdown.taxableAmount`, which is already rebased to whatever
+    // was actually collected (discount included, see rebaseGstAfterDiscount).
+    const gstCollected = Math.round((revenue - preTaxRevenue + Number.EPSILON) * 100) / 100;
+    // The platform's own margin: pre-tax revenue, minus the courier's
     // pass-through cut (never the platform's to begin with), minus the
     // rider's payout. A coupon discount only ever reduces this, never the
     // rider's share, since riderPayout is computed off distance, not fare.
     const adminCommission = Math.round(
-      (revenue - courierChargeCollected - riderPayout + Number.EPSILON) * 100,
+      (preTaxRevenue - courierChargeCollected - riderPayout + Number.EPSILON) * 100,
     ) / 100;
 
     return handleResponse(res, 200, "Reports retrieved successfully", {
@@ -1878,6 +1914,8 @@ export const adminGetReports = async (req, res) => {
       completed,
       cancelled,
       revenue,
+      preTaxRevenue,
+      gstCollected,
       totalDiscountGiven,
       courierChargeCollected,
       riderPerKmRate: settings.riderPerKmRate,

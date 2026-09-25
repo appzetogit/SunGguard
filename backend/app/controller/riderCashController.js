@@ -30,6 +30,22 @@ import {
   openRiderDepositPayment,
   verifyRiderDepositReceipt,
 } from "../services/porter/riderDepositService.js";
+import { emitNotificationEvent } from "../modules/notifications/notification.emitter.js";
+import { NOTIFICATION_EVENTS } from "../modules/notifications/notification.constants.js";
+
+/**
+ * Statuses in which the rider has NOT yet physically collected the parcel —
+ * cash only enters the "Cash Collection" ledger at pickup (see
+ * riderUpdateStatus → recordCodCollection in parcelController.js). A QR can
+ * only be created/paid while still in one of these: creating one after
+ * pickup would mean the rider is already holding the cash while the customer
+ * also pays online, and letting an already-created QR complete after pickup
+ * would leave that ledger entry unreversed — two records of the same money.
+ */
+const PRE_PICKUP_STATUSES = {
+  parcel: new Set(["ACCEPTED", "RIDER_ASSIGNED", "PICKUP_REACHED"]),
+  city_parcel: new Set(["REQUESTED", "SEARCHING", "ACCEPTED", "RIDER_ASSIGNED", "PICKUP_REACHED"]),
+};
 
 /* ==========================================================================
    Rider — COD cash they are holding, and depositing it back
@@ -131,6 +147,13 @@ export const riderCreateCodQr = async (req, res) => {
     if (booking.paymentStatus === "PAID") {
       return handleResponse(res, 400, "This booking is already paid");
     }
+    if (!PRE_PICKUP_STATUSES[kind]?.has(booking.status)) {
+      return handleResponse(
+        res,
+        400,
+        "This can only be offered before pickup — the cash is already collected",
+      );
+    }
 
     // Reuse a QR that is still live rather than minting one per tap — a
     // second QR for the same booking would be a second way to charge twice.
@@ -199,6 +222,18 @@ export const riderCheckCodQr = async (req, res) => {
       return handleResponse(res, 400, "No payment QR has been created for this booking");
     }
 
+    // Rider moved on (picked up, cash already recorded in hand) while this QR
+    // sat open — closing it here stops a late scan from converting the
+    // booking on top of cash that's already in the "Cash Collection" ledger.
+    if (!PRE_PICKUP_STATUSES[kind]?.has(booking.status)) {
+      await closeCodQr(qrId);
+      return handleResponse(
+        res,
+        400,
+        "This payment window has closed — the parcel was already picked up for cash",
+      );
+    }
+
     const status = await fetchCodQrStatus(qrId, booking.codOnlineQr?.amount);
     if (!status.paid) {
       return handleResponse(res, 200, "Waiting for payment", { paid: false });
@@ -227,6 +262,15 @@ export const riderCheckCodQr = async (req, res) => {
 
     await booking.save();
     await closeCodQr(qrId);
+
+    emitNotificationEvent(NOTIFICATION_EVENTS.PARCEL_STATUS_UPDATE, {
+      userId: booking.customerId,
+      customerId: booking.customerId,
+      parcelId: booking._id,
+      status: "PAID_ONLINE",
+      body: `Your ₹${booking.codOnlineQr.amount / 100} payment was received — no cash needed at drop.`,
+      data: { title: "Payment received", parcelId: String(booking._id), status: "PAID_ONLINE" },
+    });
 
     return handleResponse(res, 200, "Payment received", {
       paid: true,

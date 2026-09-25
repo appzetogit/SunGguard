@@ -67,6 +67,9 @@ const cityBooking = (overrides = {}) => ({
   deliveryPartnerId: RIDER_ID,
   paymentMethod: "COD",
   paymentStatus: "PENDING",
+  // Pre-pickup: the QR flow is only offered before the rider has physically
+  // collected the cash — see PRE_PICKUP_STATUSES in the controller.
+  status: "ACCEPTED",
   fare: 180,
   codCollection: { amount: 180, status: "COLLECT_PENDING" },
   codOnlineQr: {},
@@ -147,6 +150,19 @@ describe("riderCreateCodQr", () => {
     expect(createCodQr).not.toHaveBeenCalled();
   });
 
+  it("refuses once the parcel has already been picked up", async () => {
+    cityFindById.mockResolvedValue(cityBooking({ status: "PICKED_UP" }));
+
+    const res = mockRes();
+    await riderCreateCodQr(
+      { params: { kind: "city_parcel", id: BOOKING_ID }, user: { id: RIDER_ID } },
+      res,
+    );
+
+    expect(res.statusCode).toBe(400);
+    expect(createCodQr).not.toHaveBeenCalled();
+  });
+
   it("tells the rider to collect cash when Razorpay is not configured", async () => {
     isCodQrAvailable.mockReturnValue(false);
 
@@ -193,6 +209,7 @@ describe("riderCheckCodQr", () => {
       deliveryPartnerId: RIDER_ID,
       paymentMethod: "COD",
       paymentStatus: "PENDING",
+      status: "PICKUP_REACHED",
       fare: 300,
       codSettlement: { collectAmount: 300, status: "RIDER_HOLDING" },
       codOnlineQr: { qrId: "qr_2", amount: 30000 },
@@ -244,6 +261,25 @@ describe("riderCheckCodQr", () => {
 
     expect(fetchCodQrStatus).not.toHaveBeenCalled();
     expect(res.body.result.paid).toBe(true);
+  });
+
+  it("closes a stale QR and refuses once the rider has already picked up for cash", async () => {
+    const booking = cityBooking({
+      status: "PICKED_UP",
+      codOnlineQr: { qrId: "qr_1", amount: 18000 },
+    });
+    cityFindById.mockResolvedValue(booking);
+
+    const res = mockRes();
+    await riderCheckCodQr(
+      { params: { kind: "city_parcel", id: BOOKING_ID }, user: { id: RIDER_ID } },
+      res,
+    );
+
+    expect(res.statusCode).toBe(400);
+    expect(closeCodQr).toHaveBeenCalledWith("qr_1");
+    expect(fetchCodQrStatus).not.toHaveBeenCalled();
+    expect(booking.paymentStatus).toBe("PENDING");
   });
 
   it("refuses to poll a booking with no QR", async () => {
