@@ -509,7 +509,12 @@ function eventData(eventType, payload = {}, role) {
     NOTIFICATION_EVENTS.PARCEL_REQUESTED,
     NOTIFICATION_EVENTS.PARCEL_ASSIGNED,
     NOTIFICATION_EVENTS.PARCEL_STATUS_UPDATE,
-    NOTIFICATION_EVENTS.PARCEL_DELIVERED
+    NOTIFICATION_EVENTS.PARCEL_DELIVERED,
+    // Without this, the broadcast fell into the generic orderId/checkoutGroupId
+    // branch below and shipped no parcelId at all — the driver app's
+    // IncomingParcelService looks for parcelId/outstationParcelId in the push
+    // data to build the accept/reject dialog, so the offer just never appeared.
+    NOTIFICATION_EVENTS.NEW_PARCEL_BROADCAST,
   ].includes(eventType)) {
     const parcelId = String(payload.parcelId || "").trim() || undefined;
     const link =
@@ -519,6 +524,7 @@ function eventData(eventType, payload = {}, role) {
     return {
       eventType,
       parcelId,
+      outstationParcelId: parcelId,
       fare: payload.fare != null ? Number(payload.fare) : undefined,
       link,
       ...(payload.data || {}),

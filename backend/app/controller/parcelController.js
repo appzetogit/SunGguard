@@ -146,7 +146,7 @@ async function activateParcelAfterPayment(parcel) {
 import { syncDeliveryPartnerBusyFlag } from "../services/deliveryBusyService.js";
 
 // Utility to send notifications
-async function sendParcelNotification(userId, role, title, body, eventType = "alert", parcelId = null) {
+async function sendParcelNotification(userId, role, title, body, eventType = "alert", parcelId = null, status = null) {
   try {
     if (Object.values(NOTIFICATION_EVENTS).includes(eventType)) {
       emitNotificationEvent(eventType, {
@@ -154,11 +154,16 @@ async function sendParcelNotification(userId, role, title, body, eventType = "al
         customerId: role === "customer" ? userId : undefined,
         deliveryId: role === "delivery" ? userId : undefined,
         parcelId,
+        // Read by dedupeKeyForNotification (payload.parcelId branch) so each
+        // lifecycle step of the same parcel gets its own dedupe key instead
+        // of only the first status change ever sending.
+        status: status || undefined,
         body,
         data: {
           title,
           parcelId,
           role,
+          status: status || undefined,
         }
       });
     } else {
@@ -2244,7 +2249,8 @@ export const riderUpdateStatus = async (req, res) => {
         : `Parcel status: ${status}`,
       msg,
       NOTIFICATION_EVENTS.PARCEL_STATUS_UPDATE,
-      parcel._id
+      parcel._id,
+      status
     );
 
     const resultDoc = populated || parcel;

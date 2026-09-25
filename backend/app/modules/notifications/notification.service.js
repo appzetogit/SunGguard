@@ -45,6 +45,22 @@ function dedupeKeyForNotification(eventType, notification, payload = {}) {
     ].join(":");
   }
 
+  // Same reasoning as cityParcelId above: an outstation parcel's PARCEL_STATUS_UPDATE
+  // fires once per lifecycle step (ACCEPTED, RIDER_ASSIGNED, PICKUP_REACHED,
+  // PICKED_UP...), all under the same eventType. Without status in the key, only
+  // the first status change ever got a key claim; every later one this parcel
+  // ever has was a permanent "duplicate" for the rest of the dedupe TTL.
+  if (payload.parcelId) {
+    return [
+      "notify",
+      String(eventType || "UNKNOWN"),
+      String(notification?.role || "unknown"),
+      String(notification?.userId || "unknown"),
+      String(payload.parcelId),
+      String(payload.status || payload.data?.status || notification?.data?.status || ""),
+    ].join(":");
+  }
+
   const orderRef =
     payload.messageId ||
     payload.messageCreatedAt ||
