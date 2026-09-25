@@ -76,6 +76,40 @@ export async function applyParcelDeliveredRiderEarning(parcel) {
 }
 
 /**
+ * The actual amount credited for each delivered parcel — what settled onto
+ * the rider's ledger, not a fresh recompute.
+ *
+ * A delivered parcel's earning must never be recomputed live: it was frozen
+ * at whatever `computeRiderParcelEarnings`/the legacy fallback produced at
+ * delivery time (see applyParcelDeliveredRiderEarning above), and that is the
+ * amount already sitting in the rider's wallet. If a screen instead
+ * recomputes it fresh using the CURRENT `riderPerKmRate`, an admin changing
+ * that rate after the fact silently rewrites what every past delivery
+ * appears to have earned — the "Your Earning" shown per order and the real
+ * "Delivery Earning" transaction in Recent Earnings then disagree.
+ *
+ * @returns {Map<string, number>} parcelId (string) -> settled amount
+ */
+export async function getSettledParcelEarnings(parcelIds = []) {
+  const ids = [...new Set(parcelIds.map(String))].filter(Boolean);
+  if (!ids.length) return new Map();
+
+  const rows = await Transaction.find({
+    reference: { $in: ids.map((id) => `PCL-ERN-${id}`) },
+    type: "Delivery Earning",
+  })
+    .select("reference amount")
+    .lean();
+
+  const map = new Map();
+  for (const row of rows) {
+    const parcelId = String(row.reference).replace(/^PCL-ERN-/, "");
+    map.set(parcelId, roundCurrency(row.amount));
+  }
+  return map;
+}
+
+/**
  * Ensure every delivered parcel for this rider has a Settled earning transaction.
  * Fixes past deliveries that completed before settlement was wired.
  */

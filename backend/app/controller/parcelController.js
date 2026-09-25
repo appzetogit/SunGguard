@@ -44,7 +44,10 @@ import { activatePorterBookingAfterPayment } from "../services/porter/porterDisp
 import { PORTER_BOOKING_KIND, PORTER_PAYMENT_SOURCE } from "../constants/porterPayment.js";
 import logger from "../services/logger.js";
 import { findNearestParcelSellerWithDistance } from "../services/sellerNearbyService.js";
-import { applyParcelDeliveredRiderEarning } from "../services/parcelRiderSettlementService.js";
+import {
+  applyParcelDeliveredRiderEarning,
+  getSettledParcelEarnings,
+} from "../services/parcelRiderSettlementService.js";
 import {
   canCustomerRequestLateRefund,
   creditLateRefundToCustomerWallet,
@@ -100,12 +103,21 @@ function buildInitialCodSettlement(paymentMethod, fare) {
  * reached instead of just the total. Only meaningful once a rider has
  * accepted (riderAcceptLocation set); before that it's zeroed by
  * computeRiderParcelEarningBreakdown itself, same as the existing preview.
+ *
+ * `settledAmount` (from getSettledParcelEarnings) overrides the live-computed
+ * `.earning` for a DELIVERED parcel — the frozen amount actually credited,
+ * not a fresh recompute against whatever riderPerKmRate is configured today.
+ * Callers listing delivered parcels must pass this; an in-progress parcel has
+ * nothing settled yet, so the live preview is correct there.
  */
-function withRiderEarningBreakdown(parcelPlainOrDoc, settings) {
+function withRiderEarningBreakdown(parcelPlainOrDoc, settings, settledAmount = null) {
   const plain = parcelPlainOrDoc?.toObject
     ? parcelPlainOrDoc.toObject()
     : { ...parcelPlainOrDoc };
   plain.riderEarningBreakdown = computeRiderParcelEarningBreakdown(plain, settings);
+  if (plain.status === "DELIVERED" && settledAmount != null) {
+    plain.riderEarningBreakdown.earning = settledAmount;
+  }
   return plain;
 }
 
@@ -1412,6 +1424,9 @@ export const adminGetParcels = async (req, res) => {
       .sort({ createdAt: -1 });
 
     const settings = await ParcelConfig.getSearchSettings();
+    const settledByParcelId = await getSettledParcelEarnings(
+      parcels.filter((p) => p.status === "DELIVERED").map((p) => p._id),
+    );
     const enriched = parcels.map((doc) => {
       const plain = doc.toObject ? doc.toObject() : { ...doc };
       const lateSummary = getParcelLatePickupSummary(plain);
@@ -1426,8 +1441,11 @@ export const adminGetParcels = async (req, res) => {
           stillAwaitingPickup: lateSummary.stillAwaitingPickup,
         };
       }
-      plain.riderEarningBreakdown = computeRiderParcelEarningBreakdown(plain, settings);
-      return plain;
+      return withRiderEarningBreakdown(
+        plain,
+        settings,
+        settledByParcelId.get(String(plain._id)) ?? null,
+      );
     });
 
     return handleResponse(res, 200, "Parcels retrieved successfully", enriched);
@@ -1469,11 +1487,17 @@ export const adminGetParcelById = async (req, res) => {
       .lean();
 
     const settings = await ParcelConfig.getSearchSettings();
+    const settledAmount =
+      plain.status === "DELIVERED"
+        ? (await getSettledParcelEarnings([plain._id])).get(String(plain._id)) ?? null
+        : null;
+    const riderEarningBreakdown = computeRiderParcelEarningBreakdown(plain, settings);
+    if (settledAmount != null) riderEarningBreakdown.earning = settledAmount;
 
     return handleResponse(res, 200, "Parcel retrieved successfully", {
       ...plain,
       timeline,
-      riderEarningBreakdown: computeRiderParcelEarningBreakdown(plain, settings),
+      riderEarningBreakdown,
     });
   } catch (error) {
     return handleResponse(res, 500, error.message);
@@ -2454,10 +2478,13 @@ export const riderGetEarnings = async (req, res) => {
       status: "DELIVERED"
     });
     const settings = await ParcelConfig.getSearchSettings();
+    const settledByParcelId = await getSettledParcelEarnings(
+      completedParcels.map((p) => p._id),
+    );
 
     const totalDeliveries = completedParcels.length;
     const deliveriesWithBreakdown = completedParcels.map((p) =>
-      withRiderEarningBreakdown(p, settings),
+      withRiderEarningBreakdown(p, settings, settledByParcelId.get(String(p._id)) ?? null),
     );
     const totalEarnings = deliveriesWithBreakdown.reduce(
       (sum, p) => sum + p.riderEarningBreakdown.earning,

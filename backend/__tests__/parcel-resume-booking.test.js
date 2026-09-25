@@ -104,6 +104,7 @@ jest.unstable_mockModule("../app/services/sellerNearbyService.js", () => ({
 }));
 jest.unstable_mockModule("../app/services/parcelRiderSettlementService.js", () => ({
   applyParcelDeliveredRiderEarning: jest.fn(),
+  getSettledParcelEarnings: jest.fn().mockResolvedValue(new Map()),
 }));
 jest.unstable_mockModule("../app/services/parcelLateRefundService.js", () => ({
   canCustomerRequestLateRefund: jest.fn(),
